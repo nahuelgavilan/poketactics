@@ -22,122 +22,54 @@ interface TileProps {
 }
 
 /*
- * PokéTactics Design System - Nintendo-Quality Tiles
- * --------------------------------------------------
- * Professional tactical game aesthetic inspired by Fire Emblem / Advance Wars.
- * Each terrain has distinct visual texture through CSS patterns.
- * Clean, readable, no emoji clutter.
+ * PokéTactics Design System - 3D Nintendo-Quality Tiles
+ * Based on Advance Wars / Fire Emblem visual style
+ *
+ * Features:
+ * - 3D raised effect with border-b
+ * - Tailwind gradients for terrain
+ * - Path tiles lift up when hovered
+ * - Clean rounded-2xl corners
  */
 
-// Professional terrain designs - Nintendo-inspired
-const TERRAIN_DESIGN: Record<number, {
-  primary: string;
-  secondary: string;
-  accent: string;
-  borderColor: string;
-  pattern?: string;
-  // Inner detail pattern for visual interest
-  detailPattern?: string;
+// Terrain theme configuration - Tailwind classes for 3D tiles
+const TERRAIN_THEME: Record<number, {
+  gradient: string;
+  border: string;
+  overlay?: boolean;
+  texture?: 'grid' | 'stripes' | 'dots';
 }> = {
   [TERRAIN.GRASS]: {
-    primary: '#5cb870',
-    secondary: '#4aa85f',
-    accent: '#3d9650',
-    borderColor: '#2d7a3d',
-    // Subtle grass texture
-    pattern: `
-      radial-gradient(circle at 20% 30%, rgba(255,255,255,0.12) 1px, transparent 1px),
-      radial-gradient(circle at 60% 70%, rgba(255,255,255,0.08) 1px, transparent 1px),
-      radial-gradient(circle at 80% 20%, rgba(255,255,255,0.1) 1px, transparent 1px)
-    `,
+    gradient: 'from-green-500 to-emerald-600',
+    border: 'border-emerald-800',
+    texture: 'grid',
   },
   [TERRAIN.FOREST]: {
-    primary: '#2d6a4f',
-    secondary: '#245840',
-    accent: '#1b4332',
-    borderColor: '#143024',
-    // Dense tree pattern
-    pattern: `
-      radial-gradient(ellipse 40% 60% at 30% 40%, rgba(0,0,0,0.2) 0%, transparent 50%),
-      radial-gradient(ellipse 35% 50% at 70% 60%, rgba(0,0,0,0.15) 0%, transparent 50%),
-      radial-gradient(ellipse 30% 45% at 50% 30%, rgba(0,0,0,0.18) 0%, transparent 50%)
-    `,
+    gradient: 'from-emerald-700 to-teal-900',
+    border: 'border-teal-950',
+    overlay: true,
   },
   [TERRAIN.WATER]: {
-    primary: '#4fa8d1',
-    secondary: '#3a95c0',
-    accent: '#2980a9',
-    borderColor: '#1e6891',
-    // Animated wave lines
-    pattern: `
-      repeating-linear-gradient(
-        -30deg,
-        transparent 0px,
-        transparent 6px,
-        rgba(255,255,255,0.12) 6px,
-        rgba(255,255,255,0.12) 8px
-      )
-    `,
+    gradient: 'from-blue-400 to-indigo-600',
+    border: 'border-indigo-900',
   },
   [TERRAIN.MOUNTAIN]: {
-    primary: '#8b8680',
-    secondary: '#756f6a',
-    accent: '#605b56',
-    borderColor: '#4a4642',
-    // Rocky texture
-    pattern: `
-      linear-gradient(135deg, rgba(255,255,255,0.15) 25%, transparent 25%),
-      linear-gradient(225deg, rgba(0,0,0,0.1) 25%, transparent 25%),
-      linear-gradient(45deg, rgba(255,255,255,0.08) 25%, transparent 25%)
-    `,
-    detailPattern: `
-      polygon(50% 20%, 20% 80%, 80% 80%)
-    `,
+    gradient: 'from-stone-400 to-stone-600',
+    border: 'border-stone-800',
   },
   [TERRAIN.TALL_GRASS]: {
-    primary: '#6ecf8a',
-    secondary: '#5ac077',
-    accent: '#48b066',
-    borderColor: '#389d54',
-    // Tall grass stripes
-    pattern: `
-      repeating-linear-gradient(
-        0deg,
-        transparent 0px,
-        transparent 4px,
-        rgba(0,60,30,0.12) 4px,
-        rgba(0,60,30,0.12) 6px
-      ),
-      repeating-linear-gradient(
-        5deg,
-        transparent 0px,
-        transparent 5px,
-        rgba(0,80,40,0.08) 5px,
-        rgba(0,80,40,0.08) 7px
-      )
-    `,
+    gradient: 'from-green-400 to-emerald-500',
+    border: 'border-emerald-700',
+    texture: 'stripes',
   },
   [TERRAIN.POKEMON_CENTER]: {
-    primary: '#f5a5b5',
-    secondary: '#f08898',
-    accent: '#e86a7c',
-    borderColor: '#d44d60',
-    // Clean medical cross implied through highlight
-    pattern: `
-      linear-gradient(to bottom, rgba(255,255,255,0.25) 0%, transparent 40%),
-      linear-gradient(to right, rgba(255,255,255,0.1) 45%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.1) 55%)
-    `,
+    gradient: 'from-pink-400 to-rose-500',
+    border: 'border-rose-700',
   },
   [TERRAIN.BASE]: {
-    primary: '#a0aab8',
-    secondary: '#8a95a5',
-    accent: '#748292',
-    borderColor: '#5e6d7e',
-    // Stone floor pattern
-    pattern: `
-      linear-gradient(90deg, rgba(0,0,0,0.05) 1px, transparent 1px),
-      linear-gradient(rgba(0,0,0,0.05) 1px, transparent 1px)
-    `,
+    gradient: 'from-slate-400 to-slate-600',
+    border: 'border-slate-800',
+    texture: 'dots',
   },
 };
 
@@ -160,7 +92,7 @@ export function Tile({
   const isOnPath = path.some(p => p.x === x && p.y === y);
   const isInFog = !isVisible;
   const isUnexplored = !isExplored;
-  const design = TERRAIN_DESIGN[terrain] || TERRAIN_DESIGN[TERRAIN.GRASS];
+  const theme = TERRAIN_THEME[terrain] || TERRAIN_THEME[TERRAIN.GRASS];
 
   return (
     <div
@@ -171,136 +103,111 @@ export function Tile({
         e.preventDefault();
         onClick();
       }}
-      className={`
-        aspect-square rounded-lg relative cursor-pointer
-        transition-all duration-150
-        ${isMobile ? 'active:scale-95' : 'hover:brightness-110'}
-        ${isSelected ? 'z-30' : ''}
-        ${isOnPath && !isSelected ? 'z-20' : ''}
-        ${isUnexplored ? 'grayscale brightness-[0.15]' : ''}
-        ${isInFog && !isUnexplored ? 'brightness-[0.4] saturate-[0.3]' : ''}
-      `}
-      style={{
-        // Clean tile with subtle 3D effect
-        background: `linear-gradient(160deg, ${design.primary} 0%, ${design.secondary} 60%, ${design.accent} 100%)`,
-        boxShadow: isSelected
-          ? `0 0 0 3px #fbbf24, inset 0 1px 0 rgba(255,255,255,0.3)`
-          : isOnPath
-          ? `0 0 0 2px rgba(59, 130, 246, 0.6), inset 0 1px 0 rgba(255,255,255,0.3)`
-          : `inset 0 1px 0 rgba(255,255,255,0.25), inset 0 -1px 0 ${design.borderColor}`,
-        // Allow path arrows to overflow
-        overflow: 'visible',
-      }}
+      className="relative group cursor-pointer"
     >
-      {/* Pattern overlay */}
-      {design.pattern && (
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{ backgroundImage: design.pattern, backgroundSize: '16px 16px' }}
-        />
-      )}
-
-      {/* Subtle top highlight */}
+      {/* Main tile with 3D effect */}
       <div
-        className="absolute inset-x-0 top-0 h-[40%] pointer-events-none"
-        style={{
-          background: 'linear-gradient(to bottom, rgba(255,255,255,0.2) 0%, transparent 100%)',
-          borderRadius: '8px 8px 0 0',
-        }}
-      />
+        className={`
+          relative aspect-square w-full rounded-2xl
+          bg-gradient-to-br ${theme.gradient}
+          border-b-[6px] ${theme.border}
+          shadow-lg transition-all duration-200
+          ${isOnPath && !isSelected ? 'translate-y-[-2px] brightness-110' : ''}
+          ${!isMobile ? 'hover:brightness-110' : 'active:scale-95'}
+          ${isUnexplored ? 'grayscale brightness-[0.15]' : ''}
+          ${isInFog && !isUnexplored ? 'brightness-[0.4] saturate-[0.3]' : ''}
+          overflow-visible z-10
+        `}
+      >
+        {/* Texture overlay */}
+        {theme.texture === 'grid' && (
+          <div className="absolute inset-0 opacity-10 rounded-xl bg-[repeating-linear-gradient(0deg,transparent,transparent_4px,rgba(255,255,255,0.3)_4px,rgba(255,255,255,0.3)_5px),repeating-linear-gradient(90deg,transparent,transparent_4px,rgba(255,255,255,0.3)_4px,rgba(255,255,255,0.3)_5px)]" />
+        )}
+        {theme.texture === 'stripes' && (
+          <div className="absolute inset-0 opacity-15 rounded-xl bg-[repeating-linear-gradient(0deg,transparent,transparent_3px,rgba(0,60,30,0.4)_3px,rgba(0,60,30,0.4)_5px)]" />
+        )}
+        {theme.texture === 'dots' && (
+          <div className="absolute inset-0 opacity-10 rounded-xl bg-[radial-gradient(circle,rgba(255,255,255,0.3)_1px,transparent_1px)] bg-[length:8px_8px]" />
+        )}
 
-      {/* === MOVE INDICATOR - Fire Emblem Style === */}
-      {canMove && !isSelected && !isOnPath && (
-        <div
-          className="absolute inset-0 pointer-events-none rounded-lg"
-          style={{
-            background: 'rgba(100, 180, 255, 0.35)',
-            boxShadow: 'inset 0 0 0 2px rgba(60, 140, 220, 0.5)',
-          }}
-        />
-      )}
+        {/* Dark overlay for forest */}
+        {theme.overlay && (
+          <div className="absolute inset-0 bg-black/20 rounded-xl" />
+        )}
 
-      {/* === ATTACK INDICATOR - Clean Red Overlay === */}
-      {canAttack && (
-        <div
-          className="absolute inset-0 pointer-events-none rounded-lg"
-          style={{
-            background: 'rgba(255, 80, 80, 0.5)',
-            boxShadow: 'inset 0 0 0 2px rgba(220, 50, 50, 0.7)',
-          }}
-        />
-      )}
+        {/* Top highlight */}
+        <div className="absolute inset-x-0 top-0 h-[30%] bg-gradient-to-b from-white/20 to-transparent rounded-t-xl pointer-events-none" />
 
-      {/* === PATH SEGMENT - Arrow visualization === */}
-      {path.length > 0 && <PathSegment x={x} y={y} path={path} color="blue" />}
+        {/* === MOVE INDICATOR === */}
+        {canMove && !isSelected && !isOnPath && (
+          <div className="absolute inset-0 rounded-xl bg-blue-400/40 border-2 border-blue-300/60 pointer-events-none" />
+        )}
+
+        {/* === ATTACK INDICATOR === */}
+        {canAttack && (
+          <div className="absolute inset-0 rounded-xl bg-red-500/50 border-2 border-red-400/70 pointer-events-none" />
+        )}
+
+        {/* === SELECTED INDICATOR === */}
+        {isSelected && (
+          <div className="absolute inset-0 rounded-xl border-4 border-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.5)] pointer-events-none" />
+        )}
+
+        {/* === PATH SEGMENT === */}
+        {path.length > 0 && <PathSegment x={x} y={y} path={path} />}
+      </div>
 
       {/* === POKEMON UNIT === */}
       {unit && (
-        <div className={`
-          absolute inset-0 flex items-center justify-center
-          transition-all duration-200
-          ${unit.hasMoved ? 'opacity-35 saturate-0' : ''}
-        `}>
-          {/* Player aura */}
-          {!unit.hasMoved && (
-            <div
-              className="absolute inset-0 pointer-events-none"
-              style={{
-                background: `radial-gradient(circle, ${
-                  unit.owner === 'P1' ? 'rgba(59,130,246,0.4)' : 'rgba(239,68,68,0.4)'
-                } 20%, transparent 60%)`,
-              }}
-            />
+        <div className="absolute inset-0 flex items-center justify-center z-30 pointer-events-none">
+          {/* Selection ping effect */}
+          {isSelected && (
+            <div className="absolute w-full h-full border-4 border-white/40 rounded-2xl animate-ping opacity-30" />
           )}
 
-          {/* POKEMON SPRITE - BIG AND PROMINENT */}
           <div className={`
-            relative w-full h-full flex items-center justify-center
-            ${isSelected ? 'animate-bounce' : ''}
+            relative w-[90%] h-[90%] transition-transform duration-300
+            ${isSelected ? 'scale-110 -translate-y-3' : ''}
+            ${unit.hasMoved ? 'opacity-40 saturate-0' : ''}
           `}>
+            {/* Pokemon sprite */}
             <img
               src={getIconSprite(unit.template.id)}
               className={`
-                ${isMobile ? 'w-[95%] h-[95%]' : 'w-[90%] h-[90%]'}
-                object-contain
+                w-full h-full object-contain
                 ${unit.owner === 'P1' ? 'scale-x-[-1]' : ''}
-                ${!unit.hasMoved ? 'drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)]' : ''}
+                drop-shadow-lg
               `}
               style={{ imageRendering: 'pixelated' }}
               draggable="false"
               alt={unit.template.name}
             />
-          </div>
 
-          {/* HP BAR - Game style, at top */}
-          <div className={`
-            absolute ${isMobile ? 'top-0.5' : 'top-1'}
-            ${isMobile ? 'w-[85%]' : 'w-[80%]'} h-[6px]
-            bg-slate-900/80 rounded-full overflow-hidden
-            border border-slate-700/50
-          `}>
-            <div
-              className={`h-full transition-all duration-300 ${
-                unit.currentHp / unit.template.hp > 0.5
-                  ? 'bg-gradient-to-r from-green-400 to-emerald-500'
-                  : unit.currentHp / unit.template.hp > 0.25
-                  ? 'bg-gradient-to-r from-yellow-400 to-amber-500'
-                  : 'bg-gradient-to-r from-red-500 to-rose-600 animate-pulse'
-              }`}
-              style={{ width: `${(unit.currentHp / unit.template.hp) * 100}%` }}
-            />
-          </div>
+            {/* HP Bar */}
+            <div className={`
+              absolute -top-1 left-1/2 -translate-x-1/2
+              ${isMobile ? 'w-10' : 'w-10'} h-1.5
+              bg-slate-900 rounded-full overflow-hidden
+              border border-white/20 shadow-sm
+            `}>
+              <div
+                className={`h-full transition-all duration-300 ${
+                  unit.currentHp / unit.template.hp > 0.5
+                    ? 'bg-green-400'
+                    : unit.currentHp / unit.template.hp > 0.25
+                    ? 'bg-yellow-400'
+                    : 'bg-red-500 animate-pulse'
+                }`}
+                style={{ width: `${(unit.currentHp / unit.template.hp) * 100}%` }}
+              />
+            </div>
 
-          {/* PLAYER INDICATOR - Bottom badge */}
-          <div className={`
-            absolute ${isMobile ? '-bottom-0.5' : 'bottom-0'}
-            px-1.5 py-0.5 rounded-full text-[8px] font-bold
-            ${unit.owner === 'P1'
-              ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/50'
-              : 'bg-red-500 text-white shadow-lg shadow-red-500/50'
-            }
-          `}>
-            {unit.owner}
+            {/* Player indicator badge */}
+            <div className={`
+              absolute bottom-0 right-1 w-3 h-3 rounded-full
+              border border-slate-900
+              ${unit.owner === 'P1' ? 'bg-blue-500' : 'bg-red-500'}
+            `} />
           </div>
         </div>
       )}

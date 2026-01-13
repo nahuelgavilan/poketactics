@@ -27,9 +27,9 @@ export function GameBoard({
   currentPlayer,
   visibility
 }: GameBoardProps) {
-  // Styling based on device
-  const gap = isMobile ? 'gap-0.5' : 'gap-1.5';
-  const padding = isMobile ? 'p-1' : 'p-3';
+  // Styling based on device - larger gaps for 3D tiles
+  const gap = isMobile ? 'gap-1' : 'gap-2';
+  const padding = isMobile ? 'p-2' : 'p-4';
 
   // Hovered tile for path visualization
   const [hoveredTile, setHoveredTile] = useState<Position | null>(null);
@@ -80,14 +80,14 @@ export function GameBoard({
   return (
     <div
       className={`
-        relative bg-slate-800/90 backdrop-blur-sm ${padding} rounded-xl
-        shadow-2xl border border-slate-700
+        relative bg-slate-900 ${padding} rounded-3xl
+        shadow-2xl border border-slate-800
         select-none touch-manipulation
         ${isMobile ? 'w-[94vw]' : 'w-auto'}
       `}
     >
       {/* Subtle inner glow */}
-      <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-blue-500/5 to-red-500/5 pointer-events-none" />
+      <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-blue-500/5 to-red-500/5 pointer-events-none" />
 
       <div
         className={`grid ${gap} relative`}

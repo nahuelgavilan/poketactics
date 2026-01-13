@@ -4,14 +4,13 @@ interface PathSegmentProps {
   x: number;
   y: number;
   path: Position[];
-  color?: 'blue' | 'red';
 }
 
 type Direction = 'up' | 'down' | 'left' | 'right' | null;
 
 /**
  * PathSegment - Draws continuous path arrows with gap bridging
- * Inspired by Fire Emblem / Advance Wars path visualization
+ * Based on Fire Emblem / Advance Wars path visualization
  *
  * Features:
  * - START: Circle at origin + line toward next tile
@@ -19,7 +18,17 @@ type Direction = 'up' | 'down' | 'left' | 'right' | null;
  * - END: Arrow pointing in travel direction
  * - Gap bridging: Lines extend beyond tile boundaries for seamless connections
  */
-export function PathSegment({ x, y, path, color = 'blue' }: PathSegmentProps) {
+
+// Helper to get extended path for start point
+const getExtendedPath = (dir: Direction, ext: number): string => {
+  if (dir === 'up') return `M 50 50 L 50 ${-ext}`;
+  if (dir === 'down') return `M 50 50 L 50 ${100 + ext}`;
+  if (dir === 'left') return `M 50 50 L ${-ext} 50`;
+  if (dir === 'right') return `M 50 50 L ${100 + ext} 50`;
+  return '';
+};
+
+export function PathSegment({ x, y, path }: PathSegmentProps) {
   const index = path.findIndex(p => p.x === x && p.y === y);
   if (index === -1) return null;
 
@@ -40,76 +49,58 @@ export function PathSegment({ x, y, path, color = 'blue' }: PathSegmentProps) {
   const from = getRel(prev);
   const to = getRel(next);
 
-  // Color configuration
-  const colors = {
-    blue: {
-      stroke: 'rgba(59, 130, 246, 0.9)',
-      glow: 'drop-shadow(0 0 6px rgba(59, 130, 246, 0.7))',
-    },
-    red: {
-      stroke: 'rgba(239, 68, 68, 0.9)',
-      glow: 'drop-shadow(0 0 6px rgba(239, 68, 68, 0.7))',
-    }
-  };
-
-  const { stroke, glow } = colors[color];
-  const strokeWidth = '16';
+  // Visual style - RED like the showcase
+  const stroke = 'rgba(239, 68, 68, 0.9)';
+  const strokeWidth = '18';
+  const glow = 'drop-shadow(0 0 4px rgba(239, 68, 68, 0.6))';
 
   // Extension to bridge gaps between tiles (100 -> 125, 0 -> -25)
   const EXT = 25;
   const R = 25; // Curve radius
 
-  // Helper to get extended path for start point
-  const getExtendedPath = (dir: Direction): string => {
-    if (dir === 'up') return `M 50 50 L 50 ${-EXT}`;
-    if (dir === 'down') return `M 50 50 L 50 ${100 + EXT}`;
-    if (dir === 'left') return `M 50 50 L ${-EXT} 50`;
-    if (dir === 'right') return `M 50 50 L ${100 + EXT} 50`;
-    return '';
-  };
-
-  // START POINT: Circle at origin + line toward next tile
+  // 1. START POINT (Circle)
   if (!prev && next) {
     return (
       <div className="absolute inset-0 z-20 pointer-events-none flex items-center justify-center overflow-visible">
         <svg viewBox="0 0 100 100" className="w-full h-full overflow-visible" style={{ filter: glow }}>
-          <path d={getExtendedPath(to)} stroke={stroke} strokeWidth={strokeWidth} strokeLinecap="round" fill="none" />
-          <circle cx="50" cy="50" r="12" fill={stroke} />
+          <path d={getExtendedPath(to, EXT)} stroke={stroke} strokeWidth={strokeWidth} strokeLinecap="round" fill="none" />
+          <circle cx="50" cy="50" r="14" fill={stroke} />
         </svg>
       </div>
     );
   }
 
-  // END POINT: Arrow pointing in direction of travel (opposite of where it came from)
+  // 2. END POINT (Arrow) - Points OPPOSITE of where it came from
   if (prev && !next) {
     // Rotation: Arrow points in travel direction (opposite of 'from')
+    // Default arrow points DOWN, so:
     let rotation = 0;
-    if (from === 'up') rotation = 180;    // Came from above, points down
-    if (from === 'down') rotation = 0;    // Came from below, points up
-    if (from === 'left') rotation = 90;   // Came from left, points right
-    if (from === 'right') rotation = 270; // Came from right, points left
+    if (from === 'up') rotation = 0;      // Came from above → points down
+    if (from === 'down') rotation = 180;  // Came from below → points up
+    if (from === 'left') rotation = 270;  // Came from left → points right
+    if (from === 'right') rotation = 90;  // Came from right → points left
 
     return (
       <div className="absolute inset-0 z-20 pointer-events-none flex items-center justify-center overflow-visible">
         <svg
           viewBox="0 0 100 100"
-          className="w-full h-full overflow-visible"
+          className="w-full h-full overflow-visible animate-bounce-subtle"
           style={{ filter: glow, transform: `rotate(${rotation}deg)` }}
         >
-          {/* Line extending from entry direction (top before rotation) */}
-          <line x1="50" y1={100 + EXT} x2="50" y2="60" stroke={stroke} strokeWidth={strokeWidth} strokeLinecap="square" />
-          {/* Arrow head pointing up (before rotation) */}
-          <path d="M 25 55 L 50 20 L 75 55 L 50 45 Z" fill={stroke} />
+          {/* Line extending from top (entry point before rotation) */}
+          <line x1="50" y1={-EXT} x2="50" y2="30" stroke={stroke} strokeWidth={strokeWidth} strokeLinecap="square" />
+          {/* Diamond arrow pointing down (before rotation) */}
+          <path d="M 20 30 L 50 70 L 80 30 L 50 40 Z" fill={stroke} />
         </svg>
       </div>
     );
   }
 
-  // MIDDLE: Straight line or curved corner
+  // 3. MIDDLE (Straight line or curved corner)
   if (prev && next) {
     let d = '';
 
-    // Straight lines (extended)
+    // Straight lines (extended beyond tile bounds)
     if ((from === 'up' && to === 'down') || (from === 'down' && to === 'up')) {
       d = `M 50 ${-EXT} L 50 ${100 + EXT}`;
     }
@@ -117,7 +108,7 @@ export function PathSegment({ x, y, path, color = 'blue' }: PathSegmentProps) {
       d = `M ${-EXT} 50 L ${100 + EXT} 50`;
     }
 
-    // Curved corners with extended ends
+    // Curved corners with extended straight ends
     // Up <-> Right
     if ((from === 'up' && to === 'right') || (from === 'right' && to === 'up')) {
       d = `M 50 ${-EXT} L 50 ${50 - R} Q 50 50 ${50 + R} 50 L ${100 + EXT} 50`;
