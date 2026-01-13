@@ -31,6 +31,11 @@ export default function Game() {
     winner,
     exploredP1,
     exploredP2,
+    // Multiplayer state
+    myPlayer,
+    isMultiplayer,
+    isMyTurn,
+    // Actions
     initGame,
     handleTileClick,
     endBattle,
@@ -47,11 +52,15 @@ export default function Game() {
   const [showMultiplayer, setShowMultiplayer] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
-  // Get the correct explored state based on current player
-  const currentExplored = currentPlayer === 'P1' ? exploredP1 : exploredP2;
+  // In multiplayer, always show fog from your own perspective (myPlayer)
+  // In local game, show fog based on current player
+  const fogPlayer = isMultiplayer && myPlayer ? myPlayer : currentPlayer;
 
-  // Calculate visibility using fog of war
-  const visibility = useVision(units, currentPlayer, currentExplored, map);
+  // Get the correct explored state based on fog player
+  const currentExplored = fogPlayer === 'P1' ? exploredP1 : exploredP2;
+
+  // Calculate visibility using fog of war - always from your perspective
+  const visibility = useVision(units, fogPlayer, currentExplored, map);
 
   // Update explored tiles when visibility changes (only if actually different)
   useEffect(() => {
@@ -66,10 +75,10 @@ export default function Game() {
         }
       }
       if (hasNewExplored) {
-        updateExplored(currentPlayer, visibility.explored);
+        updateExplored(fogPlayer, visibility.explored);
       }
     }
-  }, [visibility.explored, currentPlayer, gameState, updateExplored, currentExplored]);
+  }, [visibility.explored, fogPlayer, gameState, updateExplored, currentExplored]);
 
   // Detect mobile
   useEffect(() => {
@@ -105,8 +114,9 @@ export default function Game() {
     );
   }
 
-  // Check if all player units have moved
-  const playerUnits = units.filter(u => u.owner === currentPlayer);
+  // Check if all player units have moved (use myPlayer in multiplayer)
+  const activePlayer = isMultiplayer && myPlayer ? myPlayer : currentPlayer;
+  const playerUnits = units.filter(u => u.owner === activePlayer);
   const allMoved = playerUnits.length > 0 && playerUnits.every(u => u.hasMoved);
 
   return (
@@ -116,6 +126,8 @@ export default function Game() {
         currentPlayer={currentPlayer}
         onRestart={initGame}
         onMenu={() => window.location.reload()}
+        myPlayer={myPlayer}
+        isMultiplayer={isMultiplayer}
       />
 
       {/* Main game area - fills remaining space, centers board, no scroll */}
@@ -129,7 +141,7 @@ export default function Game() {
           attackRange={attackRange}
           onTileClick={handleTileClick}
           isMobile={isMobile}
-          currentPlayer={currentPlayer}
+          currentPlayer={fogPlayer}
           visibility={visibility}
         />
 
@@ -194,37 +206,48 @@ export default function Game() {
         {/* Phase indicator - floating top-right, compact on mobile */}
         {gameState === 'playing' && (
           <div className="absolute top-1 right-1 md:top-3 md:right-3 flex flex-col gap-1.5 md:gap-2 items-end z-20">
-            {/* Phase badge */}
-            <div className={`
-              relative px-2 py-1 md:px-3 md:py-1.5 rounded-lg
-              text-[10px] md:text-xs font-bold uppercase tracking-wide
-              border backdrop-blur-sm shadow-lg
-              transition-all duration-300
-              ${gamePhase === 'SELECT'
-                ? 'bg-slate-800/90 border-slate-600 text-slate-300'
-                : ''
-              }
-              ${gamePhase === 'MOVING'
-                ? 'bg-blue-900/90 border-blue-500/50 text-blue-300 shadow-blue-500/20'
-                : ''
-              }
-              ${gamePhase === 'ATTACKING'
-                ? 'bg-red-900/90 border-red-500/50 text-red-300 shadow-red-500/30'
-                : ''
-              }
-              ${gamePhase === 'ACTION_MENU'
-                ? 'bg-amber-900/90 border-amber-500/50 text-amber-300 shadow-amber-500/20'
-                : ''
-              }
-            `}>
-              {gamePhase === 'SELECT' && 'Selecciona'}
-              {gamePhase === 'MOVING' && 'Destino'}
-              {gamePhase === 'ATTACKING' && 'Objetivo'}
-              {gamePhase === 'ACTION_MENU' && 'Acción'}
-            </div>
+            {/* Phase badge - show waiting state when not your turn in multiplayer */}
+            {isMultiplayer && !isMyTurn ? (
+              <div className="
+                relative px-3 py-1.5 md:px-4 md:py-2 rounded-lg
+                text-[10px] md:text-xs font-bold uppercase tracking-wide
+                border backdrop-blur-sm shadow-lg
+                bg-amber-900/90 border-amber-500/50 text-amber-300
+              ">
+                <span className="animate-pulse">Esperando...</span>
+              </div>
+            ) : (
+              <div className={`
+                relative px-2 py-1 md:px-3 md:py-1.5 rounded-lg
+                text-[10px] md:text-xs font-bold uppercase tracking-wide
+                border backdrop-blur-sm shadow-lg
+                transition-all duration-300
+                ${gamePhase === 'SELECT'
+                  ? 'bg-slate-800/90 border-slate-600 text-slate-300'
+                  : ''
+                }
+                ${gamePhase === 'MOVING'
+                  ? 'bg-blue-900/90 border-blue-500/50 text-blue-300 shadow-blue-500/20'
+                  : ''
+                }
+                ${gamePhase === 'ATTACKING'
+                  ? 'bg-red-900/90 border-red-500/50 text-red-300 shadow-red-500/30'
+                  : ''
+                }
+                ${gamePhase === 'ACTION_MENU'
+                  ? 'bg-amber-900/90 border-amber-500/50 text-amber-300 shadow-amber-500/20'
+                  : ''
+                }
+              `}>
+                {gamePhase === 'SELECT' && 'Selecciona'}
+                {gamePhase === 'MOVING' && 'Destino'}
+                {gamePhase === 'ATTACKING' && 'Objetivo'}
+                {gamePhase === 'ACTION_MENU' && 'Acción'}
+              </div>
+            )}
 
-            {/* End turn button */}
-            {playerUnits.some(u => u.hasMoved) && !allMoved && (
+            {/* End turn button - only show when it's your turn */}
+            {isMyTurn && playerUnits.some(u => u.hasMoved) && !allMoved && (
               <button
                 onClick={triggerTurnTransition}
                 className="

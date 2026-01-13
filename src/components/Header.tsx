@@ -6,9 +6,13 @@ interface HeaderProps {
   currentPlayer: Player;
   onRestart: () => void;
   onMenu?: () => void;
+  myPlayer?: Player | null;
+  isMultiplayer?: boolean;
 }
 
-export function Header({ currentPlayer, onRestart, onMenu }: HeaderProps) {
+export function Header({ currentPlayer, onRestart, onMenu, myPlayer, isMultiplayer }: HeaderProps) {
+  // In multiplayer, show whose turn it is from player's perspective
+  const isMyTurn = !isMultiplayer || myPlayer === currentPlayer;
   return (
     <header className="w-full bg-slate-800/95 backdrop-blur-sm border-b border-slate-700 shadow-lg z-40 safe-area-pt shrink-0">
       <div className="max-w-5xl mx-auto px-2 py-1.5 md:px-4 md:py-3 flex justify-between items-center">
@@ -33,46 +37,70 @@ export function Header({ currentPlayer, onRestart, onMenu }: HeaderProps) {
           </h1>
         </div>
 
-        {/* Player indicators */}
+        {/* Player indicators - shows perspective in multiplayer */}
         <div className="flex items-center gap-2 md:gap-4">
-          {/* P1 indicator */}
-          <div
-            className={`
-              relative px-3 py-1.5 md:px-4 md:py-1.5 rounded-full font-bold text-xs md:text-sm
-              border-2 transition-all duration-300
-              ${currentPlayer === 'P1'
-                ? 'bg-blue-600 border-blue-400 text-white shadow-[0_0_15px_rgba(59,130,246,0.5)] scale-105'
-                : 'bg-slate-700/50 border-slate-600 text-slate-500 scale-95'
-              }
-            `}
-          >
-            {currentPlayer === 'P1' && (
-              <div className="absolute inset-0 rounded-full bg-blue-400/20 animate-ping" />
-            )}
-            <span className="relative">P1</span>
-            <span className="relative hidden md:inline ml-1">AZUL</span>
-          </div>
+          {isMultiplayer && myPlayer ? (
+            // Multiplayer: Show "Tu turno" or "Turno enemigo"
+            <div
+              className={`
+                relative px-4 py-1.5 md:px-5 md:py-2 rounded-full font-bold text-xs md:text-sm
+                border-2 transition-all duration-300
+                ${isMyTurn
+                  ? 'bg-green-600 border-green-400 text-white shadow-[0_0_15px_rgba(34,197,94,0.5)] scale-105'
+                  : 'bg-amber-600 border-amber-400 text-white shadow-[0_0_15px_rgba(245,158,11,0.5)] scale-95'
+                }
+              `}
+            >
+              {isMyTurn && (
+                <div className="absolute inset-0 rounded-full bg-green-400/20 animate-ping" />
+              )}
+              <span className="relative">
+                {isMyTurn ? '¡Tu turno!' : 'Turno enemigo...'}
+              </span>
+            </div>
+          ) : (
+            // Local/Singleplayer: Show P1 vs P2
+            <>
+              {/* P1 indicator */}
+              <div
+                className={`
+                  relative px-3 py-1.5 md:px-4 md:py-1.5 rounded-full font-bold text-xs md:text-sm
+                  border-2 transition-all duration-300
+                  ${currentPlayer === 'P1'
+                    ? 'bg-blue-600 border-blue-400 text-white shadow-[0_0_15px_rgba(59,130,246,0.5)] scale-105'
+                    : 'bg-slate-700/50 border-slate-600 text-slate-500 scale-95'
+                  }
+                `}
+              >
+                {currentPlayer === 'P1' && (
+                  <div className="absolute inset-0 rounded-full bg-blue-400/20 animate-ping" />
+                )}
+                <span className="relative">P1</span>
+                <span className="relative hidden md:inline ml-1">AZUL</span>
+              </div>
 
-          {/* VS */}
-          <div className="text-slate-600 font-mono text-[10px] md:text-xs font-bold">VS</div>
+              {/* VS */}
+              <div className="text-slate-600 font-mono text-[10px] md:text-xs font-bold">VS</div>
 
-          {/* P2 indicator */}
-          <div
-            className={`
-              relative px-3 py-1.5 md:px-4 md:py-1.5 rounded-full font-bold text-xs md:text-sm
-              border-2 transition-all duration-300
-              ${currentPlayer === 'P2'
-                ? 'bg-red-600 border-red-400 text-white shadow-[0_0_15px_rgba(239,68,68,0.5)] scale-105'
-                : 'bg-slate-700/50 border-slate-600 text-slate-500 scale-95'
-              }
-            `}
-          >
-            {currentPlayer === 'P2' && (
-              <div className="absolute inset-0 rounded-full bg-red-400/20 animate-ping" />
-            )}
-            <span className="relative">P2</span>
-            <span className="relative hidden md:inline ml-1">ROJO</span>
-          </div>
+              {/* P2 indicator */}
+              <div
+                className={`
+                  relative px-3 py-1.5 md:px-4 md:py-1.5 rounded-full font-bold text-xs md:text-sm
+                  border-2 transition-all duration-300
+                  ${currentPlayer === 'P2'
+                    ? 'bg-red-600 border-red-400 text-white shadow-[0_0_15px_rgba(239,68,68,0.5)] scale-105'
+                    : 'bg-slate-700/50 border-slate-600 text-slate-500 scale-95'
+                  }
+                `}
+              >
+                {currentPlayer === 'P2' && (
+                  <div className="absolute inset-0 rounded-full bg-red-400/20 animate-ping" />
+                )}
+                <span className="relative">P2</span>
+                <span className="relative hidden md:inline ml-1">ROJO</span>
+              </div>
+            </>
+          )}
         </div>
 
         {/* Actions */}

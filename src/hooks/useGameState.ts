@@ -39,8 +39,14 @@ interface UseGameStateReturn {
   exploredP1: boolean[][];
   exploredP2: boolean[][];
 
+  // Multiplayer state
+  myPlayer: Player | null;
+  isMultiplayer: boolean;
+  isMyTurn: boolean;
+
   // Actions
   initGame: () => void;
+  initMultiplayerGame: (player: Player) => void;
   handleTileClick: (x: number, y: number) => void;
   endBattle: () => void;
   onCaptureMinigameSuccess: () => void;
@@ -50,6 +56,22 @@ interface UseGameStateReturn {
   confirmTurnChange: () => void;
   triggerTurnTransition: () => void;
   updateExplored: (player: Player, explored: boolean[][]) => void;
+  setMultiplayerState: (state: MultiplayerGameState) => void;
+}
+
+// State received from server in multiplayer
+interface MultiplayerGameState {
+  map: GameMap;
+  units: Unit[];
+  turn: number;
+  currentPlayer: Player;
+  myPlayer: Player;
+  status: 'waiting' | 'playing' | 'finished';
+  winner: Player | null;
+  visibility: {
+    visible: boolean[][];
+    explored: boolean[][];
+  };
 }
 
 
@@ -77,6 +99,13 @@ export function useGameState(): UseGameStateReturn {
 
   // Track if unit has moved this action (for action menu state)
   const [unitHasMoved, setUnitHasMoved] = useState(false);
+
+  // Multiplayer state - which player "I" am
+  const [myPlayer, setMyPlayer] = useState<Player | null>(null);
+  const [isMultiplayer, setIsMultiplayer] = useState(false);
+
+  // Computed: is it my turn?
+  const isMyTurn = !isMultiplayer || myPlayer === currentPlayer;
 
   const addLog = useCallback((message: string) => {
     setLogs(prev => [message, ...prev]);
@@ -195,6 +224,41 @@ export function useGameState(): UseGameStateReturn {
     resetSelection();
   }, [resetSelection]);
 
+  // Initialize multiplayer game - called when joining a room
+  const initMultiplayerGame = useCallback((player: Player) => {
+    setMyPlayer(player);
+    setIsMultiplayer(true);
+    setGameState('playing');
+    setGamePhase('SELECT');
+    resetSelection();
+  }, [resetSelection]);
+
+  // Set multiplayer state from server - syncs game state
+  const setMultiplayerState = useCallback((state: MultiplayerGameState) => {
+    setMap(state.map);
+    setUnits(state.units);
+    setTurn(state.turn);
+    setCurrentPlayer(state.currentPlayer);
+    setMyPlayer(state.myPlayer);
+    setIsMultiplayer(true);
+
+    if (state.winner) {
+      setWinner(state.winner);
+      setGameState('victory');
+    } else if (state.status === 'playing') {
+      setGameState('playing');
+    }
+
+    // Update explored tiles based on server visibility
+    if (state.visibility && state.visibility.explored) {
+      if (state.myPlayer === 'P1') {
+        setExploredP1(state.visibility.explored);
+      } else {
+        setExploredP2(state.visibility.explored);
+      }
+    }
+  }, []);
+
   // Mark unit as having completed their turn
   const waitUnit = useCallback((uid: string, currentUnits: Unit[]) => {
     const nextUnits = currentUnits.map(u =>
@@ -235,6 +299,9 @@ export function useGameState(): UseGameStateReturn {
   // Handle tile clicks based on current phase (Advance Wars style - no menu)
   const handleTileClick = useCallback((x: number, y: number) => {
     if (gameState !== 'playing') return;
+
+    // Block input when it's not your turn in multiplayer
+    if (isMultiplayer && !isMyTurn) return;
 
     const clickedUnit = units.find(u => u.x === x && u.y === y);
 
@@ -336,7 +403,7 @@ export function useGameState(): UseGameStateReturn {
       }
       return;
     }
-  }, [gameState, gamePhase, units, currentPlayer, selectedUnit, moveRange, attackRange, map, unitHasMoved, waitUnit, resetSelection, tryRandomEncounter]);
+  }, [gameState, gamePhase, units, currentPlayer, selectedUnit, moveRange, attackRange, map, unitHasMoved, waitUnit, resetSelection, tryRandomEncounter, isMultiplayer, isMyTurn]);
 
   const endBattle = useCallback(() => {
     if (!battleData) return;
@@ -554,7 +621,15 @@ export function useGameState(): UseGameStateReturn {
     winner,
     exploredP1,
     exploredP2,
+
+    // Multiplayer state
+    myPlayer,
+    isMultiplayer,
+    isMyTurn,
+
+    // Actions
     initGame,
+    initMultiplayerGame,
     handleTileClick,
     endBattle,
     onCaptureMinigameSuccess,
@@ -563,6 +638,7 @@ export function useGameState(): UseGameStateReturn {
     confirmEvolution,
     confirmTurnChange,
     triggerTurnTransition,
-    updateExplored
+    updateExplored,
+    setMultiplayerState
   };
 }
