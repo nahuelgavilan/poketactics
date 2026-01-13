@@ -246,36 +246,70 @@ export default function Game() {
           <HelpCircle className="w-4 h-4 md:w-5 md:h-5" />
         </button>
 
-        {/* Mobile: Selected unit quick info - LEFT side, phase indicator on RIGHT */}
+        {/* Mobile: Selected unit stats panel - bottom of screen */}
         {selectedUnit && isMobile && !actionMenu.isOpen && (
-          <div className="absolute top-1 left-1 animate-scale-in z-30">
+          <div className="absolute bottom-2 left-2 right-2 animate-slide-up z-30">
             <div className={`
-              flex items-center gap-1.5 px-2 py-1
-              bg-slate-900/95 backdrop-blur-md rounded-lg
-              border shadow-lg text-[11px]
+              flex items-center gap-3 px-3 py-2
+              bg-slate-950/95 backdrop-blur-xl rounded-xl
+              border-2 shadow-2xl
               ${selectedUnit.owner === 'P1'
-                ? 'border-blue-500/50 shadow-blue-500/20'
-                : 'border-red-500/50 shadow-red-500/20'
+                ? 'border-blue-500/60 shadow-blue-500/30'
+                : 'border-red-500/60 shadow-red-500/30'
               }
             `}>
-              <img
-                src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${selectedUnit.template.id}.png`}
-                className="w-5 h-5 object-contain"
-                style={{ imageRendering: 'pixelated' }}
-                alt=""
-              />
-              <span className="font-bold">{selectedUnit.template.name}</span>
-              <span className={`
-                px-1 py-0.5 rounded text-[9px] font-mono
-                ${selectedUnit.currentHp / selectedUnit.template.hp > 0.5
-                  ? 'bg-emerald-900/80 text-emerald-400'
-                  : selectedUnit.currentHp / selectedUnit.template.hp > 0.25
-                  ? 'bg-amber-900/80 text-amber-400'
-                  : 'bg-red-900/80 text-red-400'
-                }
+              {/* Pokemon sprite */}
+              <div className={`
+                relative w-12 h-12 rounded-lg overflow-hidden flex-shrink-0
+                ${selectedUnit.owner === 'P1' ? 'bg-blue-950' : 'bg-red-950'}
               `}>
-                {selectedUnit.currentHp}/{selectedUnit.template.hp}
-              </span>
+                <img
+                  src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/${selectedUnit.template.id}.gif`}
+                  className={`w-full h-full object-contain ${selectedUnit.owner === 'P1' ? 'scale-x-[-1]' : ''}`}
+                  style={{ imageRendering: 'pixelated' }}
+                  alt=""
+                />
+                {/* Player color indicator */}
+                <div className={`
+                  absolute bottom-0 left-0 right-0 h-1
+                  ${selectedUnit.owner === 'P1' ? 'bg-blue-500' : 'bg-red-500'}
+                `} />
+              </div>
+
+              {/* Name and stats */}
+              <div className="flex-1 min-w-0">
+                <div className="font-bold text-sm truncate">{selectedUnit.template.name}</div>
+                <div className="flex flex-wrap gap-1.5 mt-1">
+                  {/* HP */}
+                  <div className={`
+                    flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold
+                    ${selectedUnit.currentHp / selectedUnit.template.hp > 0.5
+                      ? 'bg-emerald-900/80 text-emerald-400'
+                      : selectedUnit.currentHp / selectedUnit.template.hp > 0.25
+                      ? 'bg-amber-900/80 text-amber-400'
+                      : 'bg-red-900/80 text-red-400'
+                    }
+                  `}>
+                    <span className="opacity-60">HP</span>
+                    <span>{selectedUnit.currentHp}/{selectedUnit.template.hp}</span>
+                  </div>
+                  {/* ATK */}
+                  <div className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-orange-900/80 text-orange-400">
+                    <span className="opacity-60">ATK</span>
+                    <span>{selectedUnit.template.atk}</span>
+                  </div>
+                  {/* MOV */}
+                  <div className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-sky-900/80 text-sky-400">
+                    <span className="opacity-60">MOV</span>
+                    <span>{selectedUnit.template.mov}</span>
+                  </div>
+                  {/* DEF */}
+                  <div className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-700/80 text-slate-300">
+                    <span className="opacity-60">DEF</span>
+                    <span>{selectedUnit.template.def}</span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         )}

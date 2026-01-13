@@ -633,6 +633,7 @@ This project uses **Semantic Versioning** (semver) with **Conventional Commits**
 
 | Version | Changes |
 |---------|---------|
+| **1.2.0** | Redesigned tiles with rich gradients, full mobile stats panel (HP/ATK/MOV/DEF), visual juice |
 | **1.1.0** | SPA layout fix, mobile improvements, visual polish, proper square tiles |
 | **1.0.0** | Initial release: Action Menu, Fog of War, Evolution, Capture minigame, Pokémon Centers, Multiplayer lobby |
 

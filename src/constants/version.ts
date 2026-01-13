@@ -15,9 +15,10 @@
  * don't trigger version bumps unless they include breaking changes.
  */
 
-export const VERSION = '1.1.0';
+export const VERSION = '1.2.0';
 
 // Version history:
+// 1.2.0 - Redesigned tiles with rich gradients, mobile stats panel, visual juice
 // 1.1.0 - SPA layout fix, mobile improvements, visual polish
 // 1.0.0 - Initial release with all core features:
 //         Action menu, Fog of War, Evolution, Capture minigame,
