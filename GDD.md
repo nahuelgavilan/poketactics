@@ -13,24 +13,29 @@
 
 ## Core Gameplay Loop
 
-1. **Select** a unit from your team
-2. **Open Action Menu** - choose your action
-3. **Execute Action** - Move, Attack, Capture, or Wait
-4. **End turn** when all units have acted (or manually end early)
-5. **Repeat** until one team is eliminated
+1. **Click unit** → see movement range immediately
+2. **Click destination** → unit moves (or click same tile to stay)
+3. **If enemies in range** → attack targets shown, click to attack
+4. **If on tall grass** → capture option available
+5. **Turn auto-ends** when all units have acted
+6. **Repeat** until one team is eliminated
 
-### Action Menu System
+### Fluid Movement System (Advance Wars Style)
 
-When a unit is selected, a bottom action menu appears with:
+The game uses direct clicking for maximum fluidity:
 
-| Action | Description |
-|--------|-------------|
-| **Mover** | Select destination within movement range |
-| **Atacar** | Select enemy within attack range |
-| **Capturar** | Attempt wild Pokémon capture (tall grass only) |
-| **Esperar** | End unit's turn without action |
+| Action | How |
+|--------|-----|
+| **Select unit** | Click on your unit |
+| **Move** | Click blue highlighted tile |
+| **Stay in place** | Click on the unit's current position |
+| **Attack** | After moving, click red highlighted enemy |
+| **Switch unit** | Click on another of your units |
+| **Cancel** | Click empty space |
 
-After moving, the menu reopens without the Move/Capture options.
+### Action Menu
+
+Only appears when needed (e.g., capture option on tall grass). Compact floating design that doesn't scroll the page.
 
 ---
 
@@ -110,10 +115,14 @@ Each Pokémon has base stats and typing:
 | Grass (Llanura) | 0% | 1 | Normal, Fighting | Default terrain |
 | Forest (Bosque) | +20% | 2 | Grass, Bug, Poison | Defensive position |
 | Water (Agua) | 0% | 99 | Water, Ice | Impassable (except Flying) |
-| Mountain (Montaña) | +30% | 99 | Rock, Ground, Dragon | Impassable (except Flying) |
-| Tall Grass (Hierba Alta) | +10% | 1 | Bug, Grass | Can trigger capture |
-| Base | 0% | 1 | None | Spawn points |
+| Mountain (Montaña) | +40% | 3 | Rock, Ground, Steel | High ground, +2 vision range |
+| Tall Grass (Hierba Alta) | +5% | 1 | Bug, Grass | Can trigger capture |
+| Base | +10% | 1 | None | Spawn points |
 | Pokémon Center | +15% | 1 | None | Heals 20% HP per turn |
+
+### Mountain Vision Bonus
+
+Units standing on mountains gain **+2 vision range** (total 5 tiles instead of 3). This makes mountains strategic scouting positions despite the high movement cost.
 
 ### Pokémon Center
 
@@ -192,19 +201,30 @@ Before confirming an attack, players see:
 
 ### Trigger Conditions
 
-When a unit moves onto **Tall Grass**:
-- **30% chance** to encounter a wild Pokémon
+When a unit is on **Tall Grass** and selects Capture:
+- Wild Pokémon **always appears** (100% encounter rate)
+- Capture success depends on **timing minigame**
 
-### Capture Process
+### Capture Minigame
 
-1. Wild Pokémon spawns adjacent to the capturer
-2. Capture modal displays the Pokémon
-3. New unit joins the capturer's team
-4. Wild unit starts with `hasMoved: true`
+1. Wild Pokémon appears with animated intro
+2. **Timing bar** with moving marker and green "catch zone"
+3. Player clicks/taps when marker is in green zone
+4. **Difficulty scales** with Pokémon stats (stronger = smaller zone, faster marker)
+5. Success: Pokéball animation + capture
+6. Failure: Pokémon escapes, turn ends
+
+### Difficulty Levels
+
+| Pokémon Stats | Catch Zone | Marker Speed |
+|---------------|------------|--------------|
+| Low (base forms) | 40% width | Slow |
+| Medium | 25% width | Medium |
+| High (final evolutions) | 15% width | Fast |
 
 ### Spawn Position
 
-The captured Pokémon spawns in the first available adjacent tile (checking in order: up, down, left, right).
+The captured Pokémon spawns in the first available adjacent tile (checking cardinal + diagonal directions).
 
 ---
 
@@ -271,8 +291,10 @@ Each player has limited visibility. Enemy units and terrain are hidden until exp
 | State | Appearance | Info Shown |
 |-------|------------|------------|
 | **Visible** | Full color | Terrain + Units |
-| **Explored** | Semi-transparent fog | Terrain only |
-| **Hidden** | Black fog | Nothing |
+| **Explored** | Grayscale (70%), dimmed | Terrain only |
+| **Hidden** | Dark grayscale (100%), very dim | Nothing |
+
+The fog effect is applied directly to tiles (grayscale filter) rather than an overlay, making it cleaner and more integrated with the game visuals.
 
 ### Strategic Impact
 
