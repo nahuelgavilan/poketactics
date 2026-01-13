@@ -11,9 +11,11 @@ services:
       - key: NODE_ENV
         value: production
 
-  # Static site for the game client
-  - type: web
-    name: poketactics-client
-    runtime: static
+staticSites:
+  # Game client
+  - name: poketactics-client
     buildCommand: npm install && npm run build
     staticPublishPath: ./dist
+    envVars:
+      - key: VITE_SERVER_URL
+        value: https://poketactics-server-jjgo.onrender.com
