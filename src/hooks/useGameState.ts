@@ -288,18 +288,27 @@ export function useGameState(): UseGameStateReturn {
     }
   }, [selectedUnit, map, units, waitUnit, addLog, openActionMenu, unitHasMoved]);
 
-  // Cancel current action and return to action menu or deselect
+  // Cancel current action and return to previous state
   const cancelAction = useCallback(() => {
     if (gamePhase === 'ACTION_MENU') {
-      // Deselect unit entirely
+      // If unit has moved, mark as waited. Otherwise deselect.
+      if (unitHasMoved && selectedUnit) {
+        waitUnit(selectedUnit.uid, units);
+      } else {
+        resetSelection();
+      }
+    } else if (gamePhase === 'MOVING') {
+      // Deselect and go back to SELECT
       resetSelection();
-    } else if (gamePhase === 'MOVING' || gamePhase === 'ATTACKING') {
-      // Return to action menu
-      if (selectedUnit) {
-        openActionMenu(selectedUnit, units, map, unitHasMoved);
+    } else if (gamePhase === 'ATTACKING') {
+      // Return to action menu if unit has moved, otherwise deselect
+      if (unitHasMoved && selectedUnit) {
+        openActionMenu(selectedUnit, units, map, true);
+      } else {
+        resetSelection();
       }
     }
-  }, [gamePhase, selectedUnit, units, map, unitHasMoved, resetSelection, openActionMenu]);
+  }, [gamePhase, selectedUnit, units, map, unitHasMoved, resetSelection, openActionMenu, waitUnit]);
 
   // Handle tile clicks based on current phase
   const handleTileClick = useCallback((x: number, y: number) => {
@@ -312,13 +321,22 @@ export function useGameState(): UseGameStateReturn {
       if (clickedUnit && clickedUnit.owner === currentPlayer && !clickedUnit.hasMoved) {
         setSelectedUnit(clickedUnit);
         setUnitHasMoved(false);
-        openActionMenu(clickedUnit, units, map, false);
+        // Show move range immediately for fluid UX (like Advance Wars)
+        const moves = calculateMoveRange(clickedUnit, map, units);
+        setMoveRange(moves);
+        setAttackRange([]);
+        setGamePhase('MOVING');
       }
       return;
     }
 
     // Phase: ACTION_MENU - can click another unit to switch selection
     if (gamePhase === 'ACTION_MENU') {
+      // If clicking on the same unit that's already selected, do nothing
+      if (clickedUnit && clickedUnit.uid === selectedUnit?.uid) {
+        return;
+      }
+      // If clicking on a different unit, switch to it
       if (clickedUnit && clickedUnit.owner === currentPlayer && !clickedUnit.hasMoved) {
         setSelectedUnit(clickedUnit);
         setUnitHasMoved(false);
@@ -329,6 +347,23 @@ export function useGameState(): UseGameStateReturn {
 
     // Phase: MOVING - selecting move destination
     if (gamePhase === 'MOVING' && selectedUnit) {
+      // If clicking on a different own unit, switch to it
+      if (clickedUnit && clickedUnit.owner === currentPlayer && !clickedUnit.hasMoved && clickedUnit.uid !== selectedUnit.uid) {
+        setSelectedUnit(clickedUnit);
+        setUnitHasMoved(false);
+        const moves = calculateMoveRange(clickedUnit, map, units);
+        setMoveRange(moves);
+        setAttackRange([]);
+        return;
+      }
+
+      // If clicking on the same unit, cancel selection
+      if (clickedUnit && clickedUnit.uid === selectedUnit.uid) {
+        resetSelection();
+        return;
+      }
+
+      // If clicking on a valid move destination
       if (moveRange.some(m => m.x === x && m.y === y)) {
         const movedUnit = { ...selectedUnit, x, y };
         const nextUnits = units.map(u => u.uid === selectedUnit.uid ? movedUnit : u);
@@ -337,9 +372,22 @@ export function useGameState(): UseGameStateReturn {
         setMoveRange([]);
         setUnitHasMoved(true);
 
-        // After moving, show action menu again (without move option)
-        openActionMenu(movedUnit, nextUnits, map, true);
+        // Check if unit can do something after moving
+        const attacks = calculateAttackRange(movedUnit, nextUnits);
+        const isOnTallGrass = map[movedUnit.y][movedUnit.x] === TERRAIN.TALL_GRASS;
+
+        if (attacks.length > 0 || isOnTallGrass) {
+          // Show action menu for attack/capture/wait
+          openActionMenu(movedUnit, nextUnits, map, true);
+        } else {
+          // No actions available, auto-wait
+          waitUnit(movedUnit.uid, nextUnits);
+        }
+        return;
       }
+
+      // Clicking elsewhere cancels
+      resetSelection();
       return;
     }
 

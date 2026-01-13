@@ -105,7 +105,7 @@ export function StartScreen({ onStartGame, onHowToPlay, onMultiplayer }: StartSc
           {/* Main title */}
           <div className="relative">
             <h1
-              className={`text-5xl md:text-7xl lg:text-8xl font-black tracking-tight text-center select-none ${titleGlitch ? 'translate-x-1' : ''}`}
+              className={`text-4xl md:text-6xl lg:text-7xl font-black tracking-tight text-center select-none ${titleGlitch ? 'translate-x-1' : ''}`}
               style={{
                 fontFamily: '"Press Start 2P", system-ui, sans-serif',
                 textShadow: titleGlitch
@@ -116,21 +116,21 @@ export function StartScreen({ onStartGame, onHowToPlay, onMultiplayer }: StartSc
               <span className="bg-gradient-to-r from-blue-400 via-blue-300 to-cyan-400 bg-clip-text text-transparent">
                 POKÉ
               </span>
-              <span className="bg-gradient-to-r from-red-500 via-orange-500 to-yellow-500 bg-clip-text text-transparent">
-                WAR
+              <span className="bg-gradient-to-r from-amber-400 via-yellow-400 to-orange-500 bg-clip-text text-transparent">
+                TACTICS
               </span>
             </h1>
 
             {/* Subtitle */}
-            <div className="flex items-center justify-center mt-3 gap-2">
-              <div className="h-px flex-1 max-w-16 bg-gradient-to-r from-transparent to-yellow-500" />
+            <div className="flex items-center justify-center mt-4 gap-2">
+              <div className="h-px flex-1 max-w-16 bg-gradient-to-r from-transparent to-emerald-500" />
               <span
-                className="text-sm md:text-lg tracking-[0.2em] font-bold text-yellow-400"
-                style={{ textShadow: '0 0 20px rgba(250, 204, 21, 0.5)' }}
+                className="text-xs md:text-sm tracking-[0.15em] font-bold text-emerald-400"
+                style={{ textShadow: '0 0 20px rgba(16, 185, 129, 0.5)' }}
               >
-                CAPTURE EDITION
+                TACTICAL BATTLE
               </span>
-              <div className="h-px flex-1 max-w-16 bg-gradient-to-l from-transparent to-yellow-500" />
+              <div className="h-px flex-1 max-w-16 bg-gradient-to-l from-transparent to-emerald-500" />
             </div>
           </div>
 
