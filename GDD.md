@@ -396,13 +396,15 @@ Turn counter increments when P1's turn begins.
 
 ## Visual Indicators
 
-### Tile Highlighting
+### Tile Highlighting (Fire Emblem Style)
 
-| Color | Meaning |
-|-------|---------|
-| Blue | Valid movement tiles |
-| Red | Attackable enemy tiles |
-| Yellow/Amber | Selected unit position |
+Clean semi-transparent overlays without animation clutter:
+
+| Color | Style | Meaning |
+|-------|-------|---------|
+| Blue overlay | `rgba(100,180,255,0.45)` + inset border | Valid movement tiles |
+| Red overlay | `rgba(255,80,80,0.5)` + inset border | Attackable enemy tiles |
+| Yellow ring | 3px solid `#fbbf24` | Selected unit position |
 
 ### HP Bar Colors
 
@@ -633,6 +635,8 @@ This project uses **Semantic Versioning** (semver) with **Conventional Commits**
 
 | Version | Changes |
 |---------|---------|
+| **1.2.2** | Professional Nintendo-style tiles (no emojis), Fire Emblem-style movement/attack overlays |
+| **1.2.1** | Fix auto-wait bug, capture on tall grass after moving, cleaner tile indicators |
 | **1.2.0** | Redesigned tiles with rich gradients, full mobile stats panel (HP/ATK/MOV/DEF), visual juice |
 | **1.1.0** | SPA layout fix, mobile improvements, visual polish, proper square tiles |
 | **1.0.0** | Initial release: Action Menu, Fog of War, Evolution, Capture minigame, Pokémon Centers, Multiplayer lobby |

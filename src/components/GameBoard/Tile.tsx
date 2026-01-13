@@ -18,89 +18,122 @@ interface TileProps {
 }
 
 /*
- * PokéTactics Design System
- * -------------------------
- * Tiles como piezas de juego de mesa premium.
- * Cada terreno tiene su propia "textura" visual usando CSS patterns.
- * Los Pokémon son el protagonista - grandes y visibles.
+ * PokéTactics Design System - Nintendo-Quality Tiles
+ * --------------------------------------------------
+ * Professional tactical game aesthetic inspired by Fire Emblem / Advance Wars.
+ * Each terrain has distinct visual texture through CSS patterns.
+ * Clean, readable, no emoji clutter.
  */
 
-// Custom terrain designs - unique to PokéTactics
+// Professional terrain designs - Nintendo-inspired
 const TERRAIN_DESIGN: Record<number, {
-  // Base colors
   primary: string;
   secondary: string;
   accent: string;
-  // Border
   borderColor: string;
-  // Optional pattern (CSS)
   pattern?: string;
-  // Icon emoji (simple, universal)
-  icon?: string;
+  // Inner detail pattern for visual interest
+  detailPattern?: string;
 }> = {
   [TERRAIN.GRASS]: {
-    primary: '#4ade80',    // green-400
-    secondary: '#22c55e',  // green-500
-    accent: '#16a34a',     // green-600
-    borderColor: '#15803d', // green-700
-    pattern: `radial-gradient(circle at 25% 25%, rgba(255,255,255,0.15) 1px, transparent 1px),
-              radial-gradient(circle at 75% 75%, rgba(255,255,255,0.1) 1px, transparent 1px)`,
+    primary: '#5cb870',
+    secondary: '#4aa85f',
+    accent: '#3d9650',
+    borderColor: '#2d7a3d',
+    // Subtle grass texture
+    pattern: `
+      radial-gradient(circle at 20% 30%, rgba(255,255,255,0.12) 1px, transparent 1px),
+      radial-gradient(circle at 60% 70%, rgba(255,255,255,0.08) 1px, transparent 1px),
+      radial-gradient(circle at 80% 20%, rgba(255,255,255,0.1) 1px, transparent 1px)
+    `,
   },
   [TERRAIN.FOREST]: {
-    primary: '#059669',    // emerald-600
-    secondary: '#047857',  // emerald-700
-    accent: '#065f46',     // emerald-800
-    borderColor: '#064e3b', // emerald-900
-    icon: '🌲',
+    primary: '#2d6a4f',
+    secondary: '#245840',
+    accent: '#1b4332',
+    borderColor: '#143024',
+    // Dense tree pattern
+    pattern: `
+      radial-gradient(ellipse 40% 60% at 30% 40%, rgba(0,0,0,0.2) 0%, transparent 50%),
+      radial-gradient(ellipse 35% 50% at 70% 60%, rgba(0,0,0,0.15) 0%, transparent 50%),
+      radial-gradient(ellipse 30% 45% at 50% 30%, rgba(0,0,0,0.18) 0%, transparent 50%)
+    `,
   },
   [TERRAIN.WATER]: {
-    primary: '#38bdf8',    // sky-400
-    secondary: '#0ea5e9',  // sky-500
-    accent: '#0284c7',     // sky-600
-    borderColor: '#0369a1', // sky-700
-    pattern: `repeating-linear-gradient(
-      -45deg,
-      transparent,
-      transparent 4px,
-      rgba(255,255,255,0.08) 4px,
-      rgba(255,255,255,0.08) 8px
-    )`,
-    icon: '〰️',
+    primary: '#4fa8d1',
+    secondary: '#3a95c0',
+    accent: '#2980a9',
+    borderColor: '#1e6891',
+    // Animated wave lines
+    pattern: `
+      repeating-linear-gradient(
+        -30deg,
+        transparent 0px,
+        transparent 6px,
+        rgba(255,255,255,0.12) 6px,
+        rgba(255,255,255,0.12) 8px
+      )
+    `,
   },
   [TERRAIN.MOUNTAIN]: {
-    primary: '#a8a29e',    // stone-400
-    secondary: '#78716c',  // stone-500
-    accent: '#57534e',     // stone-600
-    borderColor: '#44403c', // stone-700
-    icon: '⛰️',
+    primary: '#8b8680',
+    secondary: '#756f6a',
+    accent: '#605b56',
+    borderColor: '#4a4642',
+    // Rocky texture
+    pattern: `
+      linear-gradient(135deg, rgba(255,255,255,0.15) 25%, transparent 25%),
+      linear-gradient(225deg, rgba(0,0,0,0.1) 25%, transparent 25%),
+      linear-gradient(45deg, rgba(255,255,255,0.08) 25%, transparent 25%)
+    `,
+    detailPattern: `
+      polygon(50% 20%, 20% 80%, 80% 80%)
+    `,
   },
   [TERRAIN.TALL_GRASS]: {
-    primary: '#2dd4bf',    // teal-400
-    secondary: '#14b8a6',  // teal-500
-    accent: '#0d9488',     // teal-600
-    borderColor: '#0f766e', // teal-700
-    pattern: `repeating-linear-gradient(
-      0deg,
-      transparent,
-      transparent 3px,
-      rgba(0,0,0,0.05) 3px,
-      rgba(0,0,0,0.05) 6px
-    )`,
-    icon: '✨',
+    primary: '#6ecf8a',
+    secondary: '#5ac077',
+    accent: '#48b066',
+    borderColor: '#389d54',
+    // Tall grass stripes
+    pattern: `
+      repeating-linear-gradient(
+        0deg,
+        transparent 0px,
+        transparent 4px,
+        rgba(0,60,30,0.12) 4px,
+        rgba(0,60,30,0.12) 6px
+      ),
+      repeating-linear-gradient(
+        5deg,
+        transparent 0px,
+        transparent 5px,
+        rgba(0,80,40,0.08) 5px,
+        rgba(0,80,40,0.08) 7px
+      )
+    `,
   },
   [TERRAIN.POKEMON_CENTER]: {
-    primary: '#fda4af',    // rose-300
-    secondary: '#fb7185',  // rose-400
-    accent: '#f43f5e',     // rose-500
-    borderColor: '#e11d48', // rose-600
-    icon: '➕',
+    primary: '#f5a5b5',
+    secondary: '#f08898',
+    accent: '#e86a7c',
+    borderColor: '#d44d60',
+    // Clean medical cross implied through highlight
+    pattern: `
+      linear-gradient(to bottom, rgba(255,255,255,0.25) 0%, transparent 40%),
+      linear-gradient(to right, rgba(255,255,255,0.1) 45%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.1) 55%)
+    `,
   },
   [TERRAIN.BASE]: {
-    primary: '#cbd5e1',    // slate-300
-    secondary: '#94a3b8',  // slate-400
-    accent: '#64748b',     // slate-500
-    borderColor: '#475569', // slate-600
-    icon: '🏠',
+    primary: '#a0aab8',
+    secondary: '#8a95a5',
+    accent: '#748292',
+    borderColor: '#5e6d7e',
+    // Stone floor pattern
+    pattern: `
+      linear-gradient(90deg, rgba(0,0,0,0.05) 1px, transparent 1px),
+      linear-gradient(rgba(0,0,0,0.05) 1px, transparent 1px)
+    `,
   },
 };
 
@@ -127,80 +160,58 @@ export function Tile({
         onClick();
       }}
       className={`
-        aspect-square rounded-xl relative cursor-pointer overflow-hidden
+        aspect-square rounded-lg relative cursor-pointer overflow-hidden
         transition-all duration-150
-        ${isMobile ? 'active:scale-90' : 'hover:scale-105 hover:z-10'}
-        ${isSelected ? 'scale-105 z-30' : ''}
+        ${isMobile ? 'active:scale-95' : 'hover:brightness-110'}
+        ${isSelected ? 'z-30' : ''}
         ${isUnexplored ? 'grayscale brightness-[0.15]' : ''}
         ${isInFog && !isUnexplored ? 'brightness-[0.4] saturate-[0.3]' : ''}
       `}
       style={{
-        // 3D tile effect
-        background: `linear-gradient(145deg, ${design.primary} 0%, ${design.secondary} 50%, ${design.accent} 100%)`,
+        // Clean tile with subtle 3D effect
+        background: `linear-gradient(160deg, ${design.primary} 0%, ${design.secondary} 60%, ${design.accent} 100%)`,
         boxShadow: isSelected
-          ? `0 0 0 3px #fbbf24, 0 8px 16px rgba(0,0,0,0.3), inset 0 2px 0 rgba(255,255,255,0.3)`
-          : `0 4px 8px rgba(0,0,0,0.2), inset 0 2px 0 rgba(255,255,255,0.25), inset 0 -2px 0 ${design.borderColor}`,
+          ? `0 0 0 3px #fbbf24, inset 0 1px 0 rgba(255,255,255,0.3)`
+          : `inset 0 1px 0 rgba(255,255,255,0.25), inset 0 -1px 0 ${design.borderColor}`,
       }}
     >
       {/* Pattern overlay */}
       {design.pattern && (
         <div
           className="absolute inset-0 pointer-events-none"
-          style={{ backgroundImage: design.pattern, backgroundSize: '12px 12px' }}
+          style={{ backgroundImage: design.pattern, backgroundSize: '16px 16px' }}
         />
       )}
 
-      {/* Top shine */}
+      {/* Subtle top highlight */}
       <div
-        className="absolute inset-x-0 top-0 h-1/3 pointer-events-none"
+        className="absolute inset-x-0 top-0 h-[40%] pointer-events-none"
         style={{
-          background: 'linear-gradient(to bottom, rgba(255,255,255,0.3) 0%, transparent 100%)',
-          borderRadius: '12px 12px 0 0',
+          background: 'linear-gradient(to bottom, rgba(255,255,255,0.2) 0%, transparent 100%)',
+          borderRadius: '8px 8px 0 0',
         }}
       />
 
-      {/* Terrain icon - subtle, in corner */}
-      {design.icon && !unit && (
-        <div className={`
-          absolute ${isMobile ? 'bottom-0.5 right-0.5 text-[10px]' : 'bottom-1 right-1 text-xs'}
-          opacity-40 pointer-events-none select-none
-        `}>
-          {design.icon}
-        </div>
-      )}
-
-      {/* === MOVE INDICATOR === */}
+      {/* === MOVE INDICATOR - Fire Emblem Style === */}
       {canMove && !isSelected && (
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
-            background: 'radial-gradient(circle, rgba(59,130,246,0.5) 0%, rgba(37,99,235,0.3) 50%, transparent 70%)',
-            animation: 'pulse 1.2s ease-in-out infinite',
+            background: 'rgba(100, 180, 255, 0.45)',
+            boxShadow: 'inset 0 0 0 2px rgba(60, 140, 220, 0.6)',
           }}
-        >
-          {/* Corner accents */}
-          <div className="absolute top-1 left-1 w-2 h-2 border-t-2 border-l-2 border-blue-300 rounded-tl" />
-          <div className="absolute top-1 right-1 w-2 h-2 border-t-2 border-r-2 border-blue-300 rounded-tr" />
-          <div className="absolute bottom-1 left-1 w-2 h-2 border-b-2 border-l-2 border-blue-300 rounded-bl" />
-          <div className="absolute bottom-1 right-1 w-2 h-2 border-b-2 border-r-2 border-blue-300 rounded-br" />
-        </div>
+        />
       )}
 
-      {/* === ATTACK INDICATOR === */}
+      {/* === ATTACK INDICATOR - Clean Red Overlay === */}
       {canAttack && (
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
-            background: 'radial-gradient(circle, rgba(239,68,68,0.55) 0%, rgba(220,38,38,0.35) 50%, transparent 70%)',
-            animation: 'pulse 0.6s ease-in-out infinite',
+            background: 'rgba(255, 80, 80, 0.5)',
+            boxShadow: 'inset 0 0 0 2px rgba(220, 50, 50, 0.7)',
           }}
-        >
-          {/* Danger corners */}
-          <div className="absolute top-1 left-1 w-3 h-3 border-t-2 border-l-2 border-red-400 rounded-tl" />
-          <div className="absolute top-1 right-1 w-3 h-3 border-t-2 border-r-2 border-red-400 rounded-tr" />
-          <div className="absolute bottom-1 left-1 w-3 h-3 border-b-2 border-l-2 border-red-400 rounded-bl" />
-          <div className="absolute bottom-1 right-1 w-3 h-3 border-b-2 border-r-2 border-red-400 rounded-br" />
-        </div>
+        />
       )}
 
       {/* === POKEMON UNIT === */}
