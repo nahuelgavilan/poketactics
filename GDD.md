@@ -409,19 +409,32 @@ Clean semi-transparent overlays without animation clutter:
 
 ### Pathfinding Arrows
 
-When hovering over a valid move tile, a continuous arrow path shows the route:
+When hovering over a valid move tile, a continuous RED arrow path shows the route:
 
 | Element | Visual |
 |---------|--------|
-| **Start** | Blue circle at unit position |
-| **Path** | Blue line with smooth curved corners |
-| **End** | Blue arrow pointing in travel direction |
+| **Start** | Red circle (`r=14`) at unit position |
+| **Path** | Red line (`strokeWidth=18`) with smooth curved corners |
+| **End** | Diamond arrow pointing in travel direction, animated bounce |
 
 Features:
 - **Gap bridging**: Lines extend 25% beyond tile boundaries for seamless connections
-- **Smooth curves**: Quadratic bezier curves at corner tiles
-- **Glow effect**: Subtle drop-shadow for visibility
+- **Smooth curves**: Quadratic bezier curves (`r=25`) at corner tiles
+- **Red glow effect**: `drop-shadow(0 0 4px rgba(239, 68, 68, 0.6))`
 - Arrow head points in **direction of travel** (opposite of entry direction)
+- Path tiles **lift up** with `translate-y-[-2px] brightness-110`
+
+### 3D Tile Style
+
+Tiles use a Nintendo-quality 3D raised effect:
+
+| Property | Value |
+|----------|-------|
+| **Shape** | `rounded-2xl` |
+| **3D Edge** | `border-b-[6px]` with darker color |
+| **Gradient** | `bg-gradient-to-br` Tailwind classes |
+| **Textures** | Grid (grass), stripes (tall grass), dots (base) |
+| **Selection** | `border-4 border-yellow-400` with glow shadow |
 
 ### HP Bar Colors
 
