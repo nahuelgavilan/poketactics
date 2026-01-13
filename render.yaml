@@ -15,7 +15,7 @@ staticSites:
   # Game client
   - name: poketactics-client
     buildCommand: npm install && npm run build
-    staticPublishPath: ./dist
+    publishDir: ./dist
     envVars:
       - key: VITE_SERVER_URL
         value: https://poketactics-server-jjgo.onrender.com
