@@ -1,7 +1,8 @@
 import React from 'react';
 import { TERRAIN } from '../../constants/terrain';
 import { getIconSprite } from '../../utils/sprites';
-import type { TerrainType, Unit } from '../../types/game';
+import { PathSegment } from './PathSegment';
+import type { TerrainType, Unit, Position } from '../../types/game';
 
 interface TileProps {
   x: number;
@@ -12,9 +13,12 @@ interface TileProps {
   canMove: boolean;
   canAttack: boolean;
   onClick: () => void;
+  onHover?: () => void;
+  onHoverEnd?: () => void;
   isMobile?: boolean;
   isVisible?: boolean;
   isExplored?: boolean;
+  path?: Position[];
 }
 
 /*
@@ -138,16 +142,22 @@ const TERRAIN_DESIGN: Record<number, {
 };
 
 export function Tile({
+  x,
+  y,
   terrain,
   unit,
   isSelected,
   canMove,
   canAttack,
   onClick,
+  onHover,
+  onHoverEnd,
   isMobile = false,
   isVisible = true,
-  isExplored = true
+  isExplored = true,
+  path = []
 }: TileProps) {
+  const isOnPath = path.some(p => p.x === x && p.y === y);
   const isInFog = !isVisible;
   const isUnexplored = !isExplored;
   const design = TERRAIN_DESIGN[terrain] || TERRAIN_DESIGN[TERRAIN.GRASS];
@@ -155,15 +165,18 @@ export function Tile({
   return (
     <div
       onClick={onClick}
+      onMouseEnter={onHover}
+      onMouseLeave={onHoverEnd}
       onTouchEnd={(e) => {
         e.preventDefault();
         onClick();
       }}
       className={`
-        aspect-square rounded-lg relative cursor-pointer overflow-hidden
+        aspect-square rounded-lg relative cursor-pointer
         transition-all duration-150
         ${isMobile ? 'active:scale-95' : 'hover:brightness-110'}
         ${isSelected ? 'z-30' : ''}
+        ${isOnPath && !isSelected ? 'z-20' : ''}
         ${isUnexplored ? 'grayscale brightness-[0.15]' : ''}
         ${isInFog && !isUnexplored ? 'brightness-[0.4] saturate-[0.3]' : ''}
       `}
@@ -172,7 +185,11 @@ export function Tile({
         background: `linear-gradient(160deg, ${design.primary} 0%, ${design.secondary} 60%, ${design.accent} 100%)`,
         boxShadow: isSelected
           ? `0 0 0 3px #fbbf24, inset 0 1px 0 rgba(255,255,255,0.3)`
+          : isOnPath
+          ? `0 0 0 2px rgba(59, 130, 246, 0.6), inset 0 1px 0 rgba(255,255,255,0.3)`
           : `inset 0 1px 0 rgba(255,255,255,0.25), inset 0 -1px 0 ${design.borderColor}`,
+        // Allow path arrows to overflow
+        overflow: 'visible',
       }}
     >
       {/* Pattern overlay */}
@@ -193,12 +210,12 @@ export function Tile({
       />
 
       {/* === MOVE INDICATOR - Fire Emblem Style === */}
-      {canMove && !isSelected && (
+      {canMove && !isSelected && !isOnPath && (
         <div
-          className="absolute inset-0 pointer-events-none"
+          className="absolute inset-0 pointer-events-none rounded-lg"
           style={{
-            background: 'rgba(100, 180, 255, 0.45)',
-            boxShadow: 'inset 0 0 0 2px rgba(60, 140, 220, 0.6)',
+            background: 'rgba(100, 180, 255, 0.35)',
+            boxShadow: 'inset 0 0 0 2px rgba(60, 140, 220, 0.5)',
           }}
         />
       )}
@@ -206,13 +223,16 @@ export function Tile({
       {/* === ATTACK INDICATOR - Clean Red Overlay === */}
       {canAttack && (
         <div
-          className="absolute inset-0 pointer-events-none"
+          className="absolute inset-0 pointer-events-none rounded-lg"
           style={{
             background: 'rgba(255, 80, 80, 0.5)',
             boxShadow: 'inset 0 0 0 2px rgba(220, 50, 50, 0.7)',
           }}
         />
       )}
+
+      {/* === PATH SEGMENT - Arrow visualization === */}
+      {path.length > 0 && <PathSegment x={x} y={y} path={path} color="blue" />}
 
       {/* === POKEMON UNIT === */}
       {unit && (

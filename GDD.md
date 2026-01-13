@@ -403,9 +403,25 @@ Clean semi-transparent overlays without animation clutter:
 
 | Color | Style | Meaning |
 |-------|-------|---------|
-| Blue overlay | `rgba(100,180,255,0.45)` + inset border | Valid movement tiles |
+| Blue overlay | `rgba(100,180,255,0.35)` + inset border | Valid movement tiles |
 | Red overlay | `rgba(255,80,80,0.5)` + inset border | Attackable enemy tiles |
 | Yellow ring | 3px solid `#fbbf24` | Selected unit position |
+
+### Pathfinding Arrows
+
+When hovering over a valid move tile, a continuous arrow path shows the route:
+
+| Element | Visual |
+|---------|--------|
+| **Start** | Blue circle at unit position |
+| **Path** | Blue line with smooth curved corners |
+| **End** | Blue arrow pointing in travel direction |
+
+Features:
+- **Gap bridging**: Lines extend 25% beyond tile boundaries for seamless connections
+- **Smooth curves**: Quadratic bezier curves at corner tiles
+- **Glow effect**: Subtle drop-shadow for visibility
+- Arrow head points in **direction of travel** (opposite of entry direction)
 
 ### HP Bar Colors
 
@@ -663,6 +679,7 @@ This project uses **Semantic Versioning** (semver) with **Conventional Commits**
 
 | Version | Changes |
 |---------|---------|
+| **1.5.0** | Fire Emblem style pathfinding arrows with gap bridging, smooth curves at corners |
 | **1.4.0** | Server-authoritative multiplayer: fog of war per player, validated turns, full server game state |
 | **1.3.0** | Remove action menu, Advance Wars style direct flow, random encounters (30%) on tall grass |
 | **1.2.2** | Professional Nintendo-style tiles (no emojis), Fire Emblem-style movement/attack overlays |

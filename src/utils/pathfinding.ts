@@ -108,3 +108,59 @@ export function isInRange(pos: Position, range: Position[]): boolean {
 export function isInAttackRange(pos: Position, range: AttackTarget[]): boolean {
   return range.some(a => a.x === pos.x && a.y === pos.y);
 }
+
+/**
+ * Find the shortest path from start to end using BFS
+ * Returns array of positions forming the path (including start and end)
+ * Returns empty array if no valid path exists
+ */
+export function findPath(
+  start: Position,
+  end: Position,
+  map: GameMap,
+  units: Unit[],
+  movingUnit: Unit
+): Position[] {
+  if (start.x === end.x && start.y === end.y) return [start];
+
+  const queue: Position[][] = [[start]];
+  const visited = new Set([`${start.x},${start.y}`]);
+  const isFlying = movingUnit.template.types.includes(TYPES.FLYING);
+
+  while (queue.length > 0) {
+    const path = queue.shift()!;
+    const curr = path[path.length - 1];
+
+    if (curr.x === end.x && curr.y === end.y) return path;
+
+    for (const [dx, dy] of DIRECTIONS) {
+      const nx = curr.x + dx;
+      const ny = curr.y + dy;
+
+      // Check bounds
+      if (nx < 0 || nx >= BOARD_WIDTH || ny < 0 || ny >= BOARD_HEIGHT) continue;
+
+      const key = `${nx},${ny}`;
+      if (visited.has(key)) continue;
+
+      const terrain = map[ny][nx];
+      const props = TERRAIN_PROPS[terrain];
+      const cost = isFlying ? 1 : props.moveCost;
+
+      // Skip impassable terrain
+      if (cost > 10) continue;
+
+      // Check for enemy units blocking (but allow passing through the target)
+      const occupant = units.find(u => u.x === nx && u.y === ny);
+      if (occupant && occupant.owner !== movingUnit.owner && !(nx === end.x && ny === end.y)) continue;
+
+      // Skip occupied tiles (can't stop on them), unless it's the moving unit's position
+      if (occupant && occupant.uid !== movingUnit.uid && !(nx === end.x && ny === end.y)) continue;
+
+      visited.add(key);
+      queue.push([...path, { x: nx, y: ny }]);
+    }
+  }
+
+  return [];
+}

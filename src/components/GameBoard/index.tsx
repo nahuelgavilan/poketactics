@@ -1,6 +1,7 @@
+import { useState, useMemo, useCallback } from 'react';
 import { Tile } from './Tile';
 import { BOARD_WIDTH } from '../../constants/board';
-import { isInRange, isInAttackRange } from '../../utils/pathfinding';
+import { isInRange, isInAttackRange, findPath } from '../../utils/pathfinding';
 import type { GameMap, Unit, Position, AttackTarget, Player, VisibilityMap } from '../../types/game';
 
 interface GameBoardProps {
@@ -29,6 +30,41 @@ export function GameBoard({
   // Styling based on device
   const gap = isMobile ? 'gap-0.5' : 'gap-1.5';
   const padding = isMobile ? 'p-1' : 'p-3';
+
+  // Hovered tile for path visualization
+  const [hoveredTile, setHoveredTile] = useState<Position | null>(null);
+
+  // Calculate path to hovered tile
+  const activePath = useMemo(() => {
+    if (!selectedUnit || !hoveredTile) return [];
+
+    // Don't show path if hovering over the unit itself
+    if (hoveredTile.x === selectedUnit.x && hoveredTile.y === selectedUnit.y) return [];
+
+    // Only show path for valid move tiles
+    const canMoveHere = isInRange(hoveredTile, moveRange);
+    if (!canMoveHere) return [];
+
+    // Calculate shortest path
+    const path = findPath(
+      { x: selectedUnit.x, y: selectedUnit.y },
+      hoveredTile,
+      map,
+      units,
+      selectedUnit
+    );
+
+    return path;
+  }, [selectedUnit, hoveredTile, moveRange, map, units]);
+
+  // Handle hover
+  const handleTileHover = useCallback((x: number, y: number) => {
+    setHoveredTile({ x, y });
+  }, []);
+
+  const handleTileHoverEnd = useCallback(() => {
+    setHoveredTile(null);
+  }, []);
 
   // Check if a unit should be visible
   const isUnitVisible = (unit: Unit): boolean => {
@@ -84,9 +120,12 @@ export function GameBoard({
                 canMove={canMove}
                 canAttack={canAttack}
                 onClick={() => onTileClick(x, y)}
+                onHover={() => handleTileHover(x, y)}
+                onHoverEnd={handleTileHoverEnd}
                 isMobile={isMobile}
                 isVisible={isVisible}
                 isExplored={isExplored}
+                path={activePath}
               />
             );
           })
