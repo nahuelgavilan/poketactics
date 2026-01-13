@@ -57,12 +57,23 @@ export default function Game() {
   // Calculate visibility using fog of war
   const visibility = useVision(units, currentPlayer, currentExplored, map);
 
-  // Update explored tiles when visibility changes
+  // Update explored tiles when visibility changes (only if actually different)
   useEffect(() => {
     if (visibility.explored.length > 0 && gameState === 'playing') {
-      updateExplored(currentPlayer, visibility.explored);
+      // Check if any tiles are newly explored to avoid infinite loop
+      let hasNewExplored = false;
+      for (let y = 0; y < visibility.explored.length && !hasNewExplored; y++) {
+        for (let x = 0; x < visibility.explored[y].length && !hasNewExplored; x++) {
+          if (visibility.explored[y][x] && !currentExplored[y]?.[x]) {
+            hasNewExplored = true;
+          }
+        }
+      }
+      if (hasNewExplored) {
+        updateExplored(currentPlayer, visibility.explored);
+      }
     }
-  }, [visibility.explored, currentPlayer, gameState, updateExplored]);
+  }, [visibility.explored, currentPlayer, gameState, updateExplored, currentExplored]);
 
   // Detect mobile
   useEffect(() => {
