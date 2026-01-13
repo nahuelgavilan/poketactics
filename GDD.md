@@ -602,15 +602,39 @@ Server deployed to **Render.com** with `render.yaml` configuration.
 
 ---
 
+## Versioning
+
+This project uses **Semantic Versioning** (semver) with **Conventional Commits**.
+
+### Version Format: `MAJOR.MINOR.PATCH`
+
+| Bump | When | Commit Type |
+|------|------|-------------|
+| **PATCH** | Bug fixes, minor improvements | `fix:` |
+| **MINOR** | New features | `feat:` |
+| **MAJOR** | Breaking changes | `feat!:` or `BREAKING CHANGE:` |
+
+### Other Commit Types (no version bump)
+- `docs:` - Documentation only
+- `style:` - Code style/formatting
+- `refactor:` - Code restructuring
+- `perf:` - Performance improvements
+- `test:` - Adding tests
+- `chore:` - Build/tooling changes
+
+### Version Source
+- Version defined in `src/constants/version.ts`
+- Synced with `package.json`
+- Displayed in Start Screen
+
+---
+
 ## Version History
 
-| Version | Date | Changes |
-|---------|------|---------|
-| 1.0.0 | - | Initial release |
-| 1.1.0 | - | Added counter-attacks, crits, terrain bonuses |
-| 1.2.0 | - | Mobile UX overhaul, new UI components |
-| 2.0.0 | - | Action Menu system, Pokémon Centers, Evolution system |
-| 2.1.0 | - | Fog of War, Online Multiplayer |
+| Version | Changes |
+|---------|---------|
+| **1.1.0** | SPA layout fix, mobile improvements, visual polish, proper square tiles |
+| **1.0.0** | Initial release: Action Menu, Fog of War, Evolution, Capture minigame, Pokémon Centers, Multiplayer lobby |
 
 ---
 

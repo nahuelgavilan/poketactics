@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Swords, Zap, Users, BookOpen, ChevronRight, Sparkles } from 'lucide-react';
+import { VERSION } from '../constants/version';
 
 interface StartScreenProps {
   onStartGame: () => void;
@@ -137,7 +138,7 @@ export function StartScreen({ onStartGame, onHowToPlay, onMultiplayer }: StartSc
           {/* Version badge */}
           <div className="flex justify-center mt-4">
             <span className="px-3 py-1 text-[10px] font-mono tracking-wider text-slate-500 border border-slate-800 rounded-full bg-slate-900/50">
-              v1.0 • HOT SEAT
+              v{VERSION} • HOT SEAT
             </span>
           </div>
         </div>
