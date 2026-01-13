@@ -1,0 +1,96 @@
+import { TERRAIN } from '../constants/terrain';
+import { BOARD_WIDTH, BOARD_HEIGHT } from '../constants/board';
+import { getRandomWildPokemon } from '../constants/pokemon';
+import type { Unit, Position, GameMap, CaptureData } from '../types/game';
+
+const CAPTURE_DIRECTIONS: [number, number][] = [
+  [0, 1], [0, -1], [1, 0], [-1, 0],  // Cardinal
+  [1, 1], [1, -1], [-1, 1], [-1, -1] // Diagonal
+];
+
+const CAPTURE_CHANCE = 0.3; // 30% chance
+
+/**
+ * Check if a tile is passable for spawning
+ */
+function isPassableTerrain(terrain: number): boolean {
+  return terrain !== TERRAIN.WATER && terrain !== TERRAIN.MOUNTAIN;
+}
+
+/**
+ * Find a valid spawn position adjacent to the capturer
+ */
+export function findSpawnPosition(
+  capturer: Unit,
+  map: GameMap,
+  units: Unit[]
+): Position | null {
+  for (const [dx, dy] of CAPTURE_DIRECTIONS) {
+    const nx = capturer.x + dx;
+    const ny = capturer.y + dy;
+
+    // Check bounds
+    if (nx < 0 || nx >= BOARD_WIDTH || ny < 0 || ny >= BOARD_HEIGHT) continue;
+
+    // Check terrain passability
+    if (!isPassableTerrain(map[ny][nx])) continue;
+
+    // Check for existing units
+    if (units.some(u => u.x === nx && u.y === ny)) continue;
+
+    return { x: nx, y: ny };
+  }
+
+  return null;
+}
+
+/**
+ * Attempt to trigger a wild Pokemon encounter
+ * @returns CaptureData if successful, null otherwise
+ */
+export function attemptCapture(
+  capturer: Unit,
+  map: GameMap,
+  units: Unit[]
+): CaptureData | null {
+  // Check if on tall grass
+  if (map[capturer.y][capturer.x] !== TERRAIN.TALL_GRASS) {
+    return null;
+  }
+
+  // Roll for capture chance
+  if (Math.random() >= CAPTURE_CHANCE) {
+    return null;
+  }
+
+  // Find spawn position
+  const spawnPos = findSpawnPosition(capturer, map, units);
+  if (!spawnPos) {
+    return null;
+  }
+
+  // Select random wild Pokemon (from full pool, not base forms)
+  const wildMon = getRandomWildPokemon();
+
+  return {
+    pokemon: wildMon,
+    player: capturer.owner,
+    spawnPos
+  };
+}
+
+/**
+ * Create a new unit from captured Pokemon
+ */
+export function createCapturedUnit(captureData: CaptureData): Unit {
+  return {
+    uid: Math.random().toString(36).substring(7),
+    owner: captureData.player,
+    template: captureData.pokemon,
+    x: captureData.spawnPos.x,
+    y: captureData.spawnPos.y,
+    currentHp: captureData.pokemon.hp,
+    hasMoved: true, // Enters fatigued
+    kills: 0
+  };
+}
