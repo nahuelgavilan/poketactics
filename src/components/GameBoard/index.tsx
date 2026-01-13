@@ -82,7 +82,7 @@ export function GameBoard({
       className={`
         relative bg-slate-900 ${padding} rounded-3xl
         shadow-2xl border border-slate-800
-        select-none touch-manipulation
+        select-none touch-manipulation overflow-visible
         ${isMobile ? 'w-[94vw]' : 'w-auto'}
       `}
     >
@@ -90,7 +90,7 @@ export function GameBoard({
       <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-blue-500/5 to-red-500/5 pointer-events-none" />
 
       <div
-        className={`grid ${gap} relative`}
+        className={`grid ${gap} relative overflow-visible`}
         style={{
           // Width-based: 6 equal columns that fill the container
           gridTemplateColumns: `repeat(${BOARD_WIDTH}, 1fr)`,

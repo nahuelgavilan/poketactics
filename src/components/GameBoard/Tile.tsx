@@ -103,7 +103,7 @@ export function Tile({
         e.preventDefault();
         onClick();
       }}
-      className="relative group cursor-pointer"
+      className="relative group cursor-pointer overflow-visible"
     >
       {/* Main tile with 3D effect */}
       <div
