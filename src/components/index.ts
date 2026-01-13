@@ -13,7 +13,6 @@ export { MobileActionBar } from './MobileActionBar';
 export { AttackPreview } from './AttackPreview';
 export { UnitTooltip } from './UnitTooltip';
 export { GameHUD } from './GameHUD';
-export { ActionMenu } from './ActionMenu';
 export { EvolutionCinematic } from './EvolutionCinematic';
 export { TurnTransition, VictoryScreen } from './overlays';
 export { MultiplayerLobby } from './MultiplayerLobby';

@@ -7,7 +7,6 @@ import {
   CaptureModal,
   TurnTransition,
   VictoryScreen,
-  ActionMenu,
   EvolutionCinematic,
   MultiplayerLobby
 } from './components';
@@ -30,13 +29,10 @@ export default function Game() {
     captureData,
     evolutionData,
     winner,
-    actionMenu,
     exploredP1,
     exploredP2,
     initGame,
     handleTileClick,
-    selectAction,
-    cancelAction,
     endBattle,
     onCaptureMinigameSuccess,
     onCaptureMinigameFail,
@@ -258,7 +254,7 @@ export default function Game() {
         </button>
 
         {/* Mobile: Selected unit stats panel - bottom of screen */}
-        {selectedUnit && isMobile && !actionMenu.isOpen && (
+        {selectedUnit && isMobile && (
           <div className="absolute bottom-2 left-2 right-2 animate-slide-up z-30">
             <div className={`
               flex items-center gap-3 px-3 py-2
@@ -325,19 +321,6 @@ export default function Game() {
           </div>
         )}
       </main>
-
-      {/* Action Menu - centered floating, above board */}
-      {gameState === 'playing' && (
-        <ActionMenu
-          state={actionMenu}
-          selectedUnit={selectedUnit}
-          onMove={() => selectAction('move')}
-          onAttack={() => selectAction('attack')}
-          onCapture={() => selectAction('capture')}
-          onWait={() => selectAction('wait')}
-          onCancel={cancelAction}
-        />
-      )}
 
       {/* Overlays - full screen modals */}
       {gameState === 'transition' && (

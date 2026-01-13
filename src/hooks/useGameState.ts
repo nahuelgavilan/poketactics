@@ -17,7 +17,6 @@ import type {
   BattleData,
   CaptureData,
   TerrainType,
-  ActionMenuState,
   EvolutionData
 } from '../types/game';
 
@@ -37,15 +36,12 @@ interface UseGameStateReturn {
   evolutionData: EvolutionData | null;
   logs: string[];
   winner: Player | null;
-  actionMenu: ActionMenuState;
   exploredP1: boolean[][];
   exploredP2: boolean[][];
 
   // Actions
   initGame: () => void;
   handleTileClick: (x: number, y: number) => void;
-  selectAction: (action: 'move' | 'attack' | 'capture' | 'wait') => void;
-  cancelAction: () => void;
   endBattle: () => void;
   onCaptureMinigameSuccess: () => void;
   onCaptureMinigameFail: () => void;
@@ -56,13 +52,6 @@ interface UseGameStateReturn {
   updateExplored: (player: Player, explored: boolean[][]) => void;
 }
 
-const initialActionMenu: ActionMenuState = {
-  isOpen: false,
-  canMove: false,
-  canAttack: false,
-  canCapture: false,
-  canWait: false
-};
 
 export function useGameState(): UseGameStateReturn {
   const [map, setMap] = useState<GameMap>([]);
@@ -75,7 +64,6 @@ export function useGameState(): UseGameStateReturn {
   const [selectedUnit, setSelectedUnit] = useState<Unit | null>(null);
   const [moveRange, setMoveRange] = useState<Position[]>([]);
   const [attackRange, setAttackRange] = useState<AttackTarget[]>([]);
-  const [actionMenu, setActionMenu] = useState<ActionMenuState>(initialActionMenu);
 
   const [battleData, setBattleData] = useState<BattleData | null>(null);
   const [captureData, setCaptureData] = useState<CaptureData | null>(null);
@@ -98,7 +86,6 @@ export function useGameState(): UseGameStateReturn {
     setSelectedUnit(null);
     setMoveRange([]);
     setAttackRange([]);
-    setActionMenu(initialActionMenu);
     setGamePhase('SELECT');
     setUnitHasMoved(false);
   }, []);
@@ -228,98 +215,24 @@ export function useGameState(): UseGameStateReturn {
     }
   }, [resetSelection, currentPlayer]);
 
-  // Open action menu for a selected unit
-  const openActionMenu = useCallback((unit: Unit, currentUnits: Unit[], currentMap: GameMap, hasMoved: boolean) => {
-    const attacks = calculateAttackRange(unit, currentUnits);
+  // Try to trigger random encounter on tall grass (30% chance)
+  const tryRandomEncounter = useCallback((unit: Unit, currentUnits: Unit[], currentMap: GameMap): boolean => {
     const isOnTallGrass = currentMap[unit.y][unit.x] === TERRAIN.TALL_GRASS;
+    if (!isOnTallGrass) return false;
 
-    const canMove = !hasMoved;
-    const canAttack = attacks.length > 0;
-    // Can capture on tall grass - even after moving to it!
-    const canCapture = isOnTallGrass;
+    // 30% chance of encounter
+    if (Math.random() > 0.3) return false;
 
-    // If only "wait" is available, auto-wait instead of showing menu
-    if (!canMove && !canAttack && !canCapture) {
-      waitUnit(unit.uid, currentUnits);
-      return;
+    const encounter = triggerWildEncounter(unit, currentMap, currentUnits);
+    if (encounter) {
+      setGameState('capture_minigame');
+      setCaptureData(encounter);
+      return true;
     }
+    return false;
+  }, []);
 
-    setActionMenu({
-      isOpen: true,
-      canMove,
-      canAttack,
-      canCapture,
-      canWait: true
-    });
-    setAttackRange(attacks);
-    setGamePhase('ACTION_MENU');
-  }, [waitUnit]);
-
-  // Handle action selection from menu
-  const selectAction = useCallback((action: 'move' | 'attack' | 'capture' | 'wait') => {
-    if (!selectedUnit) return;
-
-    switch (action) {
-      case 'move':
-        // Guard: can only move if not already moved
-        if (unitHasMoved) return;
-        setMoveRange(calculateMoveRange(selectedUnit, map, units));
-        setAttackRange([]);
-        setActionMenu(prev => ({ ...prev, isOpen: false })); // Close menu
-        setGamePhase('MOVING');
-        break;
-
-      case 'attack':
-        setMoveRange([]);
-        setAttackRange(calculateAttackRange(selectedUnit, units));
-        setActionMenu(prev => ({ ...prev, isOpen: false })); // Close menu
-        setGamePhase('ATTACKING');
-        break;
-
-      case 'capture':
-        // Trigger wild encounter (works on tall grass, even after moving to it)
-        const encounter = triggerWildEncounter(selectedUnit, map, units);
-        if (encounter) {
-          setActionMenu(prev => ({ ...prev, isOpen: false }));
-          setGameState('capture_minigame');
-          setCaptureData(encounter);
-        } else {
-          addLog('¡No hay espacio para capturar!');
-          // Stay in action menu
-          openActionMenu(selectedUnit, units, map, unitHasMoved);
-        }
-        break;
-
-      case 'wait':
-        setActionMenu(prev => ({ ...prev, isOpen: false }));
-        waitUnit(selectedUnit.uid, units);
-        break;
-    }
-  }, [selectedUnit, map, units, waitUnit, addLog, openActionMenu, unitHasMoved]);
-
-  // Cancel current action and return to previous state
-  const cancelAction = useCallback(() => {
-    if (gamePhase === 'ACTION_MENU') {
-      // If unit has moved, mark as waited. Otherwise deselect.
-      if (unitHasMoved && selectedUnit) {
-        waitUnit(selectedUnit.uid, units);
-      } else {
-        resetSelection();
-      }
-    } else if (gamePhase === 'MOVING') {
-      // Deselect and go back to SELECT
-      resetSelection();
-    } else if (gamePhase === 'ATTACKING') {
-      // Return to action menu if unit has moved, otherwise deselect
-      if (unitHasMoved && selectedUnit) {
-        openActionMenu(selectedUnit, units, map, true);
-      } else {
-        resetSelection();
-      }
-    }
-  }, [gamePhase, selectedUnit, units, map, unitHasMoved, resetSelection, openActionMenu, waitUnit]);
-
-  // Handle tile clicks based on current phase
+  // Handle tile clicks based on current phase (Advance Wars style - no menu)
   const handleTileClick = useCallback((x: number, y: number) => {
     if (gameState !== 'playing') return;
 
@@ -343,29 +256,6 @@ export function useGameState(): UseGameStateReturn {
       return;
     }
 
-    // Phase: ACTION_MENU - interaction with open menu
-    if (gamePhase === 'ACTION_MENU') {
-      // Clicking outside or on another unit closes menu
-      if (!clickedUnit || clickedUnit.uid !== selectedUnit?.uid) {
-        // If unit already moved, must complete action (wait)
-        if (unitHasMoved && selectedUnit) {
-          waitUnit(selectedUnit.uid, units);
-        } else if (isOwnActiveUnit(clickedUnit)) {
-          // Switch to different unit
-          setSelectedUnit(clickedUnit!);
-          setUnitHasMoved(false);
-          const moves = calculateMoveRange(clickedUnit!, map, units);
-          setMoveRange(moves);
-          setAttackRange([]);
-          setActionMenu(prev => ({ ...prev, isOpen: false }));
-          setGamePhase('MOVING');
-        } else {
-          resetSelection();
-        }
-      }
-      return;
-    }
-
     // Phase: MOVING - selecting move destination
     if (gamePhase === 'MOVING' && selectedUnit) {
       // Click on different own unit: switch to it
@@ -378,25 +268,17 @@ export function useGameState(): UseGameStateReturn {
         return;
       }
 
-      // Click on current position: stay in place
+      // Click on current position: stay in place, check for attacks
       if (x === selectedUnit.x && y === selectedUnit.y) {
         setMoveRange([]);
         setUnitHasMoved(true);
 
-        // Check actions from current position
         const attacks = calculateAttackRange(selectedUnit, units);
-        const isOnTallGrass = map[selectedUnit.y][selectedUnit.x] === TERRAIN.TALL_GRASS;
-
-        // If on tall grass, always show menu (can capture + maybe attack)
-        if (isOnTallGrass) {
-          setAttackRange(attacks);
-          openActionMenu(selectedUnit, units, map, true);
-        } else if (attacks.length > 0) {
-          // Show attack targets directly
+        if (attacks.length > 0) {
           setAttackRange(attacks);
           setGamePhase('ATTACKING');
         } else {
-          // Nothing to do, wait
+          // No attacks available, auto-wait
           waitUnit(selectedUnit.uid, units);
         }
         return;
@@ -411,20 +293,18 @@ export function useGameState(): UseGameStateReturn {
         setMoveRange([]);
         setUnitHasMoved(true);
 
-        // Check actions after moving
-        const attacks = calculateAttackRange(movedUnit, nextUnits);
-        const isOnTallGrass = map[y][x] === TERRAIN.TALL_GRASS;
+        // Try random encounter on tall grass (30% chance)
+        if (tryRandomEncounter(movedUnit, nextUnits, map)) {
+          return; // Encounter triggered, will continue after minigame
+        }
 
-        // If on tall grass, always show menu (can capture + maybe attack)
-        if (isOnTallGrass) {
-          setAttackRange(attacks);
-          openActionMenu(movedUnit, nextUnits, map, true);
-        } else if (attacks.length > 0) {
-          // Show attack targets directly
+        // Check for attacks after moving
+        const attacks = calculateAttackRange(movedUnit, nextUnits);
+        if (attacks.length > 0) {
           setAttackRange(attacks);
           setGamePhase('ATTACKING');
         } else {
-          // No actions, auto-wait
+          // No attacks available, auto-wait
           waitUnit(movedUnit.uid, nextUnits);
         }
         return;
@@ -448,24 +328,15 @@ export function useGameState(): UseGameStateReturn {
         return;
       }
 
-      // Click elsewhere: cancel attack, show menu or wait
+      // Click elsewhere: if already moved, just wait; otherwise cancel
       if (unitHasMoved) {
-        // Already moved, show menu to choose wait/capture
-        const isOnTallGrass = map[selectedUnit.y][selectedUnit.x] === TERRAIN.TALL_GRASS;
-        if (isOnTallGrass) {
-          setAttackRange([]);
-          openActionMenu(selectedUnit, units, map, true);
-        } else {
-          // Just wait
-          waitUnit(selectedUnit.uid, units);
-        }
+        waitUnit(selectedUnit.uid, units);
       } else {
-        // Didn't move, cancel entirely
         resetSelection();
       }
       return;
     }
-  }, [gameState, gamePhase, units, currentPlayer, selectedUnit, moveRange, attackRange, map, openActionMenu, unitHasMoved, waitUnit, resetSelection]);
+  }, [gameState, gamePhase, units, currentPlayer, selectedUnit, moveRange, attackRange, map, unitHasMoved, waitUnit, resetSelection, tryRandomEncounter]);
 
   const endBattle = useCallback(() => {
     if (!battleData) return;
@@ -681,13 +552,10 @@ export function useGameState(): UseGameStateReturn {
     evolutionData,
     logs,
     winner,
-    actionMenu,
     exploredP1,
     exploredP2,
     initGame,
     handleTileClick,
-    selectAction,
-    cancelAction,
     endBattle,
     onCaptureMinigameSuccess,
     onCaptureMinigameFail,

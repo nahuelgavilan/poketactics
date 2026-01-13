@@ -13,16 +13,17 @@
 
 ## Core Gameplay Loop
 
-1. **Click unit** → see movement range immediately
+1. **Click unit** → see movement range immediately (blue overlay)
 2. **Click destination** → unit moves (or click same tile to stay)
-3. **If enemies in range** → attack targets shown, click to attack
-4. **If on tall grass** → capture option available
-5. **Turn auto-ends** when all units have acted
-6. **Repeat** until one team is eliminated
+3. **Random encounter** → 30% chance on tall grass triggers capture minigame
+4. **If enemies in range** → attack targets shown (red overlay), click to attack
+5. **Auto-wait** → if no attacks available, turn ends automatically
+6. **Turn auto-ends** when all units have acted
+7. **Repeat** until one team is eliminated
 
 ### Fluid Movement System (Advance Wars Style)
 
-The game uses direct clicking for maximum fluidity:
+The game uses direct clicking for maximum fluidity - no menus:
 
 | Action | How |
 |--------|-----|
@@ -30,12 +31,13 @@ The game uses direct clicking for maximum fluidity:
 | **Move** | Click blue highlighted tile |
 | **Stay in place** | Click on the unit's current position |
 | **Attack** | After moving, click red highlighted enemy |
+| **Skip attack** | Click elsewhere to auto-wait |
 | **Switch unit** | Click on another of your units |
 | **Cancel** | Click empty space |
 
-### Action Menu
+### Random Encounters
 
-Only appears when needed (e.g., capture option on tall grass). Compact floating design that doesn't scroll the page.
+When moving to **Tall Grass**, there's a **30% chance** of triggering a wild Pokémon encounter. If triggered, the capture minigame starts automatically.
 
 ---
 
@@ -56,7 +58,6 @@ Only appears when needed (e.g., capture option on tall grass). Compact floating 
 | Phase | Description |
 |-------|-------------|
 | `SELECT` | Player selecting a unit |
-| `ACTION_MENU` | Unit selected, action menu visible |
 | `MOVING` | Player selecting move destination |
 | `ATTACKING` | Player selecting attack target |
 | `WAITING` | Unit waiting (ending turn) |
@@ -635,6 +636,7 @@ This project uses **Semantic Versioning** (semver) with **Conventional Commits**
 
 | Version | Changes |
 |---------|---------|
+| **1.3.0** | Remove action menu, Advance Wars style direct flow, random encounters (30%) on tall grass |
 | **1.2.2** | Professional Nintendo-style tiles (no emojis), Fire Emblem-style movement/attack overlays |
 | **1.2.1** | Fix auto-wait bug, capture on tall grass after moving, cleaner tile indicators |
 | **1.2.0** | Redesigned tiles with rich gradients, full mobile stats panel (HP/ATK/MOV/DEF), visual juice |

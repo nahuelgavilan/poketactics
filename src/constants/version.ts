@@ -15,9 +15,10 @@
  * don't trigger version bumps unless they include breaking changes.
  */
 
-export const VERSION = '1.2.2';
+export const VERSION = '1.3.0';
 
 // Version history:
+// 1.3.0 - Remove action menu, Advance Wars style direct flow, random encounters on tall grass
 // 1.2.2 - Professional Nintendo-style tiles (no emojis), Fire Emblem movement/attack overlays
 // 1.2.1 - Fix auto-wait bug, capture on tall grass after moving, cleaner tile indicators
 // 1.2.0 - Redesigned tiles with rich gradients, mobile stats panel, visual juice
