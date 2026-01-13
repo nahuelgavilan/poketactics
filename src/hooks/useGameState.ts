@@ -5,7 +5,7 @@ import { getRandomPokemon } from '../constants/pokemon';
 import { getNextEvolution } from '../constants/evolution';
 import { calculateMoveRange, calculateAttackRange } from '../utils/pathfinding';
 import { createBattleData } from '../utils/combat';
-import { attemptCapture, createCapturedUnit } from '../utils/capture';
+import { triggerWildEncounter, createCapturedUnit } from '../utils/capture';
 import type {
   GameState,
   GamePhase,
@@ -47,6 +47,8 @@ interface UseGameStateReturn {
   selectAction: (action: 'move' | 'attack' | 'capture' | 'wait') => void;
   cancelAction: () => void;
   endBattle: () => void;
+  onCaptureMinigameSuccess: () => void;
+  onCaptureMinigameFail: () => void;
   confirmCapture: () => void;
   confirmEvolution: () => void;
   confirmTurnChange: () => void;
@@ -214,9 +216,17 @@ export function useGameState(): UseGameStateReturn {
     setUnits(nextUnits);
     resetSelection();
 
-    // Check if all units have moved - NO AUTO TRANSITION
-    // Player must manually end turn or select another unit
-  }, [resetSelection]);
+    // Check if all units of current player have moved
+    const playerUnits = nextUnits.filter(u => u.owner === currentPlayer);
+    const allMoved = playerUnits.every(u => u.hasMoved);
+
+    if (allMoved && playerUnits.length > 0) {
+      // Auto-trigger turn transition after a brief delay for feedback
+      setTimeout(() => {
+        setGameState('transition');
+      }, 300);
+    }
+  }, [resetSelection, currentPlayer]);
 
   // Open action menu for a selected unit
   const openActionMenu = useCallback((unit: Unit, currentUnits: Unit[], currentMap: GameMap, hasMoved: boolean) => {
@@ -258,14 +268,14 @@ export function useGameState(): UseGameStateReturn {
       case 'capture':
         // Guard: can only capture if not already moved
         if (unitHasMoved) return;
-        // Trigger capture attempt
-        const capture = attemptCapture(selectedUnit, map, units);
-        if (capture) {
+        // Trigger wild encounter (always succeeds if on tall grass)
+        const encounter = triggerWildEncounter(selectedUnit, map, units);
+        if (encounter) {
           setActionMenu(prev => ({ ...prev, isOpen: false }));
-          setGameState('capture');
-          setCaptureData(capture);
+          setGameState('capture_minigame');
+          setCaptureData(encounter);
         } else {
-          addLog('¡No apareció ningún Pokémon salvaje!');
+          addLog('¡No hay espacio para capturar!');
           // Stay in action menu
           openActionMenu(selectedUnit, units, map, unitHasMoved);
         }
@@ -438,6 +448,23 @@ export function useGameState(): UseGameStateReturn {
     }
   }, [battleData, units, waitUnit, addLog, resetSelection]);
 
+  // Called when minigame succeeds - show capture celebration
+  const onCaptureMinigameSuccess = useCallback(() => {
+    setGameState('capture');
+  }, []);
+
+  // Called when minigame fails - Pokemon escapes
+  const onCaptureMinigameFail = useCallback(() => {
+    if (!captureData || !selectedUnit) return;
+
+    addLog(`¡${captureData.pokemon.name} salvaje escapó!`);
+    setCaptureData(null);
+    setGameState('playing');
+
+    // Mark unit as having used their turn
+    waitUnit(selectedUnit.uid, units);
+  }, [captureData, selectedUnit, units, addLog, waitUnit]);
+
   const confirmCapture = useCallback(() => {
     if (!captureData || !selectedUnit) return;
 
@@ -551,6 +578,8 @@ export function useGameState(): UseGameStateReturn {
     selectAction,
     cancelAction,
     endBattle,
+    onCaptureMinigameSuccess,
+    onCaptureMinigameFail,
     confirmCapture,
     confirmEvolution,
     confirmTurnChange,

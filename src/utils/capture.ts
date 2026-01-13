@@ -8,13 +8,11 @@ const CAPTURE_DIRECTIONS: [number, number][] = [
   [1, 1], [1, -1], [-1, 1], [-1, -1] // Diagonal
 ];
 
-const CAPTURE_CHANCE = 0.3; // 30% chance
-
 /**
  * Check if a tile is passable for spawning
  */
 function isPassableTerrain(terrain: number): boolean {
-  return terrain !== TERRAIN.WATER && terrain !== TERRAIN.MOUNTAIN;
+  return terrain !== TERRAIN.WATER;
 }
 
 /**
@@ -45,21 +43,16 @@ export function findSpawnPosition(
 }
 
 /**
- * Attempt to trigger a wild Pokemon encounter
- * @returns CaptureData if successful, null otherwise
+ * Trigger a wild Pokemon encounter (always succeeds if on tall grass)
+ * @returns CaptureData if encounter triggered, null if conditions not met
  */
-export function attemptCapture(
+export function triggerWildEncounter(
   capturer: Unit,
   map: GameMap,
   units: Unit[]
 ): CaptureData | null {
   // Check if on tall grass
   if (map[capturer.y][capturer.x] !== TERRAIN.TALL_GRASS) {
-    return null;
-  }
-
-  // Roll for capture chance
-  if (Math.random() >= CAPTURE_CHANCE) {
     return null;
   }
 
@@ -77,6 +70,18 @@ export function attemptCapture(
     player: capturer.owner,
     spawnPos
   };
+}
+
+/**
+ * Legacy function - kept for backwards compatibility
+ * @deprecated Use triggerWildEncounter instead
+ */
+export function attemptCapture(
+  capturer: Unit,
+  map: GameMap,
+  units: Unit[]
+): CaptureData | null {
+  return triggerWildEncounter(capturer, map, units);
 }
 
 /**

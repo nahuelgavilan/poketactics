@@ -46,10 +46,11 @@ export const TERRAIN_PROPS = {
   },
   [TERRAIN.MOUNTAIN]: {
     def: 40,
-    moveCost: 99,
+    moveCost: 3,
     name: 'Montaña',
     bg: 'from-stone-800 to-black',
-    typeBonus: ['rock', 'ground', 'steel'] as PokemonType[]
+    typeBonus: ['rock', 'ground', 'steel'] as PokemonType[],
+    visionBonus: 2 // Extra vision range when standing on mountain
   },
   [TERRAIN.BASE]: {
     def: 10,

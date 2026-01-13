@@ -12,6 +12,7 @@ import {
   EvolutionCinematic,
   MultiplayerLobby
 } from './components';
+import { CaptureMinigame } from './components/CaptureMinigame';
 import { StartScreen } from './components/StartScreen';
 import { HowToPlay } from './components/HowToPlay';
 import { MobileActionBar } from './components/MobileActionBar';
@@ -38,6 +39,8 @@ export default function Game() {
     selectAction,
     cancelAction,
     endBattle,
+    onCaptureMinigameSuccess,
+    onCaptureMinigameFail,
     confirmCapture,
     confirmEvolution,
     confirmTurnChange,
@@ -52,8 +55,8 @@ export default function Game() {
   // Get the correct explored state based on current player
   const currentExplored = currentPlayer === 'P1' ? exploredP1 : exploredP2;
 
-  // Calculate visibility using fog of war
-  const visibility = useVision(units, currentPlayer, currentExplored);
+  // Calculate visibility using fog of war (pass map for terrain vision bonuses)
+  const visibility = useVision(units, currentPlayer, currentExplored, map);
 
   // Update explored tiles when visibility changes
   useEffect(() => {
@@ -120,6 +123,15 @@ export default function Game() {
 
       {gameState === 'battle' && battleData && (
         <BattleCinematic {...battleData} onComplete={endBattle} />
+      )}
+
+      {gameState === 'capture_minigame' && captureData && (
+        <CaptureMinigame
+          pokemon={captureData.pokemon}
+          player={captureData.player}
+          onSuccess={onCaptureMinigameSuccess}
+          onFail={onCaptureMinigameFail}
+        />
       )}
 
       {gameState === 'capture' && captureData && (

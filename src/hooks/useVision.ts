@@ -1,7 +1,8 @@
 import { useMemo } from 'react';
 import { BOARD_WIDTH, BOARD_HEIGHT } from '../constants/board';
 import { VISION_RANGE } from '../constants/vision';
-import type { Unit, Player, VisibilityMap } from '../types/game';
+import { TERRAIN_PROPS } from '../constants/terrain';
+import type { Unit, Player, VisibilityMap, GameMap } from '../types/game';
 
 /**
  * Calculate visibility map for fog of war
@@ -9,7 +10,8 @@ import type { Unit, Player, VisibilityMap } from '../types/game';
 export function useVision(
   units: Unit[],
   currentPlayer: Player,
-  previousExplored: boolean[][]
+  previousExplored: boolean[][],
+  map?: GameMap
 ): VisibilityMap {
   return useMemo(() => {
     // Initialize visibility arrays
@@ -26,12 +28,22 @@ export function useVision(
 
     // Calculate visible tiles based on unit positions
     for (const unit of playerUnits) {
+      // Check if unit is on terrain with vision bonus (e.g., mountain)
+      let unitVisionRange = VISION_RANGE;
+      if (map && map[unit.y] && map[unit.y][unit.x] !== undefined) {
+        const terrainType = map[unit.y][unit.x];
+        const terrainProps = TERRAIN_PROPS[terrainType];
+        if (terrainProps?.visionBonus) {
+          unitVisionRange += terrainProps.visionBonus;
+        }
+      }
+
       for (let y = 0; y < BOARD_HEIGHT; y++) {
         for (let x = 0; x < BOARD_WIDTH; x++) {
           // Manhattan distance
           const distance = Math.abs(x - unit.x) + Math.abs(y - unit.y);
 
-          if (distance <= VISION_RANGE) {
+          if (distance <= unitVisionRange) {
             visible[y][x] = true;
             explored[y][x] = true;
           }
@@ -40,7 +52,7 @@ export function useVision(
     }
 
     return { visible, explored };
-  }, [units, currentPlayer, previousExplored]);
+  }, [units, currentPlayer, previousExplored, map]);
 }
 
 /**

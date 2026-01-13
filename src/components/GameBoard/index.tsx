@@ -47,6 +47,15 @@ export function GameBoard({
     return visibility.visible[unit.y]?.[unit.x] ?? false;
   };
 
+  // Get hidden enemies for silhouette display (in explored but not visible areas)
+  const hiddenEnemies = visibility
+    ? units.filter(u =>
+        u.owner !== currentPlayer &&
+        visibility.explored[u.y]?.[u.x] &&
+        !visibility.visible[u.y]?.[u.x]
+      )
+    : [];
+
   return (
     <div
       className={`
@@ -93,7 +102,12 @@ export function GameBoard({
 
         {/* Fog of War overlay */}
         {visibility && (
-          <FogOverlay visibility={visibility} tileSize={numericTileSize} />
+          <FogOverlay
+            visibility={visibility}
+            tileSize={numericTileSize}
+            hiddenEnemies={hiddenEnemies}
+            isMobile={isMobile}
+          />
         )}
       </div>
     </div>

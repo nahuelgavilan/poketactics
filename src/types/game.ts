@@ -18,6 +18,7 @@ export type GameState =
   | 'battle'
   | 'victory'
   | 'capture'
+  | 'capture_minigame'
   | 'evolution';
 
 /**
@@ -87,6 +88,7 @@ export interface TerrainProps {
   capture?: boolean;
   typeBonus?: PokemonType[]; // Types that get bonus on this terrain
   heals?: boolean; // Pokemon Center healing
+  visionBonus?: number; // Extra vision range on this terrain
 }
 
 /**
