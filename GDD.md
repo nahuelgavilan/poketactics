@@ -543,7 +543,7 @@ Counter-attacks at 75% damage encourage:
 
 ### Overview
 
-Online multiplayer allows two players to battle via WebSocket connection. Players create or join private rooms using 6-character codes.
+Online multiplayer uses a **server-authoritative** model where all game logic runs on the server. Each player only sees their own fog of war, and the server validates all actions to prevent cheating.
 
 ### Connection Flow
 
@@ -552,6 +552,7 @@ Online multiplayer allows two players to battle via WebSocket connection. Player
 3. **Share Code** with opponent
 4. **Join Room** → enter room code
 5. **Start Game** → host initiates when both connected
+6. **Server** generates game state and sends filtered views to each player
 
 ### Room System
 
@@ -561,14 +562,32 @@ Online multiplayer allows two players to battle via WebSocket connection. Player
 - Only host can start the game
 - Room auto-deletes after 1 hour of inactivity
 
-### Synchronization
+### Server-Authoritative Model
 
-Game actions are broadcast to opponent in real-time:
-- Unit movements
-- Attack results (damage, kills)
-- Captures
-- Evolutions
-- Turn changes
+The server handles all game logic:
+
+| Feature | Server Responsibility |
+|---------|----------------------|
+| **Game State** | Server stores full state, clients receive filtered views |
+| **Fog of War** | Each player sees only their own visibility (3-tile range) |
+| **Turn Validation** | Server validates it's the player's turn before accepting actions |
+| **Action Execution** | Move, attack, wait, capture all run on server |
+| **State Updates** | After each action, server broadcasts filtered state to both players |
+
+### Client-Server Events
+
+**Client → Server:**
+- `action-move` - Request unit movement `{unitId, x, y}`
+- `action-attack` - Request attack `{attackerId, defenderId}`
+- `action-wait` - End unit's turn `{unitId}`
+- `action-capture` - Attempt capture on tall grass `{unitId}`
+- `request-state` - Request current state (for reconnection)
+
+**Server → Client:**
+- `game-started` - Initial game state (filtered by fog of war)
+- `state-update` - Updated game state after actions
+- `action-result` - Action feedback (damage dealt, evolution triggered, etc.)
+- `error` - Action rejected with error message
 
 ### Server Architecture
 
@@ -576,9 +595,17 @@ Game actions are broadcast to opponent in real-time:
 server/
 ├── src/
 │   ├── index.ts      # Express + Socket.IO server
+│   ├── gameLogic.ts  # Full game logic (combat, pathfinding, etc.)
 │   ├── rooms.ts      # Room management
 │   └── types.ts      # Server types
 ```
+
+### Fog of War per Player
+
+Each player has independent visibility tracking:
+- `exploredP1` / `exploredP2` - Tiles each player has seen
+- Server filters enemy units based on current visibility
+- Explored terrain (no enemies) remains visible after unit leaves
 
 ### Deployment
 
@@ -636,6 +663,7 @@ This project uses **Semantic Versioning** (semver) with **Conventional Commits**
 
 | Version | Changes |
 |---------|---------|
+| **1.4.0** | Server-authoritative multiplayer: fog of war per player, validated turns, full server game state |
 | **1.3.0** | Remove action menu, Advance Wars style direct flow, random encounters (30%) on tall grass |
 | **1.2.2** | Professional Nintendo-style tiles (no emojis), Fire Emblem-style movement/attack overlays |
 | **1.2.1** | Fix auto-wait bug, capture on tall grass after moving, cleaner tile indicators |

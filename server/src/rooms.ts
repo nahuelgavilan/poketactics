@@ -1,4 +1,4 @@
-import type { Room, GameState, Player } from './types';
+import type { Room, ServerGameState, Player } from './types';
 
 /**
  * Room manager for multiplayer games
@@ -35,7 +35,7 @@ export class RoomManager {
       id: roomId,
       hostId,
       guestId: null,
-      gameState: null,
+      game: null,
       createdAt: new Date()
     };
 
@@ -134,13 +134,20 @@ export class RoomManager {
   }
 
   /**
-   * Update game state for a room
+   * Set game state for a room
    */
-  updateGameState(roomId: string, gameState: GameState): void {
+  setGameState(roomId: string, gameState: ServerGameState): void {
     const room = this.rooms.get(roomId);
     if (room) {
-      room.gameState = gameState;
+      room.game = gameState;
     }
+  }
+
+  /**
+   * Get room count (for health check)
+   */
+  getRoomCount(): number {
+    return this.rooms.size;
   }
 
   /**

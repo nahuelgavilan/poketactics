@@ -1,16 +1,43 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
-import type { Player } from '../types/game';
+import type { Player, PokemonTemplate } from '../types/game';
 
 export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected';
 export type RoomStatus = 'none' | 'creating' | 'joining' | 'waiting' | 'ready' | 'playing';
 
-export type GameAction =
-  | { type: 'move'; unitId: string; x: number; y: number }
-  | { type: 'attack'; attackerId: string; defenderId: string; damage: number; counterDamage: number }
-  | { type: 'capture'; unitId: string; newUnit: unknown }
-  | { type: 'evolve'; unitId: string; newTemplateId: number; newHp: number }
-  | { type: 'wait'; unitId: string };
+// Types matching server definitions
+export interface ClientUnit {
+  uid: string;
+  owner: Player;
+  templateId: number;
+  template: PokemonTemplate;
+  x: number;
+  y: number;
+  currentHp: number;
+  hasMoved: boolean;
+  kills: number;
+}
+
+export interface ClientGameState {
+  map: number[][];
+  units: ClientUnit[];
+  turn: number;
+  currentPlayer: Player;
+  myPlayer: Player;
+  status: 'waiting' | 'playing' | 'finished';
+  winner: Player | null;
+  visibility: {
+    visible: boolean[][];
+    explored: boolean[][];
+  };
+}
+
+export type ActionResult =
+  | { type: 'move'; unitId: string; x: number; y: number; success: boolean }
+  | { type: 'attack'; attackerId: string; defenderId: string; damage: number; counterDamage: number; attackerDied: boolean; defenderDied: boolean; evolution?: { unitId: string; newTemplate: PokemonTemplate } }
+  | { type: 'capture'; unitId: string; success: boolean; newUnit?: ClientUnit; pokemon?: PokemonTemplate }
+  | { type: 'wait'; unitId: string }
+  | { type: 'turn-end'; nextPlayer: Player; turn: number };
 
 interface UseMultiplayerReturn {
   // Connection state
@@ -26,13 +53,19 @@ interface UseMultiplayerReturn {
   createRoom: () => void;
   joinRoom: (code: string) => void;
   startGame: () => void;
-  sendAction: (action: GameAction) => void;
-  endTurn: () => void;
+
+  // Game actions (server-authoritative)
+  sendMove: (unitId: string, x: number, y: number) => void;
+  sendAttack: (attackerId: string, defenderId: string) => void;
+  sendWait: (unitId: string) => void;
+  sendCapture: (unitId: string) => void;
+  requestState: () => void;
 
   // Event handlers (set these to receive game events)
-  onGameStarted: React.MutableRefObject<(() => void) | null>;
-  onGameAction: React.MutableRefObject<((action: GameAction) => void) | null>;
-  onTurnChanged: React.MutableRefObject<((data: { currentPlayer: Player; turn: number }) => void) | null>;
+  onGameStarted: React.MutableRefObject<((state: ClientGameState) => void) | null>;
+  onStateUpdate: React.MutableRefObject<((state: ClientGameState) => void) | null>;
+  onActionResult: React.MutableRefObject<((result: ActionResult) => void) | null>;
+  onPlayerJoined: React.MutableRefObject<(() => void) | null>;
   onPlayerLeft: React.MutableRefObject<(() => void) | null>;
 }
 
@@ -48,9 +81,10 @@ export function useMultiplayer(): UseMultiplayerReturn {
   const [error, setError] = useState<string | null>(null);
 
   // Event handler refs
-  const onGameStarted = useRef<(() => void) | null>(null);
-  const onGameAction = useRef<((action: GameAction) => void) | null>(null);
-  const onTurnChanged = useRef<((data: { currentPlayer: Player; turn: number }) => void) | null>(null);
+  const onGameStarted = useRef<((state: ClientGameState) => void) | null>(null);
+  const onStateUpdate = useRef<((state: ClientGameState) => void) | null>(null);
+  const onActionResult = useRef<((result: ActionResult) => void) | null>(null);
+  const onPlayerJoined = useRef<(() => void) | null>(null);
   const onPlayerLeft = useRef<(() => void) | null>(null);
 
   const connect = useCallback(() => {
@@ -80,6 +114,7 @@ export function useMultiplayer(): UseMultiplayerReturn {
       setError('No se pudo conectar al servidor');
     });
 
+    // Room events
     socket.on('room-created', (id: string) => {
       setRoomId(id);
       setRoomStatus('waiting');
@@ -94,6 +129,9 @@ export function useMultiplayer(): UseMultiplayerReturn {
 
     socket.on('player-joined', () => {
       setRoomStatus('ready');
+      if (onPlayerJoined.current) {
+        onPlayerJoined.current();
+      }
     });
 
     socket.on('player-left', () => {
@@ -103,22 +141,23 @@ export function useMultiplayer(): UseMultiplayerReturn {
       }
     });
 
-    socket.on('game-started', () => {
+    // Game events (server-authoritative)
+    socket.on('game-started', (state: ClientGameState) => {
       setRoomStatus('playing');
       if (onGameStarted.current) {
-        onGameStarted.current();
+        onGameStarted.current(state);
       }
     });
 
-    socket.on('game-action', (action: GameAction) => {
-      if (onGameAction.current) {
-        onGameAction.current(action);
+    socket.on('state-update', (state: ClientGameState) => {
+      if (onStateUpdate.current) {
+        onStateUpdate.current(state);
       }
     });
 
-    socket.on('turn-changed', (data: { currentPlayer: Player; turn: number }) => {
-      if (onTurnChanged.current) {
-        onTurnChanged.current(data);
+    socket.on('action-result', (result: ActionResult) => {
+      if (onActionResult.current) {
+        onActionResult.current(result);
       }
     });
 
@@ -171,14 +210,30 @@ export function useMultiplayer(): UseMultiplayerReturn {
     socketRef.current.emit('start-game');
   }, []);
 
-  const sendAction = useCallback((action: GameAction) => {
+  // Server-authoritative game actions
+  const sendMove = useCallback((unitId: string, x: number, y: number) => {
     if (!socketRef.current?.connected) return;
-    socketRef.current.emit('game-action', action);
+    socketRef.current.emit('action-move', { unitId, x, y });
   }, []);
 
-  const endTurn = useCallback(() => {
+  const sendAttack = useCallback((attackerId: string, defenderId: string) => {
     if (!socketRef.current?.connected) return;
-    socketRef.current.emit('end-turn');
+    socketRef.current.emit('action-attack', { attackerId, defenderId });
+  }, []);
+
+  const sendWait = useCallback((unitId: string) => {
+    if (!socketRef.current?.connected) return;
+    socketRef.current.emit('action-wait', { unitId });
+  }, []);
+
+  const sendCapture = useCallback((unitId: string) => {
+    if (!socketRef.current?.connected) return;
+    socketRef.current.emit('action-capture', { unitId });
+  }, []);
+
+  const requestState = useCallback(() => {
+    if (!socketRef.current?.connected) return;
+    socketRef.current.emit('request-state');
   }, []);
 
   // Cleanup on unmount
@@ -201,11 +256,15 @@ export function useMultiplayer(): UseMultiplayerReturn {
     createRoom,
     joinRoom,
     startGame,
-    sendAction,
-    endTurn,
+    sendMove,
+    sendAttack,
+    sendWait,
+    sendCapture,
+    requestState,
     onGameStarted,
-    onGameAction,
-    onTurnChanged,
+    onStateUpdate,
+    onActionResult,
+    onPlayerJoined,
     onPlayerLeft
   };
 }
