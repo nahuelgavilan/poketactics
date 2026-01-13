@@ -14,6 +14,8 @@ interface TileProps {
   canAttack: boolean;
   onClick: () => void;
   isMobile?: boolean;
+  isVisible?: boolean;    // Currently in vision range
+  isExplored?: boolean;   // Has been seen before
 }
 
 export function Tile({
@@ -23,8 +25,13 @@ export function Tile({
   canMove,
   canAttack,
   onClick,
-  isMobile = false
+  isMobile = false,
+  isVisible = true,
+  isExplored = true
 }: TileProps) {
+  // Fog state: unexplored = dark gray, explored but not visible = desaturated
+  const isInFog = !isVisible;
+  const isUnexplored = !isExplored;
   // Icon sizes based on mobile/desktop
   const iconSize = isMobile ? 'w-5 h-5' : 'w-8 h-8';
   const sproutSize = isMobile ? 16 : 24;
@@ -39,12 +46,13 @@ export function Tile({
       }}
       className={`
         aspect-square rounded-lg border-b-4 relative cursor-pointer
-        transition-all duration-100 overflow-hidden
+        transition-all duration-300 overflow-hidden
         ${getTileColor(terrain)}
         ${canMove ? 'ring-[3px] ring-blue-400/70 z-10 scale-[0.92] shadow-lg shadow-blue-500/20' : ''}
         ${canAttack ? 'ring-[3px] ring-red-500/80 z-10 scale-[0.92] bg-red-900/50 shadow-lg shadow-red-500/30' : ''}
         ${isSelected ? 'ring-2 ring-white z-20 scale-[0.95]' : ''}
         ${isMobile ? 'active:scale-90 active:brightness-125' : 'hover:brightness-110'}
+        ${isUnexplored ? 'grayscale brightness-[0.3]' : isInFog ? 'grayscale-[70%] brightness-[0.6]' : ''}
       `}
     >
       {/* Terrain icons */}

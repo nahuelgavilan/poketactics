@@ -1,5 +1,4 @@
 import { Tile } from './Tile';
-import { FogOverlay } from './FogOverlay';
 import { BOARD_WIDTH } from '../../constants/board';
 import { isInRange, isInAttackRange } from '../../utils/pathfinding';
 import type { GameMap, Unit, Position, AttackTarget, Player, VisibilityMap } from '../../types/game';
@@ -34,9 +33,6 @@ export function GameBoard({
   const gap = isMobile ? 'gap-1' : 'gap-1.5';
   const padding = isMobile ? 'p-2' : 'p-4';
 
-  // Numeric tile size for fog overlay (approximate)
-  const numericTileSize = isMobile ? 48 : 64;
-
   // Check if a unit should be visible
   const isUnitVisible = (unit: Unit): boolean => {
     // Own units are always visible
@@ -47,14 +43,6 @@ export function GameBoard({
     return visibility.visible[unit.y]?.[unit.x] ?? false;
   };
 
-  // Get hidden enemies for silhouette display (in explored but not visible areas)
-  const hiddenEnemies = visibility
-    ? units.filter(u =>
-        u.owner !== currentPlayer &&
-        visibility.explored[u.y]?.[u.x] &&
-        !visibility.visible[u.y]?.[u.x]
-      )
-    : [];
 
   return (
     <div
@@ -83,6 +71,10 @@ export function GameBoard({
             const canMove = isInRange({ x, y }, moveRange);
             const canAttack = isInAttackRange({ x, y }, attackRange);
 
+            // Visibility state for fog of war
+            const isVisible = visibility ? visibility.visible[y]?.[x] ?? true : true;
+            const isExplored = visibility ? visibility.explored[y]?.[x] ?? true : true;
+
             return (
               <Tile
                 key={`${x}-${y}`}
@@ -95,19 +87,11 @@ export function GameBoard({
                 canAttack={canAttack}
                 onClick={() => onTileClick(x, y)}
                 isMobile={isMobile}
+                isVisible={isVisible}
+                isExplored={isExplored}
               />
             );
           })
-        )}
-
-        {/* Fog of War overlay */}
-        {visibility && (
-          <FogOverlay
-            visibility={visibility}
-            tileSize={numericTileSize}
-            hiddenEnemies={hiddenEnemies}
-            isMobile={isMobile}
-          />
         )}
       </div>
     </div>
