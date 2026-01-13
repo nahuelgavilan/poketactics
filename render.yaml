@@ -2,7 +2,7 @@ services:
   # WebSocket server for multiplayer
   - type: web
     name: poketactics-server
-    env: node
+    runtime: node
     region: oregon
     plan: free
     buildCommand: cd server && npm install && npm run build
@@ -10,23 +10,11 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
-      - key: CLIENT_URL
-        fromService:
-          name: poketactics-client
-          type: web
-          property: url
 
   # Static site for the game client
   - type: web
     name: poketactics-client
-    env: static
-    region: oregon
+    runtime: static
     plan: free
     buildCommand: npm install && npm run build
     staticPublishPath: ./dist
-    envVars:
-      - key: VITE_SERVER_URL
-        fromService:
-          name: poketactics-server
-          type: web
-          property: url
