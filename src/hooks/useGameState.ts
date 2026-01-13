@@ -233,16 +233,27 @@ export function useGameState(): UseGameStateReturn {
     const attacks = calculateAttackRange(unit, currentUnits);
     const isOnTallGrass = currentMap[unit.y][unit.x] === TERRAIN.TALL_GRASS;
 
+    const canMove = !hasMoved;
+    const canAttack = attacks.length > 0;
+    // Can capture on tall grass - even after moving to it!
+    const canCapture = isOnTallGrass;
+
+    // If only "wait" is available, auto-wait instead of showing menu
+    if (!canMove && !canAttack && !canCapture) {
+      waitUnit(unit.uid, currentUnits);
+      return;
+    }
+
     setActionMenu({
       isOpen: true,
-      canMove: !hasMoved,
-      canAttack: attacks.length > 0,
-      canCapture: isOnTallGrass && !hasMoved,
+      canMove,
+      canAttack,
+      canCapture,
       canWait: true
     });
     setAttackRange(attacks);
     setGamePhase('ACTION_MENU');
-  }, []);
+  }, [waitUnit]);
 
   // Handle action selection from menu
   const selectAction = useCallback((action: 'move' | 'attack' | 'capture' | 'wait') => {
@@ -266,9 +277,7 @@ export function useGameState(): UseGameStateReturn {
         break;
 
       case 'capture':
-        // Guard: can only capture if not already moved
-        if (unitHasMoved) return;
-        // Trigger wild encounter (always succeeds if on tall grass)
+        // Trigger wild encounter (works on tall grass, even after moving to it)
         const encounter = triggerWildEncounter(selectedUnit, map, units);
         if (encounter) {
           setActionMenu(prev => ({ ...prev, isOpen: false }));
