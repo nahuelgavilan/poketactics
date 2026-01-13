@@ -184,12 +184,13 @@ export default function Game() {
           </div>
         )}
 
-        {/* Phase indicator - floating top-right */}
+        {/* Phase indicator - floating top-right, compact on mobile */}
         {gameState === 'playing' && (
-          <div className="absolute top-3 right-3 flex flex-col gap-2 items-end">
-            {/* Phase badge - enhanced */}
+          <div className="absolute top-1 right-1 md:top-3 md:right-3 flex flex-col gap-1.5 md:gap-2 items-end z-20">
+            {/* Phase badge */}
             <div className={`
-              relative px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider
+              relative px-2 py-1 md:px-3 md:py-1.5 rounded-lg
+              text-[10px] md:text-xs font-bold uppercase tracking-wide
               border backdrop-blur-sm shadow-lg
               transition-all duration-300
               ${gamePhase === 'SELECT'
@@ -209,77 +210,63 @@ export default function Game() {
                 : ''
               }
             `}>
-              {/* Pulse indicator */}
-              {(gamePhase === 'ATTACKING' || gamePhase === 'MOVING') && (
-                <span className={`
-                  absolute -left-1 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full
-                  ${gamePhase === 'ATTACKING' ? 'bg-red-500' : 'bg-blue-500'}
-                  animate-ping
-                `} />
-              )}
-              <span className="relative flex items-center gap-2">
-                {gamePhase === 'SELECT' && '⏳ Selecciona'}
-                {gamePhase === 'MOVING' && '👆 Elige destino'}
-                {gamePhase === 'ATTACKING' && '⚔️ Elige objetivo'}
-                {gamePhase === 'ACTION_MENU' && '📋 Elige acción'}
-              </span>
+              {gamePhase === 'SELECT' && 'Selecciona'}
+              {gamePhase === 'MOVING' && 'Destino'}
+              {gamePhase === 'ATTACKING' && 'Objetivo'}
+              {gamePhase === 'ACTION_MENU' && 'Acción'}
             </div>
 
-            {/* End turn button - enhanced */}
+            {/* End turn button */}
             {playerUnits.some(u => u.hasMoved) && !allMoved && (
               <button
                 onClick={triggerTurnTransition}
                 className="
-                  group flex items-center gap-2 px-3 py-2
+                  group flex items-center gap-1.5 px-2 py-1.5 md:px-3 md:py-2
                   bg-gradient-to-r from-slate-700 to-slate-800
                   hover:from-slate-600 hover:to-slate-700
                   border border-slate-600/50 hover:border-slate-500
-                  rounded-lg text-xs font-semibold
+                  rounded-lg text-[10px] md:text-xs font-semibold
                   transition-all duration-200
                   shadow-lg hover:shadow-xl hover:scale-105
                 "
               >
-                <Clock className="w-3.5 h-3.5 text-amber-400 group-hover:animate-spin" />
-                <span>Terminar turno</span>
+                <Clock className="w-3 h-3 md:w-3.5 md:h-3.5 text-amber-400" />
+                <span className="hidden md:inline">Terminar turno</span>
+                <span className="md:hidden">Fin</span>
               </button>
             )}
           </div>
         )}
 
-        {/* Help button - bottom right */}
+        {/* Help button - bottom right, smaller on mobile */}
         <button
           onClick={() => setShowHowToPlay(true)}
-          className="absolute bottom-4 right-4 p-2 bg-slate-800/80 hover:bg-slate-700 rounded-full text-slate-400 hover:text-white transition-colors"
+          className="absolute bottom-2 right-2 md:bottom-4 md:right-4 p-1.5 md:p-2 bg-slate-800/80 hover:bg-slate-700 rounded-full text-slate-400 hover:text-white transition-colors z-20"
         >
-          <HelpCircle className="w-5 h-5" />
+          <HelpCircle className="w-4 h-4 md:w-5 md:h-5" />
         </button>
 
-        {/* Mobile: Selected unit quick info - top center */}
+        {/* Mobile: Selected unit quick info - LEFT side, phase indicator on RIGHT */}
         {selectedUnit && isMobile && !actionMenu.isOpen && (
-          <div className="absolute top-2 left-1/2 -translate-x-1/2 animate-slide-up">
+          <div className="absolute top-1 left-1 animate-scale-in z-30">
             <div className={`
-              flex items-center gap-2 px-3 py-1.5
-              bg-slate-900/95 backdrop-blur-md rounded-full
-              border shadow-lg
+              flex items-center gap-1.5 px-2 py-1
+              bg-slate-900/95 backdrop-blur-md rounded-lg
+              border shadow-lg text-[11px]
               ${selectedUnit.owner === 'P1'
                 ? 'border-blue-500/50 shadow-blue-500/20'
                 : 'border-red-500/50 shadow-red-500/20'
               }
             `}>
-              <div className={`
-                w-6 h-6 rounded-full overflow-hidden
-                ${selectedUnit.owner === 'P1' ? 'bg-blue-950/80' : 'bg-red-950/80'}
-              `}>
-                <img
-                  src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${selectedUnit.template.id}.png`}
-                  className="w-full h-full object-contain"
-                  style={{ imageRendering: 'pixelated' }}
-                  alt=""
-                />
-              </div>
-              <div className="font-bold text-xs">{selectedUnit.template.name}</div>
-              <div className={`
-                px-1.5 py-0.5 rounded text-[10px] font-mono
+              <img
+                src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${selectedUnit.template.id}.png`}
+                className="w-5 h-5 object-contain"
+                style={{ imageRendering: 'pixelated' }}
+                alt=""
+              />
+              <span className="font-bold">{selectedUnit.template.name}</span>
+              <span className={`
+                px-1 py-0.5 rounded text-[9px] font-mono
                 ${selectedUnit.currentHp / selectedUnit.template.hp > 0.5
                   ? 'bg-emerald-900/80 text-emerald-400'
                   : selectedUnit.currentHp / selectedUnit.template.hp > 0.25
@@ -288,7 +275,7 @@ export default function Game() {
                 }
               `}>
                 {selectedUnit.currentHp}/{selectedUnit.template.hp}
-              </div>
+              </span>
             </div>
           </div>
         )}

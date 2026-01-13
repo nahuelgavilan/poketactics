@@ -1,5 +1,5 @@
 import { Tile } from './Tile';
-import { BOARD_WIDTH, BOARD_HEIGHT } from '../../constants/board';
+import { BOARD_WIDTH } from '../../constants/board';
 import { isInRange, isInAttackRange } from '../../utils/pathfinding';
 import type { GameMap, Unit, Position, AttackTarget, Player, VisibilityMap } from '../../types/game';
 
@@ -26,19 +26,9 @@ export function GameBoard({
   currentPlayer,
   visibility
 }: GameBoardProps) {
-  // Calculate tile size to fit viewport properly
-  // Mobile: Use viewport units to ensure board fits without scroll
-  // Desktop: fixed comfortable size with max constraint
-  const gap = isMobile ? 'gap-0.5' : 'gap-1';
-  const padding = isMobile ? 'p-1.5' : 'p-3';
-
-  // Calculate tile size using CSS calc to fit within viewport
-  // Account for: header (~56px), main padding (16px), board padding (12px), gaps
-  // Available height = 100vh - 60px header - 16px padding - 12px board padding
-  // Each tile = (available - gaps) / BOARD_HEIGHT
-  const tileSizeCalc = isMobile
-    ? `calc((100vh - 80px - ${BOARD_HEIGHT - 1} * 2px) / ${BOARD_HEIGHT})`
-    : `clamp(3rem, calc((100vh - 120px) / ${BOARD_HEIGHT}), 4.5rem)`;
+  // Styling based on device
+  const gap = isMobile ? 'gap-0.5' : 'gap-1.5';
+  const padding = isMobile ? 'p-1' : 'p-3';
 
   // Check if a unit should be visible
   const isUnitVisible = (unit: Unit): boolean => {
@@ -57,12 +47,8 @@ export function GameBoard({
         relative bg-slate-800/90 backdrop-blur-sm ${padding} rounded-xl
         shadow-2xl border border-slate-700
         select-none touch-manipulation
-        max-h-full
+        ${isMobile ? 'w-[94vw]' : 'w-auto'}
       `}
-      style={{
-        // Constrain board width based on tile size and columns
-        maxWidth: isMobile ? '95vw' : 'auto'
-      }}
     >
       {/* Subtle inner glow */}
       <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-blue-500/5 to-red-500/5 pointer-events-none" />
@@ -70,8 +56,8 @@ export function GameBoard({
       <div
         className={`grid ${gap} relative`}
         style={{
-          gridTemplateColumns: `repeat(${BOARD_WIDTH}, ${tileSizeCalc})`,
-          gridTemplateRows: `repeat(${BOARD_HEIGHT}, ${tileSizeCalc})`,
+          // Width-based: 6 equal columns that fill the container
+          gridTemplateColumns: `repeat(${BOARD_WIDTH}, 1fr)`,
         }}
       >
         {map.map((row, y) =>

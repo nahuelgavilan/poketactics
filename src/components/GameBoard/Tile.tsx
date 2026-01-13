@@ -45,7 +45,7 @@ export function Tile({
         onClick();
       }}
       className={`
-        w-full h-full rounded-md border-b-2 relative cursor-pointer
+        aspect-square rounded-md border-b-2 relative cursor-pointer
         transition-all duration-200 overflow-hidden
         ${getTileColor(terrain)}
         ${canMove ? 'ring-2 ring-blue-400/70 z-10 scale-[0.94] shadow-md shadow-blue-500/20' : ''}
