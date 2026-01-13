@@ -378,13 +378,14 @@ export function useGameState(): UseGameStateReturn {
         const attacks = calculateAttackRange(selectedUnit, units);
         const isOnTallGrass = map[selectedUnit.y][selectedUnit.x] === TERRAIN.TALL_GRASS;
 
-        if (attacks.length > 0) {
-          // Show attack targets directly (fluid)
+        // If on tall grass, always show menu (can capture + maybe attack)
+        if (isOnTallGrass) {
+          setAttackRange(attacks);
+          openActionMenu(selectedUnit, units, map, true);
+        } else if (attacks.length > 0) {
+          // Show attack targets directly
           setAttackRange(attacks);
           setGamePhase('ATTACKING');
-        } else if (isOnTallGrass) {
-          // Can capture, show menu
-          openActionMenu(selectedUnit, units, map, true);
         } else {
           // Nothing to do, wait
           waitUnit(selectedUnit.uid, units);
@@ -405,13 +406,14 @@ export function useGameState(): UseGameStateReturn {
         const attacks = calculateAttackRange(movedUnit, nextUnits);
         const isOnTallGrass = map[y][x] === TERRAIN.TALL_GRASS;
 
-        if (attacks.length > 0) {
+        // If on tall grass, always show menu (can capture + maybe attack)
+        if (isOnTallGrass) {
+          setAttackRange(attacks);
+          openActionMenu(movedUnit, nextUnits, map, true);
+        } else if (attacks.length > 0) {
           // Show attack targets directly
           setAttackRange(attacks);
           setGamePhase('ATTACKING');
-        } else if (isOnTallGrass) {
-          // Can capture, show menu
-          openActionMenu(movedUnit, nextUnits, map, true);
         } else {
           // No actions, auto-wait
           waitUnit(movedUnit.uid, nextUnits);

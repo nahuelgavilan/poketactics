@@ -10,8 +10,8 @@ interface HeaderProps {
 
 export function Header({ currentPlayer, onRestart, onMenu }: HeaderProps) {
   return (
-    <header className="w-full bg-slate-800/95 backdrop-blur-sm border-b border-slate-700 shadow-lg z-40 safe-area-pt">
-      <div className="max-w-5xl mx-auto px-3 py-2.5 md:px-4 md:py-4 flex justify-between items-center">
+    <header className="w-full bg-slate-800/95 backdrop-blur-sm border-b border-slate-700 shadow-lg z-40 safe-area-pt shrink-0">
+      <div className="max-w-5xl mx-auto px-2 py-1.5 md:px-4 md:py-3 flex justify-between items-center">
         {/* Logo */}
         <div className="flex items-center gap-2">
           {onMenu && (
@@ -24,12 +24,12 @@ export function Header({ currentPlayer, onRestart, onMenu }: HeaderProps) {
             </button>
           )}
           <h1 className="text-base md:text-xl font-black italic tracking-tight flex items-center gap-1.5 md:gap-2">
-            <Swords className="w-5 h-5 md:w-6 md:h-6 text-red-500" />
+            <Swords className="w-5 h-5 md:w-6 md:h-6 text-amber-500" />
             <span className="hidden xs:inline">
               <span className="text-white">POKÉ</span>
-              <span className="text-yellow-400">WAR</span>
+              <span className="text-amber-400">TACTICS</span>
             </span>
-            <span className="xs:hidden text-white">PW</span>
+            <span className="xs:hidden text-amber-400">PT</span>
           </h1>
         </div>
 

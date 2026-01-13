@@ -3,7 +3,6 @@ import { useGameState, useVision } from './hooks';
 import {
   Header,
   GameBoard,
-  Sidebar,
   BattleCinematic,
   CaptureModal,
   TurnTransition,
@@ -15,7 +14,7 @@ import {
 import { CaptureMinigame } from './components/CaptureMinigame';
 import { StartScreen } from './components/StartScreen';
 import { HowToPlay } from './components/HowToPlay';
-import { MobileActionBar } from './components/MobileActionBar';
+import { Clock, HelpCircle } from 'lucide-react';
 
 export default function Game() {
   const {
@@ -23,13 +22,13 @@ export default function Game() {
     units,
     currentPlayer,
     gameState,
+    gamePhase,
     selectedUnit,
     moveRange,
     attackRange,
     battleData,
     captureData,
     evolutionData,
-    logs,
     winner,
     actionMenu,
     exploredP1,
@@ -55,7 +54,7 @@ export default function Game() {
   // Get the correct explored state based on current player
   const currentExplored = currentPlayer === 'P1' ? exploredP1 : exploredP2;
 
-  // Calculate visibility using fog of war (pass map for terrain vision bonuses)
+  // Calculate visibility using fog of war
   const visibility = useVision(units, currentPlayer, currentExplored, map);
 
   // Update explored tiles when visibility changes
@@ -72,11 +71,6 @@ export default function Game() {
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
-
-  // Handle start game from menu
-  const handleStartGame = () => {
-    initGame();
-  };
 
   // Show start screen
   if (gameState === 'menu') {
@@ -95,7 +89,7 @@ export default function Game() {
     return (
       <>
         <StartScreen
-          onStartGame={handleStartGame}
+          onStartGame={initGame}
           onHowToPlay={() => setShowHowToPlay(true)}
           onMultiplayer={() => setShowMultiplayer(true)}
         />
@@ -104,16 +98,216 @@ export default function Game() {
     );
   }
 
+  // Check if all player units have moved
+  const playerUnits = units.filter(u => u.owner === currentPlayer);
+  const allMoved = playerUnits.length > 0 && playerUnits.every(u => u.hasMoved);
+
   return (
-    <div className="min-h-screen min-h-[100dvh] bg-slate-900 text-slate-100 font-sans flex flex-col select-none overflow-hidden">
-      {/* Header */}
+    <div className="fixed inset-0 bg-slate-900 text-slate-100 flex flex-col select-none overflow-hidden">
+      {/* Header - compact */}
       <Header
         currentPlayer={currentPlayer}
         onRestart={initGame}
         onMenu={() => window.location.reload()}
       />
 
-      {/* Overlays */}
+      {/* Main game area - fills remaining space, centers board, no scroll */}
+      <main className="flex-1 min-h-0 relative flex items-center justify-center p-1 md:p-3 overflow-hidden">
+        {/* Game Board */}
+        <GameBoard
+          map={map}
+          units={units}
+          selectedUnit={selectedUnit}
+          moveRange={moveRange}
+          attackRange={attackRange}
+          onTileClick={handleTileClick}
+          isMobile={isMobile}
+          currentPlayer={currentPlayer}
+          visibility={visibility}
+        />
+
+        {/* Selected Unit Info - floating top-left on desktop */}
+        {selectedUnit && !isMobile && (
+          <div className="absolute top-3 left-3 animate-scale-in">
+            <div className={`
+              relative bg-slate-900/95 backdrop-blur-md rounded-xl p-3
+              border shadow-2xl
+              ${selectedUnit.owner === 'P1'
+                ? 'border-blue-500/50 shadow-blue-500/20'
+                : 'border-red-500/50 shadow-red-500/20'
+              }
+            `}>
+              {/* Glow effect */}
+              <div className={`
+                absolute inset-0 rounded-xl blur-xl opacity-30
+                ${selectedUnit.owner === 'P1' ? 'bg-blue-500' : 'bg-red-500'}
+              `} />
+
+              <div className="relative flex items-center gap-3">
+                {/* Pokemon sprite mini */}
+                <div className={`
+                  w-10 h-10 rounded-lg overflow-hidden
+                  ${selectedUnit.owner === 'P1' ? 'bg-blue-950/80' : 'bg-red-950/80'}
+                `}>
+                  <img
+                    src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/${selectedUnit.template.id}.gif`}
+                    className={`w-full h-full object-contain ${selectedUnit.owner === 'P1' ? 'scale-x-[-1]' : ''}`}
+                    style={{ imageRendering: 'pixelated' }}
+                    alt=""
+                  />
+                </div>
+
+                <div>
+                  <div className="font-bold text-sm tracking-wide">{selectedUnit.template.name}</div>
+                  <div className="flex gap-2 mt-1">
+                    <span className={`
+                      px-1.5 py-0.5 rounded text-[10px] font-mono
+                      ${selectedUnit.currentHp / selectedUnit.template.hp > 0.5
+                        ? 'bg-emerald-900/50 text-emerald-400'
+                        : selectedUnit.currentHp / selectedUnit.template.hp > 0.25
+                        ? 'bg-amber-900/50 text-amber-400'
+                        : 'bg-red-900/50 text-red-400'
+                      }
+                    `}>
+                      HP {selectedUnit.currentHp}/{selectedUnit.template.hp}
+                    </span>
+                    <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-slate-800 text-slate-400">
+                      ATK {selectedUnit.template.atk}
+                    </span>
+                    <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-slate-800 text-slate-400">
+                      MOV {selectedUnit.template.mov}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Phase indicator - floating top-right */}
+        {gameState === 'playing' && (
+          <div className="absolute top-3 right-3 flex flex-col gap-2 items-end">
+            {/* Phase badge - enhanced */}
+            <div className={`
+              relative px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider
+              border backdrop-blur-sm shadow-lg
+              transition-all duration-300
+              ${gamePhase === 'SELECT'
+                ? 'bg-slate-800/90 border-slate-600 text-slate-300'
+                : ''
+              }
+              ${gamePhase === 'MOVING'
+                ? 'bg-blue-900/90 border-blue-500/50 text-blue-300 shadow-blue-500/20'
+                : ''
+              }
+              ${gamePhase === 'ATTACKING'
+                ? 'bg-red-900/90 border-red-500/50 text-red-300 shadow-red-500/30'
+                : ''
+              }
+              ${gamePhase === 'ACTION_MENU'
+                ? 'bg-amber-900/90 border-amber-500/50 text-amber-300 shadow-amber-500/20'
+                : ''
+              }
+            `}>
+              {/* Pulse indicator */}
+              {(gamePhase === 'ATTACKING' || gamePhase === 'MOVING') && (
+                <span className={`
+                  absolute -left-1 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full
+                  ${gamePhase === 'ATTACKING' ? 'bg-red-500' : 'bg-blue-500'}
+                  animate-ping
+                `} />
+              )}
+              <span className="relative flex items-center gap-2">
+                {gamePhase === 'SELECT' && '⏳ Selecciona'}
+                {gamePhase === 'MOVING' && '👆 Elige destino'}
+                {gamePhase === 'ATTACKING' && '⚔️ Elige objetivo'}
+                {gamePhase === 'ACTION_MENU' && '📋 Elige acción'}
+              </span>
+            </div>
+
+            {/* End turn button - enhanced */}
+            {playerUnits.some(u => u.hasMoved) && !allMoved && (
+              <button
+                onClick={triggerTurnTransition}
+                className="
+                  group flex items-center gap-2 px-3 py-2
+                  bg-gradient-to-r from-slate-700 to-slate-800
+                  hover:from-slate-600 hover:to-slate-700
+                  border border-slate-600/50 hover:border-slate-500
+                  rounded-lg text-xs font-semibold
+                  transition-all duration-200
+                  shadow-lg hover:shadow-xl hover:scale-105
+                "
+              >
+                <Clock className="w-3.5 h-3.5 text-amber-400 group-hover:animate-spin" />
+                <span>Terminar turno</span>
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Help button - bottom right */}
+        <button
+          onClick={() => setShowHowToPlay(true)}
+          className="absolute bottom-4 right-4 p-2 bg-slate-800/80 hover:bg-slate-700 rounded-full text-slate-400 hover:text-white transition-colors"
+        >
+          <HelpCircle className="w-5 h-5" />
+        </button>
+
+        {/* Mobile: Selected unit quick info - top center */}
+        {selectedUnit && isMobile && !actionMenu.isOpen && (
+          <div className="absolute top-2 left-1/2 -translate-x-1/2 animate-slide-up">
+            <div className={`
+              flex items-center gap-2 px-3 py-1.5
+              bg-slate-900/95 backdrop-blur-md rounded-full
+              border shadow-lg
+              ${selectedUnit.owner === 'P1'
+                ? 'border-blue-500/50 shadow-blue-500/20'
+                : 'border-red-500/50 shadow-red-500/20'
+              }
+            `}>
+              <div className={`
+                w-6 h-6 rounded-full overflow-hidden
+                ${selectedUnit.owner === 'P1' ? 'bg-blue-950/80' : 'bg-red-950/80'}
+              `}>
+                <img
+                  src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${selectedUnit.template.id}.png`}
+                  className="w-full h-full object-contain"
+                  style={{ imageRendering: 'pixelated' }}
+                  alt=""
+                />
+              </div>
+              <div className="font-bold text-xs">{selectedUnit.template.name}</div>
+              <div className={`
+                px-1.5 py-0.5 rounded text-[10px] font-mono
+                ${selectedUnit.currentHp / selectedUnit.template.hp > 0.5
+                  ? 'bg-emerald-900/80 text-emerald-400'
+                  : selectedUnit.currentHp / selectedUnit.template.hp > 0.25
+                  ? 'bg-amber-900/80 text-amber-400'
+                  : 'bg-red-900/80 text-red-400'
+                }
+              `}>
+                {selectedUnit.currentHp}/{selectedUnit.template.hp}
+              </div>
+            </div>
+          </div>
+        )}
+      </main>
+
+      {/* Action Menu - centered floating, above board */}
+      {gameState === 'playing' && (
+        <ActionMenu
+          state={actionMenu}
+          selectedUnit={selectedUnit}
+          onMove={() => selectAction('move')}
+          onAttack={() => selectAction('attack')}
+          onCapture={() => selectAction('capture')}
+          onWait={() => selectAction('wait')}
+          onCancel={cancelAction}
+        />
+      )}
+
+      {/* Overlays - full screen modals */}
       {gameState === 'transition' && (
         <TurnTransition
           currentPlayer={currentPlayer}
@@ -148,76 +342,30 @@ export default function Game() {
 
       {showHowToPlay && <HowToPlay onClose={() => setShowHowToPlay(false)} />}
 
-      {/* Main Game Area */}
-      <main className="flex-1 w-full max-w-6xl mx-auto p-3 md:p-4 flex flex-col md:flex-row gap-4 md:gap-6 items-center md:items-start justify-start md:justify-center overflow-auto">
-        {/* Game Board - Mobile optimized */}
-        <div className="w-full md:w-auto flex justify-center">
-          <GameBoard
-            map={map}
-            units={units}
-            selectedUnit={selectedUnit}
-            moveRange={moveRange}
-            attackRange={attackRange}
-            onTileClick={handleTileClick}
-            isMobile={isMobile}
-            currentPlayer={currentPlayer}
-            visibility={visibility}
-          />
-        </div>
-
-        {/* Sidebar - Hidden on mobile, shown on desktop */}
-        <div className="hidden md:block">
-          <Sidebar
-            selectedUnit={selectedUnit}
-            logs={logs}
-            onEndTurn={triggerTurnTransition}
-          />
-        </div>
-      </main>
-
-      {/* Mobile Action Bar - Only on mobile when no action menu */}
-      {isMobile && !actionMenu.isOpen && (
-        <MobileActionBar
-          selectedUnit={selectedUnit}
-          canAttack={attackRange.length > 0}
-          onEndTurn={triggerTurnTransition}
-          onHelp={() => setShowHowToPlay(true)}
-        />
-      )}
-
-      {/* Action Menu - Shows when unit is selected */}
-      {gameState === 'playing' && (
-        <ActionMenu
-          state={actionMenu}
-          selectedUnit={selectedUnit}
-          onMove={() => selectAction('move')}
-          onAttack={() => selectAction('attack')}
-          onCapture={() => selectAction('capture')}
-          onWait={() => selectAction('wait')}
-          onCancel={cancelAction}
-        />
-      )}
-
-      {/* Custom styles for animations */}
+      {/* Global styles */}
       <style>{`
         @keyframes shake {
           0%, 100% { transform: translateX(0); }
-          10%, 30%, 50%, 70%, 90% { transform: translateX(-10px); }
-          20%, 40%, 60%, 80% { transform: translateX(10px); }
+          25% { transform: translateX(-5px); }
+          75% { transform: translateX(5px); }
         }
 
-        @keyframes float {
-          0%, 100% { transform: translateY(0) rotate(0deg); }
-          50% { transform: translateY(-20px) rotate(3deg); }
+        .animate-in {
+          animation: fadeIn 0.2s ease-out;
         }
 
-        @keyframes pulse-glow {
-          0%, 100% { box-shadow: 0 0 5px currentColor; }
-          50% { box-shadow: 0 0 20px currentColor, 0 0 30px currentColor; }
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(-10px); }
+          to { opacity: 1; transform: translateY(0); }
         }
 
-        .animate-pulse-glow {
-          animation: pulse-glow 2s ease-in-out infinite;
+        .slide-in-from-left {
+          animation: slideInLeft 0.2s ease-out;
+        }
+
+        @keyframes slideInLeft {
+          from { opacity: 0; transform: translateX(-20px); }
+          to { opacity: 1; transform: translateX(0); }
         }
       `}</style>
     </div>

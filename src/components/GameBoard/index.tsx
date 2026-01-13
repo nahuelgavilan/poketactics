@@ -1,5 +1,5 @@
 import { Tile } from './Tile';
-import { BOARD_WIDTH } from '../../constants/board';
+import { BOARD_WIDTH, BOARD_HEIGHT } from '../../constants/board';
 import { isInRange, isInAttackRange } from '../../utils/pathfinding';
 import type { GameMap, Unit, Position, AttackTarget, Player, VisibilityMap } from '../../types/game';
 
@@ -26,12 +26,19 @@ export function GameBoard({
   currentPlayer,
   visibility
 }: GameBoardProps) {
-  // Calculate tile size based on viewport
-  // Mobile: fit 6 columns with gaps in ~95vw
-  // Desktop: fixed comfortable size
-  const tileSize = isMobile ? 'minmax(2.8rem, 1fr)' : 'minmax(3.5rem, 5rem)';
-  const gap = isMobile ? 'gap-1' : 'gap-1.5';
-  const padding = isMobile ? 'p-2' : 'p-4';
+  // Calculate tile size to fit viewport properly
+  // Mobile: Use viewport units to ensure board fits without scroll
+  // Desktop: fixed comfortable size with max constraint
+  const gap = isMobile ? 'gap-0.5' : 'gap-1';
+  const padding = isMobile ? 'p-1.5' : 'p-3';
+
+  // Calculate tile size using CSS calc to fit within viewport
+  // Account for: header (~56px), main padding (16px), board padding (12px), gaps
+  // Available height = 100vh - 60px header - 16px padding - 12px board padding
+  // Each tile = (available - gaps) / BOARD_HEIGHT
+  const tileSizeCalc = isMobile
+    ? `calc((100vh - 80px - ${BOARD_HEIGHT - 1} * 2px) / ${BOARD_HEIGHT})`
+    : `clamp(3rem, calc((100vh - 120px) / ${BOARD_HEIGHT}), 4.5rem)`;
 
   // Check if a unit should be visible
   const isUnitVisible = (unit: Unit): boolean => {
@@ -47,19 +54,24 @@ export function GameBoard({
   return (
     <div
       className={`
-        relative bg-slate-800/90 backdrop-blur-sm ${padding} rounded-2xl
+        relative bg-slate-800/90 backdrop-blur-sm ${padding} rounded-xl
         shadow-2xl border border-slate-700
         select-none touch-manipulation
-        ${isMobile ? 'w-full max-w-[95vw]' : ''}
+        max-h-full
       `}
+      style={{
+        // Constrain board width based on tile size and columns
+        maxWidth: isMobile ? '95vw' : 'auto'
+      }}
     >
       {/* Subtle inner glow */}
-      <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-blue-500/5 to-red-500/5 pointer-events-none" />
+      <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-blue-500/5 to-red-500/5 pointer-events-none" />
 
       <div
         className={`grid ${gap} relative`}
         style={{
-          gridTemplateColumns: `repeat(${BOARD_WIDTH}, ${tileSize})`,
+          gridTemplateColumns: `repeat(${BOARD_WIDTH}, ${tileSizeCalc})`,
+          gridTemplateRows: `repeat(${BOARD_HEIGHT}, ${tileSizeCalc})`,
         }}
       >
         {map.map((row, y) =>

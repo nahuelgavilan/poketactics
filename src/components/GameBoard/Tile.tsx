@@ -45,12 +45,12 @@ export function Tile({
         onClick();
       }}
       className={`
-        aspect-square rounded-lg border-b-4 relative cursor-pointer
-        transition-all duration-300 overflow-hidden
+        w-full h-full rounded-md border-b-2 relative cursor-pointer
+        transition-all duration-200 overflow-hidden
         ${getTileColor(terrain)}
-        ${canMove ? 'ring-[3px] ring-blue-400/70 z-10 scale-[0.92] shadow-lg shadow-blue-500/20' : ''}
-        ${canAttack ? 'ring-[3px] ring-red-500/80 z-10 scale-[0.92] bg-red-900/50 shadow-lg shadow-red-500/30' : ''}
-        ${isSelected ? 'ring-2 ring-white z-20 scale-[0.95]' : ''}
+        ${canMove ? 'ring-2 ring-blue-400/70 z-10 scale-[0.94] shadow-md shadow-blue-500/20' : ''}
+        ${canAttack ? 'ring-2 ring-red-500/80 z-10 scale-[0.94] bg-red-900/50 shadow-md shadow-red-500/30' : ''}
+        ${isSelected ? 'ring-2 ring-white z-20 scale-[0.96]' : ''}
         ${isMobile ? 'active:scale-90 active:brightness-125' : 'hover:brightness-110'}
         ${isUnexplored ? 'grayscale brightness-[0.3]' : isInFog ? 'grayscale-[70%] brightness-[0.6]' : ''}
       `}
@@ -78,45 +78,85 @@ export function Tile({
         </div>
       )}
 
-      {/* Move indicator pulse */}
+      {/* Move indicator - animated gradient */}
       {canMove && (
-        <div className="absolute inset-0 bg-blue-400/20 animate-pulse pointer-events-none" />
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute inset-0 bg-blue-400/25 animate-pulse" />
+          <div className="absolute inset-0 bg-gradient-to-t from-blue-400/40 to-transparent" />
+          <div
+            className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-blue-400 shadow-lg shadow-blue-400/50"
+            style={{ animation: 'bounce 1s infinite' }}
+          />
+        </div>
       )}
 
-      {/* Attack indicator pulse */}
+      {/* Attack indicator - danger pulse */}
       {canAttack && (
-        <div className="absolute inset-0 bg-red-500/20 animate-pulse pointer-events-none" />
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute inset-0 bg-red-500/25 animate-pulse" />
+          <div className="absolute inset-0 bg-gradient-to-t from-red-500/40 to-transparent" />
+          <div className="absolute inset-0 border-2 border-red-500/50 rounded-md animate-ping opacity-30" />
+        </div>
       )}
 
       {/* Unit */}
       {unit && (
-        <div className={`absolute inset-0 flex items-center justify-center z-20 ${unit.hasMoved ? 'grayscale opacity-60' : ''}`}>
-          <img
-            src={getIconSprite(unit.template.id)}
-            className={`
-              w-[85%] h-[85%] object-contain drop-shadow-md
-              ${unit.owner === 'P1' ? 'scale-x-[-1]' : ''}
-              ${isSelected ? 'animate-bounce' : ''}
-            `}
-            style={{ imageRendering: 'pixelated' }}
-            draggable="false"
-            alt={unit.template.name}
-          />
-          {/* HP bar */}
-          <div className={`absolute top-0.5 ${isMobile ? 'w-6' : 'w-8'} h-1 bg-black/50 rounded-full overflow-hidden backdrop-blur-sm`}>
+        <div className={`
+          absolute inset-0 flex items-center justify-center z-20
+          transition-all duration-200
+          ${unit.hasMoved ? 'grayscale opacity-50 scale-90' : ''}
+        `}>
+          {/* Unit sprite with glow */}
+          <div className={`
+            relative w-[85%] h-[85%]
+            ${isSelected ? 'animate-bounce' : ''}
+            ${!unit.hasMoved ? 'drop-shadow-lg' : 'drop-shadow-sm'}
+          `}>
+            {/* Glow behind unit */}
+            {!unit.hasMoved && (
+              <div className={`
+                absolute inset-0 rounded-full blur-md opacity-40
+                ${unit.owner === 'P1' ? 'bg-blue-500' : 'bg-red-500'}
+              `} />
+            )}
+            <img
+              src={getIconSprite(unit.template.id)}
+              className={`
+                relative w-full h-full object-contain
+                ${unit.owner === 'P1' ? 'scale-x-[-1]' : ''}
+              `}
+              style={{ imageRendering: 'pixelated' }}
+              draggable="false"
+              alt={unit.template.name}
+            />
+          </div>
+
+          {/* HP bar - sleeker design */}
+          <div className={`
+            absolute top-0.5 ${isMobile ? 'w-7' : 'w-9'} h-1.5
+            bg-black/60 rounded-full overflow-hidden
+            border border-white/10 shadow-inner
+          `}>
             <div
-              className={`h-full transition-all duration-300 ${
-                unit.currentHp / unit.template.hp > 0.5
-                  ? unit.owner === 'P1' ? 'bg-blue-400' : 'bg-red-500'
+              className={`
+                h-full transition-all duration-500 ease-out
+                ${unit.currentHp / unit.template.hp > 0.5
+                  ? unit.owner === 'P1' ? 'bg-gradient-to-r from-blue-400 to-cyan-400' : 'bg-gradient-to-r from-red-500 to-orange-400'
                   : unit.currentHp / unit.template.hp > 0.25
-                  ? 'bg-yellow-400'
-                  : 'bg-red-600 animate-pulse'
-              }`}
+                  ? 'bg-gradient-to-r from-yellow-400 to-amber-500'
+                  : 'bg-gradient-to-r from-red-600 to-red-500 animate-pulse'
+                }
+              `}
               style={{ width: `${(unit.currentHp / unit.template.hp) * 100}%` }}
             />
           </div>
-          {/* Owner indicator glow */}
-          <div className={`absolute -bottom-0.5 ${isMobile ? 'w-3' : 'w-4'} h-1.5 rounded-full blur-[2px] ${unit.owner === 'P1' ? 'bg-blue-500' : 'bg-red-500'}`} />
+
+          {/* Owner indicator - subtle bottom glow */}
+          <div className={`
+            absolute -bottom-0.5 ${isMobile ? 'w-4' : 'w-5'} h-1
+            rounded-full opacity-70
+            ${unit.owner === 'P1' ? 'bg-blue-500 shadow-lg shadow-blue-500/50' : 'bg-red-500 shadow-lg shadow-red-500/50'}
+          `} />
         </div>
       )}
     </div>
