@@ -15,9 +15,10 @@
  * don't trigger version bumps unless they include breaking changes.
  */
 
-export const VERSION = '1.9.1';
+export const VERSION = '1.10.0';
 
 // Version history:
+// 1.10.0 - Terrain info panel (click empty tile), updated tutorial with Pikachu and action menu graphics
 // 1.9.1 - Distinctive terrain visuals: grass blades, tree canopies, mountain peaks, water waves, healing cross
 // 1.9.0 - Fire Emblem style contextual action menu: appears next to unit with notch pointer, smart positioning
 // 1.8.1 - Fix: click other tiles during ACTION_MENU to change destination, fix arrow direction

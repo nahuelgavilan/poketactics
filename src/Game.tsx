@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useGameState, useVision } from './hooks';
 import {
   Header,
@@ -8,12 +8,14 @@ import {
   TurnTransition,
   VictoryScreen,
   EvolutionCinematic,
-  MultiplayerLobby
+  MultiplayerLobby,
+  TerrainInfoPanel
 } from './components';
 import { CaptureMinigame } from './components/CaptureMinigame';
 import { StartScreen } from './components/StartScreen';
 import { HowToPlay } from './components/HowToPlay';
 import { Clock, HelpCircle } from 'lucide-react';
+import type { Position, TerrainType } from './types/game';
 
 export default function Game() {
   const {
@@ -57,6 +59,32 @@ export default function Game() {
   const [showHowToPlay, setShowHowToPlay] = useState(false);
   const [showMultiplayer, setShowMultiplayer] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [selectedTerrain, setSelectedTerrain] = useState<{ x: number; y: number; terrain: TerrainType } | null>(null);
+
+  // Wrapper for tile click that also handles terrain info
+  const handleTileClickWithTerrain = useCallback((x: number, y: number) => {
+    // Check if there's a unit at this position
+    const unitAtPosition = units.find(u => u.x === x && u.y === y);
+
+    // If clicking empty tile while in SELECT phase and no unit selected, show terrain info
+    if (!unitAtPosition && gamePhase === 'SELECT' && !selectedUnit && map[y] && map[y][x] !== undefined) {
+      setSelectedTerrain({ x, y, terrain: map[y][x] });
+      return;
+    }
+
+    // Clear terrain selection when doing any game action
+    setSelectedTerrain(null);
+
+    // Pass to game logic
+    handleTileClick(x, y);
+  }, [units, gamePhase, selectedUnit, map, handleTileClick]);
+
+  // Clear terrain selection when game state changes
+  useEffect(() => {
+    if (selectedUnit || gamePhase !== 'SELECT') {
+      setSelectedTerrain(null);
+    }
+  }, [selectedUnit, gamePhase]);
 
   // In multiplayer, always show fog from your own perspective (myPlayer)
   // In local game, show fog based on current player
@@ -146,7 +174,7 @@ export default function Game() {
           moveRange={moveRange}
           attackRange={attackRange}
           pendingPosition={pendingPosition}
-          onTileClick={handleTileClick}
+          onTileClick={handleTileClickWithTerrain}
           isMobile={isMobile}
           currentPlayer={fogPlayer}
           visibility={visibility}
@@ -350,6 +378,14 @@ export default function Game() {
               </div>
             </div>
           </div>
+        )}
+
+        {/* Terrain Info Panel - shows when clicking empty tile */}
+        {selectedTerrain && gameState === 'playing' && !selectedUnit && (
+          <TerrainInfoPanel
+            terrain={selectedTerrain.terrain}
+            onClose={() => setSelectedTerrain(null)}
+          />
         )}
 
       </main>

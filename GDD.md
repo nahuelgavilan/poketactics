@@ -133,6 +133,15 @@ Each Pokémon has base stats and typing:
 | Base | +10% | 1 | None | Spawn points |
 | Pokémon Center | +15% | 1 | None | Heals 20% HP per turn |
 
+### Terrain Info Panel
+
+Clicking an **empty tile** (no unit) during the SELECT phase shows a **Terrain Info Panel** at the bottom of the screen with:
+- Terrain name and icon
+- Defense bonus (%)
+- Movement cost
+- Special properties (capture chance, healing, vision bonus)
+- Type attack bonuses
+
 ### Terrain Visual Distinctions
 
 Each terrain has unique visual elements (no icons, CSS-only decorations):
@@ -720,6 +729,7 @@ This project uses **Semantic Versioning** (semver) with **Conventional Commits**
 
 | Version | Changes |
 |---------|---------|
+| **1.10.0** | Terrain info panel (click empty tile to see stats), updated tutorial with Pikachu and action menu graphics |
 | **1.9.1** | Distinctive terrain visuals: grass blades, tree canopies, mountain peaks, water waves, healing cross |
 | **1.9.0** | Fire Emblem style contextual action menu: appears next to unit with notch pointer, smart positioning |
 | **1.8.1** | Fix: click other tiles during ACTION_MENU to change destination, fix arrow direction |
