@@ -31,6 +31,7 @@ interface UseGameStateReturn {
   selectedUnit: Unit | null;
   moveRange: Position[];
   attackRange: AttackTarget[];
+  pendingPosition: Position | null;
   battleData: BattleData | null;
   captureData: CaptureData | null;
   evolutionData: EvolutionData | null;
@@ -60,6 +61,7 @@ interface UseGameStateReturn {
   // Action menu
   selectAttack: () => void;
   selectWait: () => void;
+  cancelAction: () => void;
 }
 
 // State received from server in multiplayer
@@ -103,6 +105,9 @@ export function useGameState(): UseGameStateReturn {
   // Track if unit has moved this action (for action menu state)
   const [unitHasMoved, setUnitHasMoved] = useState(false);
 
+  // Pending position - where unit WILL move (preview, not confirmed yet)
+  const [pendingPosition, setPendingPosition] = useState<Position | null>(null);
+
   // Multiplayer state - which player "I" am
   const [myPlayer, setMyPlayer] = useState<Player | null>(null);
   const [isMultiplayer, setIsMultiplayer] = useState(false);
@@ -118,6 +123,7 @@ export function useGameState(): UseGameStateReturn {
     setSelectedUnit(null);
     setMoveRange([]);
     setAttackRange([]);
+    setPendingPosition(null);
     setGamePhase('SELECT');
     setUnitHasMoved(false);
   }, []);
@@ -338,35 +344,24 @@ export function useGameState(): UseGameStateReturn {
         return;
       }
 
-      // Click on current position: stay in place, show action menu
-      if (x === selectedUnit.x && y === selectedUnit.y) {
-        setMoveRange([]);
-        setUnitHasMoved(true);
+      // Click on current position OR valid move destination: show preview with action menu
+      const isCurrentPosition = x === selectedUnit.x && y === selectedUnit.y;
+      const isValidDestination = moveRange.some(m => m.x === x && m.y === y);
 
-        // Calculate available attacks for action menu
-        const attacks = calculateAttackRange(selectedUnit, units);
+      if (isCurrentPosition || isValidDestination) {
+        // Set pending position (where unit WILL move, not confirmed yet)
+        setPendingPosition({ x, y });
+
+        // Create virtual unit at pending position to calculate attack range
+        const virtualUnit = { ...selectedUnit, x, y };
+
+        // Calculate attacks from the pending position (not current!)
+        const attacks = calculateAttackRange(virtualUnit, units);
         setAttackRange(attacks);
-        setGamePhase('ACTION_MENU');
-        return;
-      }
 
-      // Click on valid move destination
-      if (moveRange.some(m => m.x === x && m.y === y)) {
-        const movedUnit = { ...selectedUnit, x, y };
-        const nextUnits = units.map(u => u.uid === selectedUnit.uid ? movedUnit : u);
-        setUnits(nextUnits);
-        setSelectedUnit(movedUnit);
-        setMoveRange([]);
-        setUnitHasMoved(true);
+        // Keep moveRange visible during ACTION_MENU for context
+        // Don't clear it yet - setMoveRange([]);
 
-        // Try random encounter on tall grass (30% chance)
-        if (tryRandomEncounter(movedUnit, nextUnits, map)) {
-          return; // Encounter triggered, will continue after minigame
-        }
-
-        // Calculate available attacks for action menu
-        const attacks = calculateAttackRange(movedUnit, nextUnits);
-        setAttackRange(attacks);
         setGamePhase('ACTION_MENU');
         return;
       }
@@ -598,17 +593,52 @@ export function useGameState(): UseGameStateReturn {
     }
   }, []);
 
-  // Action menu: select attack
+  // Action menu: select attack - move unit to pending position, then attack
   const selectAttack = useCallback(() => {
-    if (!selectedUnit || attackRange.length === 0) return;
-    setGamePhase('ATTACKING');
-  }, [selectedUnit, attackRange]);
+    if (!selectedUnit || !pendingPosition || attackRange.length === 0) return;
 
-  // Action menu: select wait
+    // Move unit to pending position
+    const movedUnit = { ...selectedUnit, x: pendingPosition.x, y: pendingPosition.y };
+    const nextUnits = units.map(u => u.uid === selectedUnit.uid ? movedUnit : u);
+    setUnits(nextUnits);
+    setSelectedUnit(movedUnit);
+    setMoveRange([]);
+    setPendingPosition(null);
+    setUnitHasMoved(true);
+
+    // Recalculate attack range from new position (should be same, but just in case)
+    const attacks = calculateAttackRange(movedUnit, nextUnits);
+    setAttackRange(attacks);
+
+    setGamePhase('ATTACKING');
+  }, [selectedUnit, pendingPosition, attackRange, units]);
+
+  // Action menu: select wait - move unit to pending position and end turn
   const selectWait = useCallback(() => {
-    if (!selectedUnit) return;
-    waitUnit(selectedUnit.uid, units);
-  }, [selectedUnit, units, waitUnit]);
+    if (!selectedUnit || !pendingPosition) return;
+
+    // Move unit to pending position
+    const movedUnit = { ...selectedUnit, x: pendingPosition.x, y: pendingPosition.y };
+    const nextUnits = units.map(u => u.uid === selectedUnit.uid ? movedUnit : u);
+    setUnits(nextUnits);
+    setPendingPosition(null);
+    setMoveRange([]);
+
+    // Try random encounter on tall grass (30% chance)
+    if (tryRandomEncounter(movedUnit, nextUnits, map)) {
+      return; // Encounter triggered, will continue after minigame
+    }
+
+    // Mark unit as done
+    waitUnit(movedUnit.uid, nextUnits);
+  }, [selectedUnit, pendingPosition, units, map, tryRandomEncounter, waitUnit]);
+
+  // Cancel action - go back to MOVING phase
+  const cancelAction = useCallback(() => {
+    setPendingPosition(null);
+    setAttackRange([]);
+    setGamePhase('MOVING');
+  }, []);
 
   return {
     map,
@@ -620,6 +650,7 @@ export function useGameState(): UseGameStateReturn {
     selectedUnit,
     moveRange,
     attackRange,
+    pendingPosition,
     battleData,
     captureData,
     evolutionData,
@@ -648,6 +679,7 @@ export function useGameState(): UseGameStateReturn {
     setMultiplayerState,
     // Action menu
     selectAttack,
-    selectWait
+    selectWait,
+    cancelAction
   };
 }

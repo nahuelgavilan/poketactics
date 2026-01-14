@@ -36,6 +36,8 @@ export default function Game() {
     myPlayer,
     isMultiplayer,
     isMyTurn,
+    // Preview state
+    pendingPosition,
     // Actions
     initGame,
     handleTileClick,
@@ -49,7 +51,8 @@ export default function Game() {
     updateExplored,
     // Action menu
     selectAttack,
-    selectWait
+    selectWait,
+    cancelAction
   } = useGameState();
 
   const [showHowToPlay, setShowHowToPlay] = useState(false);
@@ -143,6 +146,7 @@ export default function Game() {
           selectedUnit={selectedUnit}
           moveRange={moveRange}
           attackRange={attackRange}
+          pendingPosition={pendingPosition}
           onTileClick={handleTileClick}
           isMobile={isMobile}
           currentPlayer={fogPlayer}
@@ -348,8 +352,8 @@ export default function Game() {
           </div>
         )}
 
-        {/* Action Menu - floating after unit moves */}
-        {gamePhase === 'ACTION_MENU' && selectedUnit && gameState === 'playing' && (
+        {/* Action Menu - floating when selecting destination */}
+        {gamePhase === 'ACTION_MENU' && selectedUnit && pendingPosition && gameState === 'playing' && (
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-40 animate-slide-up">
             <div className="bg-slate-900/95 backdrop-blur-xl rounded-2xl p-3 border-2 border-slate-700 shadow-2xl">
               <div className="text-center text-xs text-slate-400 mb-2 font-semibold uppercase tracking-wide">
@@ -359,6 +363,7 @@ export default function Game() {
                 canAttack={attackRange.length > 0}
                 onAttack={selectAttack}
                 onWait={selectWait}
+                onCancel={cancelAction}
                 isMobile={isMobile}
               />
             </div>

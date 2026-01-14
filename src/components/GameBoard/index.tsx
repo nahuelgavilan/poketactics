@@ -10,6 +10,7 @@ interface GameBoardProps {
   selectedUnit: Unit | null;
   moveRange: Position[];
   attackRange: AttackTarget[];
+  pendingPosition: Position | null;
   onTileClick: (x: number, y: number) => void;
   isMobile?: boolean;
   currentPlayer: Player;
@@ -22,6 +23,7 @@ export function GameBoard({
   selectedUnit,
   moveRange,
   attackRange,
+  pendingPosition,
   onTileClick,
   isMobile = false,
   currentPlayer,
@@ -34,28 +36,34 @@ export function GameBoard({
   // Hovered tile for path visualization
   const [hoveredTile, setHoveredTile] = useState<Position | null>(null);
 
-  // Calculate path to hovered tile
+  // Calculate path - to pendingPosition (confirmed) or hoveredTile (preview)
   const activePath = useMemo(() => {
-    if (!selectedUnit || !hoveredTile) return [];
+    if (!selectedUnit) return [];
 
-    // Don't show path if hovering over the unit itself
-    if (hoveredTile.x === selectedUnit.x && hoveredTile.y === selectedUnit.y) return [];
+    // If there's a pending position, always show path to it (ACTION_MENU phase)
+    const targetTile = pendingPosition || hoveredTile;
+    if (!targetTile) return [];
 
-    // Only show path for valid move tiles
-    const canMoveHere = isInRange(hoveredTile, moveRange);
-    if (!canMoveHere) return [];
+    // Don't show path if target is the unit itself
+    if (targetTile.x === selectedUnit.x && targetTile.y === selectedUnit.y) return [];
+
+    // Only show path for valid move tiles (skip check if pendingPosition since it's already validated)
+    if (!pendingPosition) {
+      const canMoveHere = isInRange(targetTile, moveRange);
+      if (!canMoveHere) return [];
+    }
 
     // Calculate shortest path
     const path = findPath(
       { x: selectedUnit.x, y: selectedUnit.y },
-      hoveredTile,
+      targetTile,
       map,
       units,
       selectedUnit
     );
 
     return path;
-  }, [selectedUnit, hoveredTile, moveRange, map, units]);
+  }, [selectedUnit, hoveredTile, pendingPosition, moveRange, map, units]);
 
   // Handle hover
   const handleTileHover = useCallback((x: number, y: number) => {

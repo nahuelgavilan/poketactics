@@ -1,33 +1,36 @@
-import { Swords, Clock, Target } from 'lucide-react';
+import { Swords, Clock, Target, X, Move } from 'lucide-react';
 
 interface UnitActionMenuProps {
   canAttack: boolean;
   onAttack: () => void;
   onWait: () => void;
+  onCancel: () => void;
   isMobile?: boolean;
 }
 
 /**
- * Floating action menu that appears after a unit moves
- * Shows available actions: Attack (if enemies in range), Wait
+ * Floating action menu that appears when selecting a move destination
+ * Shows available actions: Attack (if enemies in range), Wait, Cancel
  */
 export function UnitActionMenu({
   canAttack,
   onAttack,
   onWait,
+  onCancel,
   isMobile = false
 }: UnitActionMenuProps) {
   const buttonBase = `
-    flex items-center gap-2 px-4 py-2.5
+    flex items-center justify-center gap-2 px-4 py-2.5
     font-bold text-sm uppercase tracking-wide
     rounded-xl border-2 border-b-4
     transition-all duration-150
     active:border-b-2 active:translate-y-[2px]
     shadow-lg
+    min-w-[140px]
   `;
 
   return (
-    <div className="animate-scale-in flex flex-col gap-2">
+    <div className="animate-scale-in flex flex-row gap-2">
       {/* Attack button - only show if enemies in range */}
       {canAttack && (
         <button
@@ -43,23 +46,38 @@ export function UnitActionMenu({
         >
           <Swords className="w-5 h-5" />
           <span>Atacar</span>
-          <Target className="w-4 h-4 opacity-60" />
         </button>
       )}
 
-      {/* Wait button - always available */}
+      {/* Wait/Move button - confirms the move */}
       <button
         onClick={onWait}
         className={`
           ${buttonBase}
-          bg-gradient-to-br from-slate-500 to-slate-700
-          border-slate-400 border-b-slate-900
+          bg-gradient-to-br from-blue-500 to-blue-700
+          border-blue-400 border-b-blue-900
           text-white
-          hover:from-slate-400 hover:to-slate-600
+          hover:from-blue-400 hover:to-blue-600
+          hover:shadow-blue-500/30
         `}
       >
-        <Clock className="w-5 h-5" />
-        <span>Esperar</span>
+        <Move className="w-5 h-5" />
+        <span>Mover</span>
+      </button>
+
+      {/* Cancel button */}
+      <button
+        onClick={onCancel}
+        className={`
+          ${buttonBase}
+          bg-gradient-to-br from-slate-600 to-slate-800
+          border-slate-500 border-b-slate-950
+          text-slate-300
+          hover:from-slate-500 hover:to-slate-700
+        `}
+      >
+        <X className="w-5 h-5" />
+        <span>Cancelar</span>
       </button>
     </div>
   );

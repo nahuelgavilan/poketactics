@@ -15,9 +15,10 @@
  * don't trigger version bumps unless they include breaking changes.
  */
 
-export const VERSION = '1.7.0';
+export const VERSION = '1.8.0';
 
 // Version history:
+// 1.8.0 - Fire Emblem style preview: click destination → preview path + attack range → confirm with Mover/Atacar/Cancelar
 // 1.7.0 - Action menu after moving: Atacar/Esperar buttons, fixed path arrows clipping
 // 1.6.0 - Multiplayer perspective: each player sees own fog/turn, "Tu turno" vs "Turno enemigo" UI
 // 1.5.0 - Fire Emblem style pathfinding arrows with gap bridging, smooth curves at corners
