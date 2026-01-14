@@ -59,8 +59,8 @@ export function TerrainInfoPanel({ terrain, onClose }: TerrainInfoPanelProps) {
 
   return (
     <div
-      className="absolute bottom-2 left-2 right-2 z-40 animate-slide-up"
-      onClick={(e) => e.stopPropagation()}
+      className="absolute bottom-2 left-2 right-2 z-40 animate-slide-up cursor-pointer"
+      onClick={onClose}
     >
       <div className={`
         relative overflow-hidden
@@ -87,12 +87,7 @@ export function TerrainInfoPanel({ terrain, onClose }: TerrainInfoPanelProps) {
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between">
                 <h3 className="font-bold text-white text-sm">{props.name}</h3>
-                <button
-                  onClick={onClose}
-                  className="text-slate-500 hover:text-white text-xs px-2 py-0.5 rounded hover:bg-slate-800"
-                >
-                  ✕
-                </button>
+                <span className="text-slate-600 text-[10px]">Toca para cerrar</span>
               </div>
 
               {/* Stats row */}

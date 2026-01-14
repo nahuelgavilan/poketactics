@@ -142,6 +142,8 @@ Clicking an **empty tile** (no unit) during the SELECT phase shows a **Terrain I
 - Special properties (capture chance, healing, vision bonus)
 - Type attack bonuses
 
+**UX**: Click anywhere to dismiss (tap same tile to toggle, tap panel, or tap any other tile/unit). Shows "Toca para cerrar" hint.
+
 ### Terrain Visual Distinctions
 
 Each terrain has unique visual elements (no icons, CSS-only decorations):

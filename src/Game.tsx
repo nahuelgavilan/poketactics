@@ -66,9 +66,14 @@ export default function Game() {
     // Check if there's a unit at this position
     const unitAtPosition = units.find(u => u.x === x && u.y === y);
 
-    // If clicking empty tile while in SELECT phase and no unit selected, show terrain info
+    // If clicking empty tile while in SELECT phase and no unit selected
     if (!unitAtPosition && gamePhase === 'SELECT' && !selectedUnit && map[y] && map[y][x] !== undefined) {
-      setSelectedTerrain({ x, y, terrain: map[y][x] });
+      // Toggle: if clicking same tile, close panel; otherwise show new terrain
+      if (selectedTerrain && selectedTerrain.x === x && selectedTerrain.y === y) {
+        setSelectedTerrain(null);
+      } else {
+        setSelectedTerrain({ x, y, terrain: map[y][x] });
+      }
       return;
     }
 
@@ -77,7 +82,7 @@ export default function Game() {
 
     // Pass to game logic
     handleTileClick(x, y);
-  }, [units, gamePhase, selectedUnit, map, handleTileClick]);
+  }, [units, gamePhase, selectedUnit, map, handleTileClick, selectedTerrain]);
 
   // Clear terrain selection when game state changes
   useEffect(() => {

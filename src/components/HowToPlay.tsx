@@ -24,19 +24,20 @@ interface HowToPlayProps {
 const PIKACHU_SPRITE = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/25.gif';
 const CHARMANDER_SPRITE = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/4.gif';
 
-// Mini tile component for tutorial
+// Mini tile component for tutorial - matches actual game graphics
 function MiniTile({
   type,
   children,
   highlight,
   selected,
-  arrow
+  pathSegment
 }: {
   type: 'plains' | 'tallgrass' | 'forest' | 'water' | 'mountain' | 'pokecenter';
   children?: React.ReactNode;
-  highlight?: 'move' | 'attack' | 'path';
+  highlight?: 'move' | 'attack';
   selected?: boolean;
-  arrow?: 'up' | 'down' | 'left' | 'right' | 'end';
+  // Path segment: 'start', direction pairs like 'up-right', 'left-right', or 'end-left'
+  pathSegment?: 'start' | 'end-up' | 'end-down' | 'end-left' | 'end-right' | 'up-down' | 'left-right' | 'up-right' | 'up-left' | 'down-right' | 'down-left';
 }) {
   const bgColors = {
     plains: 'from-lime-400 to-green-500',
@@ -47,69 +48,145 @@ function MiniTile({
     pokecenter: 'from-rose-300 to-pink-400'
   };
 
+  const borderColors = {
+    plains: 'border-green-700',
+    tallgrass: 'border-emerald-800',
+    forest: 'border-green-950',
+    water: 'border-blue-700',
+    mountain: 'border-stone-700',
+    pokecenter: 'border-pink-600'
+  };
+
+  // SVG path for different arrow segments (matching the game's PathSegment component)
+  const getPathSvg = () => {
+    if (!pathSegment) return null;
+
+    const stroke = 'rgba(239, 68, 68, 0.9)';
+    const strokeWidth = 6;
+
+    // Start point - circle
+    if (pathSegment === 'start') {
+      return (
+        <svg viewBox="0 0 100 100" className="absolute inset-0 w-full h-full z-20 overflow-visible">
+          <circle cx="50" cy="50" r="12" fill={stroke} />
+        </svg>
+      );
+    }
+
+    // End points - arrow heads
+    if (pathSegment.startsWith('end-')) {
+      const dir = pathSegment.split('-')[1];
+      let linePath = '';
+      let arrowPath = '';
+
+      if (dir === 'down') {
+        linePath = 'M 50 0 L 50 40';
+        arrowPath = 'M 30 45 L 50 75 L 70 45 L 50 55 Z';
+      } else if (dir === 'up') {
+        linePath = 'M 50 100 L 50 60';
+        arrowPath = 'M 30 55 L 50 25 L 70 55 L 50 45 Z';
+      } else if (dir === 'right') {
+        linePath = 'M 0 50 L 40 50';
+        arrowPath = 'M 45 30 L 75 50 L 45 70 L 55 50 Z';
+      } else if (dir === 'left') {
+        linePath = 'M 100 50 L 60 50';
+        arrowPath = 'M 55 30 L 25 50 L 55 70 L 45 50 Z';
+      }
+
+      return (
+        <svg viewBox="0 0 100 100" className="absolute inset-0 w-full h-full z-20 overflow-visible">
+          <path d={linePath} stroke={stroke} strokeWidth={strokeWidth} strokeLinecap="round" fill="none" />
+          <path d={arrowPath} fill={stroke} />
+        </svg>
+      );
+    }
+
+    // Middle segments - lines
+    let d = '';
+    if (pathSegment === 'up-down') d = 'M 50 0 L 50 100';
+    else if (pathSegment === 'left-right') d = 'M 0 50 L 100 50';
+    else if (pathSegment === 'up-right') d = 'M 50 0 L 50 50 L 100 50';
+    else if (pathSegment === 'up-left') d = 'M 50 0 L 50 50 L 0 50';
+    else if (pathSegment === 'down-right') d = 'M 50 100 L 50 50 L 100 50';
+    else if (pathSegment === 'down-left') d = 'M 50 100 L 50 50 L 0 50';
+
+    return (
+      <svg viewBox="0 0 100 100" className="absolute inset-0 w-full h-full z-20 overflow-visible">
+        <path d={d} stroke={stroke} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+      </svg>
+    );
+  };
+
   return (
     <div className={`
-      relative aspect-square rounded-lg
+      relative aspect-square rounded-xl overflow-visible
       bg-gradient-to-br ${bgColors[type]}
-      border-b-[3px] border-black/30
-      ${selected ? 'ring-2 ring-yellow-400 ring-offset-1 ring-offset-slate-900' : ''}
-      overflow-hidden
+      border-b-[4px] ${borderColors[type]}
+      ${selected ? 'ring-2 ring-yellow-400 shadow-[0_0_10px_rgba(250,204,21,0.5)]' : ''}
     `}>
-      {/* Highlight overlays */}
-      {highlight === 'move' && (
-        <div className="absolute inset-0 bg-blue-400/40 border-2 border-blue-300/60 rounded-lg" />
-      )}
-      {highlight === 'attack' && (
-        <div className="absolute inset-0 bg-red-500/50 border-2 border-red-400/70 rounded-lg" />
-      )}
-      {highlight === 'path' && (
-        <div className="absolute inset-0 bg-blue-400/30 rounded-lg" />
-      )}
+      {/* Top highlight - like the game */}
+      <div className="absolute inset-x-0 top-0 h-[30%] bg-gradient-to-b from-white/20 to-transparent rounded-t-xl pointer-events-none" />
 
-      {/* Path arrow */}
-      {arrow && arrow !== 'end' && (
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className={`w-1.5 h-4 bg-red-500 rounded-full ${
-            arrow === 'up' ? 'rotate-0' :
-            arrow === 'down' ? 'rotate-180' :
-            arrow === 'left' ? '-rotate-90' :
-            'rotate-90'
-          }`} />
-        </div>
+      {/* Terrain decorations - matching game exactly */}
+      {type === 'plains' && (
+        <div className="absolute inset-0 opacity-20 rounded-xl bg-[repeating-linear-gradient(90deg,transparent,transparent_8px,rgba(255,255,255,0.4)_8px,rgba(255,255,255,0.4)_10px)]" />
       )}
-      {arrow === 'end' && (
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="w-0 h-0 border-l-[6px] border-r-[6px] border-t-[10px] border-l-transparent border-r-transparent border-t-red-500" />
-        </div>
-      )}
-
-      {/* Terrain decorations */}
       {type === 'tallgrass' && (
-        <div className="absolute inset-0 opacity-40">
-          <div className="absolute inset-x-1 top-1 h-3 bg-[repeating-linear-gradient(90deg,transparent_0px,transparent_2px,rgba(0,100,0,0.8)_2px,rgba(0,100,0,0.8)_3px)]"
-               style={{ clipPath: 'polygon(0% 100%, 10% 20%, 20% 100%, 30% 30%, 40% 100%, 50% 10%, 60% 100%, 70% 40%, 80% 100%, 90% 20%, 100% 100%)' }} />
-        </div>
-      )}
-      {type === 'forest' && (
-        <div className="absolute inset-0 opacity-30">
-          <div className="absolute w-[60%] h-[60%] rounded-full bg-green-900 -top-[20%] -left-[20%]" />
-          <div className="absolute w-[40%] h-[40%] rounded-full bg-green-900 bottom-0 right-0" />
-        </div>
-      )}
-      {type === 'water' && (
-        <div className="absolute inset-0 opacity-30 bg-[repeating-linear-gradient(100deg,transparent,transparent_4px,rgba(255,255,255,0.5)_4px,rgba(255,255,255,0.5)_8px)]" />
-      )}
-      {type === 'mountain' && (
-        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[8px] border-r-[8px] border-b-[12px] border-l-transparent border-r-transparent border-b-stone-600 opacity-60" />
-      )}
-      {type === 'pokecenter' && (
-        <div className="absolute inset-0 flex items-center justify-center opacity-50">
-          <div className="relative w-[40%] h-[40%]">
-            <div className="absolute left-1/2 -translate-x-1/2 top-0 w-[30%] h-full bg-white rounded-sm" />
-            <div className="absolute top-1/2 -translate-y-1/2 left-0 w-full h-[30%] bg-white rounded-sm" />
+        <div className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none">
+          <div className="absolute inset-0 opacity-30 bg-[repeating-linear-gradient(90deg,transparent,transparent_3px,rgba(0,80,0,0.6)_3px,rgba(0,80,0,0.6)_5px)]" />
+          <div className="absolute inset-x-0 top-[15%] h-[40%] opacity-40">
+            <div className="w-full h-full bg-[repeating-linear-gradient(90deg,transparent_0px,transparent_4px,rgba(34,197,94,0.8)_4px,transparent_6px,transparent_8px)]"
+                 style={{ clipPath: 'polygon(0% 100%, 10% 20%, 20% 100%, 30% 30%, 40% 100%, 50% 10%, 60% 100%, 70% 40%, 80% 100%, 90% 20%, 100% 100%)' }} />
           </div>
         </div>
       )}
+      {type === 'forest' && (
+        <div className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none">
+          <div className="absolute inset-0 bg-black/20" />
+          <div className="absolute inset-0 opacity-40">
+            <div className="absolute w-[60%] h-[60%] rounded-full bg-green-900/60 -top-[10%] -left-[10%]" />
+            <div className="absolute w-[50%] h-[50%] rounded-full bg-green-900/50 -bottom-[5%] -right-[5%]" />
+          </div>
+        </div>
+      )}
+      {type === 'water' && (
+        <div className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none">
+          <div className="absolute inset-0 opacity-30 bg-[repeating-linear-gradient(100deg,transparent,transparent_10px,rgba(255,255,255,0.5)_10px,rgba(255,255,255,0.5)_20px)]" />
+          <div className="absolute inset-0 opacity-20 bg-[radial-gradient(ellipse_at_30%_20%,rgba(255,255,255,0.6)_0%,transparent_30%)]" />
+        </div>
+      )}
+      {type === 'mountain' && (
+        <div className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none">
+          <div className="absolute inset-0 opacity-50">
+            <div className="absolute bottom-0 left-[10%] w-0 h-0 border-l-[8px] border-r-[8px] border-b-[14px] border-l-transparent border-r-transparent border-b-stone-600" />
+            <div className="absolute bottom-0 left-[35%] w-0 h-0 border-l-[10px] border-r-[10px] border-b-[18px] border-l-transparent border-r-transparent border-b-stone-500" />
+            <div className="absolute bottom-0 right-[15%] w-0 h-0 border-l-[6px] border-r-[6px] border-b-[10px] border-l-transparent border-r-transparent border-b-stone-600" />
+          </div>
+          <div className="absolute bottom-[14px] left-[40%] w-0 h-0 border-l-[5px] border-r-[5px] border-b-[6px] border-l-transparent border-r-transparent border-b-white opacity-60" />
+        </div>
+      )}
+      {type === 'pokecenter' && (
+        <div className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.3)_0%,transparent_60%)]" />
+          <div className="absolute inset-0 flex items-center justify-center opacity-50">
+            <div className="relative w-[50%] h-[50%]">
+              <div className="absolute left-1/2 -translate-x-1/2 top-0 w-[30%] h-full bg-white rounded-sm" />
+              <div className="absolute top-1/2 -translate-y-1/2 left-0 w-full h-[30%] bg-white rounded-sm" />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Highlight overlays */}
+      {highlight === 'move' && (
+        <div className="absolute inset-0 rounded-xl bg-blue-400/40 border-2 border-blue-300/60" />
+      )}
+      {highlight === 'attack' && (
+        <div className="absolute inset-0 rounded-xl bg-red-500/50 border-2 border-red-400/70" />
+      )}
+
+      {/* Path arrows - rendered like the game */}
+      {getPathSvg()}
 
       {/* Content (Pokemon, etc) */}
       {children && (
@@ -169,8 +246,8 @@ const TUTORIAL_SLIDES = [
           Las casillas <span className="text-blue-400 font-semibold">azules</span> muestran dónde puede moverse.
         </p>
 
-        {/* Visual grid example */}
-        <div className="grid grid-cols-5 gap-1 p-3 bg-slate-800/50 rounded-xl border border-slate-700">
+        {/* Visual grid example - matches actual game */}
+        <div className="grid grid-cols-5 gap-1.5 p-3 bg-slate-800/50 rounded-xl border border-slate-700">
           <MiniTile type="plains" />
           <MiniTile type="plains" highlight="move" />
           <MiniTile type="plains" highlight="move" />
@@ -178,15 +255,15 @@ const TUTORIAL_SLIDES = [
           <MiniTile type="water" />
 
           <MiniTile type="plains" highlight="move" />
-          <MiniTile type="plains" highlight="move" arrow="right" />
-          <MiniTile type="plains" highlight="move" arrow="right" />
-          <MiniTile type="plains" highlight="path" arrow="end" />
+          <MiniTile type="plains" highlight="move" pathSegment="up-right" />
+          <MiniTile type="plains" highlight="move" pathSegment="left-right" />
+          <MiniTile type="plains" pathSegment="end-right" />
           <MiniTile type="water" />
 
-          <MiniTile type="plains" selected>
-            <img src={PIKACHU_SPRITE} className="w-6 h-6 object-contain scale-x-[-1]" style={{ imageRendering: 'pixelated' }} alt="" />
+          <MiniTile type="plains" selected pathSegment="start">
+            <img src={PIKACHU_SPRITE} className="w-7 h-7 object-contain scale-x-[-1]" style={{ imageRendering: 'pixelated' }} alt="" />
           </MiniTile>
-          <MiniTile type="plains" highlight="move" arrow="up" />
+          <MiniTile type="plains" highlight="move" pathSegment="up-down" />
           <MiniTile type="tallgrass" highlight="move" />
           <MiniTile type="plains" />
           <MiniTile type="mountain" />
