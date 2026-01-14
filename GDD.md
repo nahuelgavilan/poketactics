@@ -8,6 +8,7 @@
 - **Platform**: Web (Mobile-first responsive)
 - **Players**: 2 (Hot-seat or Online multiplayer)
 - **Tech Stack**: React, TypeScript, Tailwind CSS, Vite, Socket.IO
+- **Current Version**: 0.20.0 (Alpha)
 
 ---
 
@@ -59,7 +60,8 @@ When moving to **Tall Grass**, there's a **30% chance** of triggering a wild Pok
 | `menu` | Start screen / Main menu |
 | `playing` | Active gameplay, player selecting/moving units |
 | `battle` | Combat cinematic playing |
-| `capture` | Wild Pokémon capture event |
+| `capture_minigame` | Wild Pokémon capture minigame |
+| `capture_result` | Capture result modal |
 | `evolution` | Evolution cinematic playing |
 | `transition` | Turn change animation |
 | `victory` | Game over, winner announced |
@@ -237,28 +239,129 @@ Before confirming an attack, players see:
 
 ## Capture System
 
+### Overview
+
+The capture system uses a **probability-based formula** with a **3-ring timing minigame**. Players can optionally attack once to weaken the wild Pokémon before attempting capture.
+
 ### Trigger Conditions
 
-When a unit is on **Tall Grass** and selects Capture:
-- Wild Pokémon **always appears** (100% encounter rate)
-- Capture success depends on **timing minigame**
+When a unit moves to **Tall Grass**, there's a **30% chance** of triggering a wild Pokémon encounter. The capture minigame then begins.
 
-### Capture Minigame
+### Capture Minigame Phases
 
-1. Wild Pokémon appears with animated intro
-2. **Timing bar** with moving marker and green "catch zone"
-3. Player clicks/taps when marker is in green zone
-4. **Difficulty scales** with Pokémon stats (stronger = smaller zone, faster marker)
-5. Success: Pokéball animation + capture
-6. Failure: Pokémon escapes, turn ends
+#### Phase 1: Dramatic Intro
+1. **Flash** (150ms) - White screen flash
+2. **Alert** (550ms) - Giant "!" appears with shake animation
+3. **Silhouette** (700ms) - Mystery dark silhouette with type-colored glow
+4. **Reveal** (800ms) - Pokémon revealed with brightness flash and name
 
-### Difficulty Levels
+#### Phase 2: Battle Menu
+Player sees the wild Pokémon with:
+- **Name and type badges**
+- **HP bar** (GBA-style with gradient colors)
+- **Current capture chance** percentage
 
-| Pokémon Stats | Catch Zone | Marker Speed |
-|---------------|------------|--------------|
-| Low (base forms) | 40% width | Slow |
-| Medium | 25% width | Medium |
-| High (final evolutions) | 15% width | Fast |
+**Action Buttons** (premium GBA-style with 3D depth):
+- **ATACAR** (red) - Attack once to weaken (only usable once)
+- **CAPTURAR** (amber) - Start ring timing minigame
+- **HUIR** (gray) - Flee from encounter
+
+#### Phase 3: Attack Cinematic (if chosen)
+When player chooses to attack:
+1. **Intro** - Player's Pokémon slides in from left
+2. **Execute** - Attack hits, damage number flies up, wild Pokémon flashes
+3. **Counter** - Wild Pokémon counter-attacks, player's Pokémon takes damage
+4. **Outro** - Player's Pokémon slides out, returns to battle menu
+
+**Note**: Only the wild Pokémon is visible normally. The player's Pokémon only appears during the attack cinematic.
+
+#### Phase 4: Ring Timing Minigame
+Three consecutive ring challenges, each faster than the last:
+
+| Ring | Speed | Duration |
+|------|-------|----------|
+| Ring 1 | Slow | 1800ms |
+| Ring 2 | Medium | 1400ms |
+| Ring 3 | Fast | 1000ms |
+
+**Visual Elements**:
+- Target ring with type-colored border and glow
+- Zone indicators (green/blue/yellow circles)
+- 12 orbiting particles around the ring
+- Pokéball in center
+- Shrinking ring that changes color based on timing zone
+
+**Timing Zones**:
+| Ring Size | Rating | Bonus |
+|-----------|--------|-------|
+| ≤20% | PERFECTO | +10% |
+| ≤40% | GENIAL | +6% |
+| ≤65% | BIEN | +3% |
+| >65% | Fallaste | +0% |
+
+**Tap Feedback**: Burst particles on tap, ring result message with bounce animation
+
+#### Phase 5: Pokéball Throw & Shake
+1. **Throw** - Pokéball flies up from bottom with spin
+2. **Shake** - 3 shakes with wobble animation
+3. **Stars** - Each shake lights up a star indicator
+4. **Sparkle particles** on each shake
+
+#### Phase 6: Result
+- **Success**: Confetti rain, "¡CAPTURADO!" message, Pokémon joins team
+- **Failure**: "¡ESCAPÓ!" message, Pokémon flees
+
+### Capture Probability Formula
+
+```
+Capture Chance = Base Rate + HP Bonus + Ring Bonus
+```
+
+**Capped between 5% and 95%** (never guaranteed, never impossible)
+
+#### Base Rate (based on Pokémon stats)
+
+```typescript
+statTotal = hp + atk + def
+
+if (statTotal < 100) baseRate = 45%
+if (statTotal < 150) baseRate = 35%
+if (statTotal < 200) baseRate = 25%
+else baseRate = 15%
+```
+
+#### HP Bonus (from weakening)
+
+```
+HP Bonus = (1 - currentHP/maxHP) × 40%
+```
+
+| Wild HP | HP Bonus |
+|---------|----------|
+| 100% | +0% |
+| 75% | +10% |
+| 50% | +20% |
+| 25% | +30% |
+| 1 HP | +40% |
+
+#### Ring Bonus (from timing)
+
+Sum of all 3 ring results:
+- Perfect: +10% each (max +30%)
+- Great: +6% each (max +18%)
+- Good: +3% each (max +9%)
+- Miss: +0%
+
+### Example Calculation
+
+| Factor | Value |
+|--------|-------|
+| Base Rate (weak Pokémon) | 35% |
+| HP Bonus (hit down to 50%) | +20% |
+| Ring 1: Perfect | +10% |
+| Ring 2: Great | +6% |
+| Ring 3: Good | +3% |
+| **Total** | **74%** |
 
 ### Spawn Position
 
@@ -384,6 +487,46 @@ Turn counter increments when P1's turn begins.
 
 ## User Interface
 
+### Premium Start Screen (v0.18.0)
+
+GBA-inspired boot sequence with premium animations:
+
+#### Boot Sequence Phases
+1. **Boot** (2000ms) - GBA-style loading bar with "INICIANDO..." text
+2. **Title** (variable) - Letter-by-letter reveal of "POKÉTACTICS" with glow effects
+3. **Ready** - Full menu with team showcase
+
+#### Visual Elements
+- **Layered background**: Diagonal split (blue/red), gradient orbs, particle effects
+- **Team Showcase**:
+  - P1 (Blue): Pikachu, Dragonite, Lucario with blue glow
+  - P2 (Red): Charizard, Gengar, Gyarados with red glow
+- **Signature Pokémon**: Largest sprite in front with pulsing glow
+- **Version badge**: "v{VERSION} ALPHA" at bottom
+- **Menu buttons**: "JUGAR" (primary), "CÓMO JUGAR" (secondary)
+
+### Premium Victory Screen (v0.18.0)
+
+Celebration screen with GBA-style effects:
+
+#### Victory Sequence Phases
+1. **Flash** (200ms) - White flash
+2. **Reveal** (600ms) - Background and trophy appear
+3. **Celebrate** (700ms) - Confetti and effects begin
+4. **Ready** - Buttons appear
+
+#### Visual Elements
+- **Team-colored gradient background** (blue for P1, red for P2)
+- **Animated glow orbs** with pulse effect
+- **Crown** above trophy with golden glow
+- **Trophy** with team-colored circle and ping animation
+- **"VICTORIA"** text with golden glow
+- **Team name** ("AZUL" or "ROJO") with 3D text shadow
+- **Confetti rain** (50 particles) in team colors + gold
+- **Twinkling stars** (15 stars) with twinkle animation
+- **Version badge** at bottom
+- **Action buttons**: "Revancha", "Menú"
+
 ### Desktop Layout
 
 ```
@@ -419,17 +562,17 @@ Turn counter increments when P1's turn begins.
 
 | Component | Purpose |
 |-----------|---------|
-| `StartScreen` | Animated main menu with logo |
+| `StartScreen` | GBA boot sequence, letter-by-letter title, team showcase, version badge |
 | `HowToPlay` | 5-slide tutorial modal |
 | `GameBoard` | Interactive tile grid with units |
-| `Header` | Turn/player info, restart/menu buttons |
+| `Header` | Turn/player info, dropdown menu with actions |
 | `UnitActionMenu` | Fire Emblem style contextual menu (appears next to tile) |
-| `BattleCinematic` | Combat animation sequence |
-| `CaptureMinigame` | Timing-based capture UI |
-| `CaptureModal` | Wild Pokémon capture result |
+| `BattleCinematic` | GBA-style combat animation with VS intro, segmented HP bars |
+| `CaptureMinigame` | Probability-based capture with ring timing, attack option |
+| `CaptureModal` | Capture result with stat bars and type badges |
 | `EvolutionCinematic` | Evolution animation with stat comparison |
-| `TurnTransition` | Fire Emblem style turn change: diagonal slash, shield emblem, GBA button |
-| `VictoryScreen` | End game celebration |
+| `TurnTransition` | Fire Emblem style turn change: diagonal slash, shield emblem |
+| `VictoryScreen` | Confetti celebration with crown/trophy animation |
 | `MultiplayerLobby` | Room creation/joining UI |
 
 ---
@@ -479,9 +622,9 @@ Tiles use a Nintendo-quality 3D raised effect:
 
 | Percentage | Color |
 |------------|-------|
-| > 50% | Green |
-| 25-50% | Yellow |
-| < 25% | Red |
+| > 50% | Green gradient |
+| 25-50% | Yellow/Amber gradient |
+| < 25% | Red/Orange gradient |
 
 ### Player Colors
 
@@ -510,7 +653,17 @@ If animated sprites unavailable:
 
 ## Battle Cinematic Phases
 
-### Attack Sequence
+### GBA-Style Battle (v0.15.0)
+
+Premium battle cinematic with Fire Emblem / Pokémon GBA aesthetics:
+
+#### VS Intro Sequence
+1. **Diagonal split** - Screen splits diagonally
+2. **VS emblem** - "VS" appears with glow
+3. **Stat panels** - Both Pokémon stats slide in
+4. **Particles** - Type-colored particles
+
+#### Combat Sequence
 
 1. `intro` (800ms) - "X attacks!"
 2. `charge` (800ms) - Power-up animation
@@ -518,7 +671,7 @@ If animated sprites unavailable:
 4. `impact` (600ms) - Hit flash, screen shake
 5. `result` (1500ms) - Damage numbers, effectiveness text
 
-### Counter-Attack Sequence
+#### Counter-Attack Sequence
 
 If defender survives and can counter:
 
@@ -528,9 +681,16 @@ If defender survives and can counter:
 9. `counter_impact` (600ms) - Hit flash
 10. `counter_result` (1500ms) - Damage display
 
-### End Phase
+#### End Phase
 
 11. `end` (500ms) - "Combat ends"
+
+#### Visual Features
+- **Segmented HP bars** (10 segments like GBA games)
+- **Stat panels** with ATK/DEF display
+- **Type-colored backgrounds** and glows
+- **Typewriter text** animation
+- **Particle effects** throughout
 
 ---
 
@@ -566,7 +726,7 @@ src/
 ├── components/       # React UI components
 │   ├── GameBoard/    # Board + Tile components
 │   └── overlays/     # Modal overlays
-├── constants/        # Game data (types, terrain, pokemon)
+├── constants/        # Game data (types, terrain, pokemon, version)
 ├── hooks/            # React hooks (useGameState)
 ├── types/            # TypeScript definitions
 └── utils/            # Game logic (combat, pathfinding, capture)
@@ -598,12 +758,13 @@ Counter-attacks at 75% damage encourage:
 - Ranged unit value (attack without counter risk)
 - Terrain positioning (defensive bonuses)
 
-### Capture Gamble
+### Capture Strategy
 
-30% capture chance in tall grass:
-- Risk: Wasted turn if no capture
-- Reward: Extra team member
-- Strategy: Early captures most valuable
+Capture probability formula encourages:
+- **Risk vs Reward**: Attack to weaken (but take damage) for higher capture chance
+- **Skill reward**: Perfect ring timing gives significant bonus (+30% max)
+- **Never guaranteed**: Even 95% can fail, adding tension
+- **Never impossible**: Even tough Pokémon have 5% minimum chance
 
 ---
 
@@ -642,38 +803,13 @@ The server handles all game logic:
 | **Action Execution** | Move, attack, wait, capture all run on server |
 | **State Updates** | After each action, server broadcasts filtered state to both players |
 
-### Client-Server Events
+### True Multiplayer (v0.14.0)
 
-**Client → Server:**
-- `action-move` - Request unit movement `{unitId, x, y}`
-- `action-attack` - Request attack `{attackerId, defenderId}`
-- `action-wait` - End unit's turn `{unitId}`
-- `action-capture` - Attempt capture on tall grass `{unitId}`
-- `request-state` - Request current state (for reconnection)
-
-**Server → Client:**
-- `game-started` - Initial game state (filtered by fog of war)
-- `state-update` - Updated game state after actions
-- `action-result` - Action feedback (damage dealt, evolution triggered, etc.)
-- `error` - Action rejected with error message
-
-### Server Architecture
-
-```
-server/
-├── src/
-│   ├── index.ts      # Express + Socket.IO server
-│   ├── gameLogic.ts  # Full game logic (combat, pathfinding, etc.)
-│   ├── rooms.ts      # Room management
-│   └── types.ts      # Server types
-```
-
-### Fog of War per Player
-
-Each player has independent visibility tracking:
-- `exploredP1` / `exploredP2` - Tiles each player has seen
-- Server filters enemy units based on current visibility
-- Explored terrain (no enemies) remains visible after unit leaves
+Each player experience:
+- **Own perspective**: P1 always sees themselves as "blue team"
+- **Own fog of war**: Independent visibility calculation
+- **No turn screen**: Game flows naturally without blocking transition
+- **Real-time sync**: Actions immediately visible to opponent
 
 ### Deployment
 
@@ -712,40 +848,51 @@ This project uses **Semantic Versioning** (semver) with **Conventional Commits**
 | **MINOR** | New features | `feat:` |
 | **MAJOR** | Breaking changes | `feat!:` or `BREAKING CHANGE:` |
 
-### Other Commit Types (no version bump)
-- `docs:` - Documentation only
-- `style:` - Code style/formatting
-- `refactor:` - Code restructuring
-- `perf:` - Performance improvements
-- `test:` - Adding tests
-- `chore:` - Build/tooling changes
+### Alpha Phase (v0.x.x)
+
+Currently in alpha - major version stays at 0 until core features complete.
 
 ### Version Source
 - Version defined in `src/constants/version.ts`
-- Synced with `package.json`
-- Displayed in Start Screen
+- Displayed in Start Screen and Victory Screen
 
 ---
 
-## Version History
+## Version History (Alpha)
 
 | Version | Changes |
 |---------|---------|
-| **1.10.0** | Terrain info panel (click empty tile to see stats), updated tutorial with Pikachu and action menu graphics |
-| **1.9.1** | Distinctive terrain visuals: grass blades, tree canopies, mountain peaks, water waves, healing cross |
-| **1.9.0** | Fire Emblem style contextual action menu: appears next to unit with notch pointer, smart positioning |
-| **1.8.1** | Fix: click other tiles during ACTION_MENU to change destination, fix arrow direction |
-| **1.8.0** | Fire Emblem style preview: click destination → preview path + attack range → confirm with menu |
-| **1.7.0** | Action menu after moving: Atacar/Esperar buttons, fixed path arrows clipping |
-| **1.6.0** | Multiplayer perspective: each player sees own fog/turn, "Tu turno" vs "Turno enemigo" UI |
-| **1.5.0** | Fire Emblem style pathfinding arrows with gap bridging, smooth curves at corners |
-| **1.4.0** | Server-authoritative multiplayer: fog of war per player, validated turns, full server game state |
-| **1.3.0** | Remove action menu, Advance Wars style direct flow, random encounters (30%) on tall grass |
-| **1.2.2** | Professional Nintendo-style tiles (no emojis), Fire Emblem-style movement/attack overlays |
-| **1.2.1** | Fix auto-wait bug, capture on tall grass after moving, cleaner tile indicators |
-| **1.2.0** | Redesigned tiles with rich gradients, full mobile stats panel (HP/ATK/MOV/DEF), visual juice |
-| **1.1.0** | SPA layout fix, mobile improvements, visual polish, proper square tiles |
-| **1.0.0** | Initial release: Action Menu, Fog of War, Evolution, Capture minigame, Pokémon Centers, Multiplayer lobby |
+| **0.20.0** | Ultra-premium capture: cinematic attack (slide-in/out), juicy ring with orbiting particles, GBA-style 3D buttons |
+| **0.19.0** | GBA-style capture: mini battle with attack/capture/flee, HP weakening, probability-based formula, ring timing |
+| **0.18.0** | Premium screens: GBA boot sequence, letter-by-letter title, team showcase, confetti victory, version badges |
+| **0.17.0** | Micro-combat capture: type-specific attack patterns, swipe controls, combo system, flee mechanic |
+| **0.16.1** | Challenging capture: will bar, multiple attempts, Pokemon movement, escalating difficulty |
+| **0.16.0** | Premium capture system: dramatic encounter intro, ring-based minigame, Pokeball physics |
+| **0.15.0** | Premium GBA-style battle cinematic: VS intro, segmented HP bars, stat panels, particles, typewriter text |
+| **0.14.0** | True multiplayer: each player is P1/P2, own fog of war, no turn transition screen, server-authoritative |
+| **0.13.1** | Refined main menu: layered backgrounds, ambient particles, signature Pokemon glows, premium buttons |
+| **0.13.0** | Premium GBA-style main menu: diagonal split design, rotating Pokemon, tactical aesthetic |
+| **0.12.1** | Fix: turn transition fully blocks game view, smooth dropdown menu animation |
+| **0.12.0** | Header dropdown menu: end turn + actions in compact GBA-style menu |
+| **0.11.0** | GBA-style turn controls: always-visible end turn button, progress bar, fully opaque transition |
+| **0.10.3** | Fire Emblem style turn transition: diagonal slash, shield emblem, GBA-era button panel |
+| **0.10.2** | Tutorial uses actual game Tile component - identical graphics, real PathSegment arrows |
+| **0.10.1** | Fix: terrain panel UX - click anywhere to close |
+| **0.10.0** | Terrain info panel (click empty tile), updated tutorial with action menu graphics |
+| **0.9.1** | Distinctive terrain visuals: grass blades, tree canopies, mountain peaks, water waves, healing cross |
+| **0.9.0** | Fire Emblem style contextual action menu: appears next to unit with notch pointer |
+| **0.8.1** | Fix: click other tiles during ACTION_MENU to change destination |
+| **0.8.0** | Fire Emblem style preview: click destination → preview path + attack range → confirm |
+| **0.7.0** | Action menu after moving: Atacar/Esperar buttons, fixed path arrows clipping |
+| **0.6.0** | Multiplayer perspective: each player sees own fog/turn |
+| **0.5.0** | Fire Emblem style pathfinding arrows with gap bridging, smooth curves |
+| **0.4.0** | Server-authoritative multiplayer: fog of war per player, validated turns |
+| **0.3.0** | Remove action menu, Advance Wars style direct flow, random encounters (30%) |
+| **0.2.2** | Professional Nintendo-style tiles, Fire Emblem movement/attack overlays |
+| **0.2.1** | Fix auto-wait bug, capture on tall grass, cleaner tile indicators |
+| **0.2.0** | Redesigned tiles with rich gradients, mobile stats panel |
+| **0.1.0** | SPA layout fix, mobile improvements, visual polish |
+| **0.0.1** | Initial alpha: Action Menu, Fog of War, Evolution, Capture, Pokémon Centers, Multiplayer |
 
 ---
 
@@ -757,4 +904,4 @@ This project uses **Semantic Versioning** (semver) with **Conventional Commits**
 
 ---
 
-*This document describes PokéTactics as of the current implementation. Features marked as "planned" or in the roadmap are not yet implemented.*
+*This document describes PokéTactics as of v0.20.0 (Alpha). Features marked as "planned" or in the roadmap are not yet implemented.*
