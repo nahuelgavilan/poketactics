@@ -45,6 +45,7 @@ export default function Game() {
     endBattle,
     onCaptureMinigameSuccess,
     onCaptureMinigameFail,
+    onCaptureMinigameFlee,
     confirmCapture,
     confirmEvolution,
     confirmTurnChange,
@@ -534,6 +535,7 @@ export default function Game() {
           player={captureData.player}
           onSuccess={onCaptureMinigameSuccess}
           onFail={onCaptureMinigameFail}
+          onFlee={onCaptureMinigameFlee}
         />
       )}
 

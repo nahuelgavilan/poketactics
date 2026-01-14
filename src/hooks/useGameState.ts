@@ -52,6 +52,7 @@ interface UseGameStateReturn {
   endBattle: () => void;
   onCaptureMinigameSuccess: () => void;
   onCaptureMinigameFail: () => void;
+  onCaptureMinigameFlee: () => void;
   confirmCapture: () => void;
   confirmEvolution: () => void;
   confirmTurnChange: () => void;
@@ -534,6 +535,23 @@ export function useGameState(): UseGameStateReturn {
     waitUnit(selectedUnit.uid, units);
   }, [captureData, selectedUnit, units, addLog, waitUnit]);
 
+  // Called when player flees from capture minigame - escapes safely, keeps turn
+  const onCaptureMinigameFlee = useCallback(() => {
+    if (!captureData || !selectedUnit) return;
+
+    addLog(`¡Huiste del ${captureData.pokemon.name} salvaje!`);
+    setCaptureData(null);
+    setGameState('playing');
+
+    // Player escapes safely - unit can still act this turn
+    // Move unit to pending position but don't mark as moved
+    if (pendingPosition) {
+      const movedUnit = { ...selectedUnit, x: pendingPosition.x, y: pendingPosition.y };
+      setUnits(units.map(u => u.uid === selectedUnit.uid ? movedUnit : u));
+    }
+    resetSelection();
+  }, [captureData, selectedUnit, units, pendingPosition, addLog, resetSelection]);
+
   const confirmCapture = useCallback(() => {
     if (!captureData || !selectedUnit) return;
 
@@ -702,6 +720,7 @@ export function useGameState(): UseGameStateReturn {
     endBattle,
     onCaptureMinigameSuccess,
     onCaptureMinigameFail,
+    onCaptureMinigameFlee,
     confirmCapture,
     confirmEvolution,
     confirmTurnChange,
