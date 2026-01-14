@@ -533,6 +533,7 @@ export default function Game() {
         <CaptureMinigame
           pokemon={captureData.pokemon}
           player={captureData.player}
+          playerPokemon={selectedUnit?.template}
           onSuccess={onCaptureMinigameSuccess}
           onFail={onCaptureMinigameFail}
           onFlee={onCaptureMinigameFlee}
