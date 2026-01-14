@@ -15,9 +15,10 @@
  * don't trigger version bumps unless they include breaking changes.
  */
 
-export const VERSION = '1.8.1';
+export const VERSION = '1.8.2';
 
 // Version history:
+// 1.8.2 - Compact action menu: icons only on mobile, positioned top-right
 // 1.8.1 - Fix: click other tiles during ACTION_MENU to change destination, fix arrow direction
 // 1.8.0 - Fire Emblem style preview: click destination → preview path + attack range → confirm with Mover/Atacar/Cancelar
 // 1.7.0 - Action menu after moving: Atacar/Esperar buttons, fixed path arrows clipping

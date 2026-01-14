@@ -1,4 +1,4 @@
-import { Swords, Clock, Target, X, Move } from 'lucide-react';
+import { Swords, Check, X } from 'lucide-react';
 
 interface UnitActionMenuProps {
   canAttack: boolean;
@@ -9,8 +9,7 @@ interface UnitActionMenuProps {
 }
 
 /**
- * Floating action menu that appears when selecting a move destination
- * Shows available actions: Attack (if enemies in range), Wait, Cancel
+ * Compact action menu - icons on mobile, icons+text on desktop
  */
 export function UnitActionMenu({
   canAttack,
@@ -19,65 +18,69 @@ export function UnitActionMenu({
   onCancel,
   isMobile = false
 }: UnitActionMenuProps) {
+  // Compact button style
   const buttonBase = `
-    flex items-center justify-center gap-2 px-4 py-2.5
-    font-bold text-sm uppercase tracking-wide
-    rounded-xl border-2 border-b-4
-    transition-all duration-150
-    active:border-b-2 active:translate-y-[2px]
-    shadow-lg
-    min-w-[140px]
+    flex items-center justify-center gap-1.5
+    font-bold text-xs uppercase tracking-wide
+    rounded-lg border-2 border-b-3
+    transition-all duration-100
+    active:border-b-2 active:translate-y-[1px]
+    shadow-md
   `;
 
+  // Size based on device
+  const buttonSize = isMobile ? 'w-11 h-11' : 'px-3 py-2';
+
   return (
-    <div className="animate-scale-in flex flex-row gap-2">
+    <div className="flex flex-row gap-1.5">
       {/* Attack button - only show if enemies in range */}
       {canAttack && (
         <button
           onClick={onAttack}
           className={`
-            ${buttonBase}
-            bg-gradient-to-br from-red-500 to-red-700
-            border-red-400 border-b-red-900
+            ${buttonBase} ${buttonSize}
+            bg-gradient-to-br from-red-500 to-red-600
+            border-red-400 border-b-red-800
             text-white
-            hover:from-red-400 hover:to-red-600
-            hover:shadow-red-500/30
+            hover:from-red-400 hover:to-red-500
           `}
+          title="Atacar"
         >
-          <Swords className="w-5 h-5" />
-          <span>Atacar</span>
+          <Swords className={isMobile ? 'w-5 h-5' : 'w-4 h-4'} />
+          {!isMobile && <span>Atacar</span>}
         </button>
       )}
 
-      {/* Wait/Move button - confirms the move */}
+      {/* Confirm move button */}
       <button
         onClick={onWait}
         className={`
-          ${buttonBase}
-          bg-gradient-to-br from-blue-500 to-blue-700
-          border-blue-400 border-b-blue-900
+          ${buttonBase} ${buttonSize}
+          bg-gradient-to-br from-emerald-500 to-emerald-600
+          border-emerald-400 border-b-emerald-800
           text-white
-          hover:from-blue-400 hover:to-blue-600
-          hover:shadow-blue-500/30
+          hover:from-emerald-400 hover:to-emerald-500
         `}
+        title="Confirmar"
       >
-        <Move className="w-5 h-5" />
-        <span>Mover</span>
+        <Check className={isMobile ? 'w-5 h-5' : 'w-4 h-4'} strokeWidth={3} />
+        {!isMobile && <span>OK</span>}
       </button>
 
       {/* Cancel button */}
       <button
         onClick={onCancel}
         className={`
-          ${buttonBase}
-          bg-gradient-to-br from-slate-600 to-slate-800
-          border-slate-500 border-b-slate-950
-          text-slate-300
-          hover:from-slate-500 hover:to-slate-700
+          ${buttonBase} ${buttonSize}
+          bg-gradient-to-br from-slate-500 to-slate-600
+          border-slate-400 border-b-slate-800
+          text-white
+          hover:from-slate-400 hover:to-slate-500
         `}
+        title="Cancelar"
       >
-        <X className="w-5 h-5" />
-        <span>Cancelar</span>
+        <X className={isMobile ? 'w-5 h-5' : 'w-4 h-4'} strokeWidth={3} />
+        {!isMobile && <span>No</span>}
       </button>
     </div>
   );

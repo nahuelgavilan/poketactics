@@ -211,8 +211,8 @@ export default function Game() {
           </div>
         )}
 
-        {/* Phase indicator - floating top-right, compact on mobile */}
-        {gameState === 'playing' && (
+        {/* Phase indicator - floating top-right, hidden during ACTION_MENU (action menu takes its place) */}
+        {gameState === 'playing' && gamePhase !== 'ACTION_MENU' && (
           <div className="absolute top-1 right-1 md:top-3 md:right-3 flex flex-col gap-1.5 md:gap-2 items-end z-20">
             {/* Phase badge - show waiting state when not your turn in multiplayer */}
             {isMultiplayer && !isMyTurn ? (
@@ -242,15 +242,10 @@ export default function Game() {
                   ? 'bg-red-900/90 border-red-500/50 text-red-300 shadow-red-500/30'
                   : ''
                 }
-                ${gamePhase === 'ACTION_MENU'
-                  ? 'bg-amber-900/90 border-amber-500/50 text-amber-300 shadow-amber-500/20'
-                  : ''
-                }
               `}>
                 {gamePhase === 'SELECT' && 'Selecciona'}
                 {gamePhase === 'MOVING' && 'Destino'}
                 {gamePhase === 'ATTACKING' && 'Objetivo'}
-                {gamePhase === 'ACTION_MENU' && 'Acción'}
               </div>
             )}
 
@@ -352,13 +347,10 @@ export default function Game() {
           </div>
         )}
 
-        {/* Action Menu - floating when selecting destination */}
+        {/* Action Menu - compact, top-right */}
         {gamePhase === 'ACTION_MENU' && selectedUnit && pendingPosition && gameState === 'playing' && (
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-40 animate-slide-up">
-            <div className="bg-slate-900/95 backdrop-blur-xl rounded-2xl p-3 border-2 border-slate-700 shadow-2xl">
-              <div className="text-center text-xs text-slate-400 mb-2 font-semibold uppercase tracking-wide">
-                ¿Qué quieres hacer?
-              </div>
+          <div className="absolute top-1 right-1 md:top-3 md:right-3 z-40 animate-scale-in">
+            <div className="bg-slate-900/90 backdrop-blur-md rounded-xl p-1.5 md:p-2 border border-slate-700/50 shadow-xl">
               <UnitActionMenu
                 canAttack={attackRange.length > 0}
                 onAttack={selectAttack}
