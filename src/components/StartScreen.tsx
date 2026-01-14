@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Swords, Users, BookOpen, ChevronRight, Shield, Zap, Target, Crown } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { Swords, Users, BookOpen, ChevronRight, Shield, Sparkles } from 'lucide-react';
 import { VERSION } from '../constants/version';
 
 interface StartScreenProps {
@@ -8,111 +8,133 @@ interface StartScreenProps {
   onMultiplayer?: () => void;
 }
 
-// Featured Pokemon for the animated display
+// Featured Pokemon with their signature colors
 const FEATURED_POKEMON = [
-  { id: 6, name: 'Charizard' },
-  { id: 25, name: 'Pikachu' },
-  { id: 149, name: 'Dragonite' },
-  { id: 94, name: 'Gengar' },
-  { id: 130, name: 'Gyarados' },
-  { id: 448, name: 'Lucario' },
+  { id: 6, name: 'Charizard', glow: 'rgba(251,146,60,0.6)' },
+  { id: 25, name: 'Pikachu', glow: 'rgba(250,204,21,0.6)' },
+  { id: 149, name: 'Dragonite', glow: 'rgba(251,146,60,0.5)' },
+  { id: 94, name: 'Gengar', glow: 'rgba(168,85,247,0.6)' },
+  { id: 130, name: 'Gyarados', glow: 'rgba(59,130,246,0.6)' },
+  { id: 448, name: 'Lucario', glow: 'rgba(96,165,250,0.5)' },
 ];
 
 export function StartScreen({ onStartGame, onHowToPlay, onMultiplayer }: StartScreenProps) {
-  const [showContent, setShowContent] = useState(false);
+  const [phase, setPhase] = useState<'intro' | 'ready'>('intro');
   const [activePokemon, setActivePokemon] = useState(0);
+  const [particles, setParticles] = useState<Array<{ id: number; x: number; y: number; delay: number }>>([]);
 
   useEffect(() => {
-    const timer = setTimeout(() => setShowContent(true), 200);
+    // Generate floating particles
+    const newParticles = Array.from({ length: 20 }, (_, i) => ({
+      id: i,
+      x: Math.random() * 100,
+      y: Math.random() * 100,
+      delay: Math.random() * 5
+    }));
+    setParticles(newParticles);
+
+    // Entrance animation
+    const introTimer = setTimeout(() => setPhase('ready'), 100);
 
     // Cycle through featured Pokemon
     const pokemonInterval = setInterval(() => {
       setActivePokemon(prev => (prev + 1) % FEATURED_POKEMON.length);
-    }, 3000);
+    }, 4000);
 
     return () => {
-      clearTimeout(timer);
+      clearTimeout(introTimer);
       clearInterval(pokemonInterval);
     };
   }, []);
 
+  const currentPokemon = FEATURED_POKEMON[activePokemon];
+  const oppositePokemon = FEATURED_POKEMON[(activePokemon + 3) % FEATURED_POKEMON.length];
+
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden">
-      {/* Base background - dark tactical */}
-      <div className="absolute inset-0 bg-slate-950" />
+    <div className="fixed inset-0 z-50 overflow-hidden select-none">
+      {/* === LAYERED BACKGROUND === */}
 
-      {/* Diagonal split design - like Fire Emblem */}
+      {/* Base - deep dark */}
+      <div className="absolute inset-0 bg-[#0a0a0f]" />
+
+      {/* Radial gradient center glow */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(30,30,50,1)_0%,transparent_70%)]" />
+
+      {/* Team territories with noise texture */}
       <div className="absolute inset-0">
-        {/* Top diagonal - Blue team territory */}
+        {/* Blue territory - left */}
         <div
-          className="absolute inset-0 bg-gradient-to-br from-blue-950 via-blue-900/80 to-transparent"
-          style={{ clipPath: 'polygon(0 0, 100% 0, 60% 100%, 0 100%)' }}
+          className="absolute inset-0 bg-gradient-to-br from-blue-900/40 via-blue-950/20 to-transparent"
+          style={{ clipPath: 'polygon(0 0, 55% 0, 35% 100%, 0 100%)' }}
         />
 
-        {/* Bottom diagonal - Red team territory */}
+        {/* Red territory - right */}
         <div
-          className="absolute inset-0 bg-gradient-to-tl from-red-950 via-red-900/80 to-transparent"
-          style={{ clipPath: 'polygon(100% 0, 100% 100%, 0 100%, 40% 0)' }}
-        />
-
-        {/* Center accent line */}
-        <div
-          className="absolute inset-0 bg-gradient-to-b from-amber-500 to-amber-600"
-          style={{ clipPath: 'polygon(48% 0, 52% 0, 42% 100%, 38% 100%)' }}
-        />
-        <div
-          className="absolute inset-0 bg-amber-400/50"
-          style={{ clipPath: 'polygon(49% 0, 51% 0, 41% 100%, 39% 100%)' }}
+          className="absolute inset-0 bg-gradient-to-tl from-red-900/40 via-red-950/20 to-transparent"
+          style={{ clipPath: 'polygon(45% 0, 100% 0, 100% 100%, 65% 100%)' }}
         />
       </div>
 
-      {/* Grid pattern overlay */}
+      {/* Subtle vignette */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_40%,rgba(0,0,0,0.7)_100%)]" />
+
+      {/* Animated ambient particles */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {particles.map(p => (
+          <div
+            key={p.id}
+            className="absolute w-1 h-1 rounded-full bg-amber-400/30 animate-float-particle"
+            style={{
+              left: `${p.x}%`,
+              top: `${p.y}%`,
+              animationDelay: `${p.delay}s`
+            }}
+          />
+        ))}
+      </div>
+
+      {/* Noise texture overlay */}
       <div
-        className="absolute inset-0 opacity-[0.03]"
+        className="absolute inset-0 opacity-[0.015] pointer-events-none mix-blend-overlay"
         style={{
-          backgroundImage: `
-            linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)
-          `,
-          backgroundSize: '40px 40px'
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`
         }}
       />
 
-      {/* Animated diagonal stripes */}
+      {/* Scanlines */}
       <div
-        className="absolute inset-0 pointer-events-none opacity-[0.02]"
+        className="absolute inset-0 pointer-events-none opacity-[0.03]"
         style={{
-          backgroundImage: `repeating-linear-gradient(
-            -35deg,
-            transparent,
-            transparent 30px,
-            rgba(251,191,36,1) 30px,
-            rgba(251,191,36,1) 60px
-          )`,
-          animation: 'stripes-scroll 30s linear infinite'
+          background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.5) 2px, rgba(0,0,0,0.5) 4px)'
         }}
       />
 
-      {/* Decorative corner frames - GBA style */}
-      <div className="absolute top-4 left-4 w-20 h-20 border-l-3 border-t-3 border-amber-600/40" />
-      <div className="absolute top-4 right-4 w-20 h-20 border-r-3 border-t-3 border-amber-600/40" />
-      <div className="absolute bottom-4 left-4 w-20 h-20 border-l-3 border-b-3 border-amber-600/40" />
-      <div className="absolute bottom-4 right-4 w-20 h-20 border-r-3 border-b-3 border-amber-600/40" />
+      {/* === POKEMON DISPLAYS === */}
 
-      {/* Featured Pokemon display - left side */}
-      <div className="absolute left-8 md:left-16 top-1/2 -translate-y-1/2 opacity-20 md:opacity-30">
-        <div className="relative">
+      {/* Left Pokemon - Blue team */}
+      <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1/3 h-full pointer-events-none">
+        <div className="relative h-full flex items-center justify-center">
           {FEATURED_POKEMON.map((pokemon, i) => (
             <div
               key={pokemon.id}
-              className={`absolute -translate-x-1/2 -translate-y-1/2 transition-all duration-700 ${
-                i === activePokemon ? 'opacity-100 scale-100' : 'opacity-0 scale-90'
+              className={`absolute transition-all duration-1000 ease-out ${
+                i === activePokemon
+                  ? 'opacity-100 scale-100 translate-x-0'
+                  : 'opacity-0 scale-75 -translate-x-8'
               }`}
             >
+              {/* Glow behind Pokemon */}
+              <div
+                className="absolute inset-0 blur-3xl scale-150 animate-pulse"
+                style={{
+                  background: `radial-gradient(circle, ${pokemon.glow} 0%, transparent 70%)`,
+                  animationDuration: '3s'
+                }}
+              />
               <img
                 src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/${pokemon.id}.gif`}
                 alt={pokemon.name}
-                className="w-24 h-24 md:w-40 md:h-40 object-contain scale-x-[-1] drop-shadow-[0_0_20px_rgba(59,130,246,0.5)]"
+                className="relative w-32 h-32 md:w-48 md:h-48 lg:w-56 lg:h-56 object-contain scale-x-[-1] drop-shadow-2xl animate-pokemon-idle"
                 style={{ imageRendering: 'pixelated' }}
               />
             </div>
@@ -120,23 +142,33 @@ export function StartScreen({ onStartGame, onHowToPlay, onMultiplayer }: StartSc
         </div>
       </div>
 
-      {/* Featured Pokemon display - right side */}
-      <div className="absolute right-8 md:right-16 top-1/2 -translate-y-1/2 opacity-20 md:opacity-30">
-        <div className="relative">
+      {/* Right Pokemon - Red team */}
+      <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1/3 h-full pointer-events-none">
+        <div className="relative h-full flex items-center justify-center">
           {FEATURED_POKEMON.map((pokemon, i) => {
             const shiftedIndex = (i + 3) % FEATURED_POKEMON.length;
             return (
               <div
                 key={`right-${pokemon.id}`}
-                className={`absolute -translate-x-1/2 -translate-y-1/2 transition-all duration-700 ${
-                  shiftedIndex === activePokemon ? 'opacity-100 scale-100' : 'opacity-0 scale-90'
+                className={`absolute transition-all duration-1000 ease-out ${
+                  shiftedIndex === activePokemon
+                    ? 'opacity-100 scale-100 translate-x-0'
+                    : 'opacity-0 scale-75 translate-x-8'
                 }`}
               >
+                <div
+                  className="absolute inset-0 blur-3xl scale-150 animate-pulse"
+                  style={{
+                    background: `radial-gradient(circle, ${pokemon.glow} 0%, transparent 70%)`,
+                    animationDuration: '3s',
+                    animationDelay: '1.5s'
+                  }}
+                />
                 <img
                   src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/${pokemon.id}.gif`}
                   alt={pokemon.name}
-                  className="w-24 h-24 md:w-40 md:h-40 object-contain drop-shadow-[0_0_20px_rgba(239,68,68,0.5)]"
-                  style={{ imageRendering: 'pixelated' }}
+                  className="relative w-32 h-32 md:w-48 md:h-48 lg:w-56 lg:h-56 object-contain drop-shadow-2xl animate-pokemon-idle"
+                  style={{ imageRendering: 'pixelated', animationDelay: '0.5s' }}
                 />
               </div>
             );
@@ -144,273 +176,364 @@ export function StartScreen({ onStartGame, onHowToPlay, onMultiplayer }: StartSc
         </div>
       </div>
 
-      {/* Main content container */}
-      <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4 py-8">
+      {/* === DECORATIVE FRAME === */}
 
-        {/* Title section */}
-        <div className={`transform transition-all duration-700 ${showContent ? 'translate-y-0 opacity-100' : '-translate-y-8 opacity-0'}`}>
+      {/* Corner ornaments */}
+      <div className="absolute top-6 left-6 w-16 h-16">
+        <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-amber-500/80 to-transparent" />
+        <div className="absolute top-0 left-0 h-full w-[2px] bg-gradient-to-b from-amber-500/80 to-transparent" />
+        <div className="absolute top-2 left-2 w-2 h-2 bg-amber-500/60 rotate-45" />
+      </div>
+      <div className="absolute top-6 right-6 w-16 h-16">
+        <div className="absolute top-0 right-0 w-full h-[2px] bg-gradient-to-l from-amber-500/80 to-transparent" />
+        <div className="absolute top-0 right-0 h-full w-[2px] bg-gradient-to-b from-amber-500/80 to-transparent" />
+        <div className="absolute top-2 right-2 w-2 h-2 bg-amber-500/60 rotate-45" />
+      </div>
+      <div className="absolute bottom-6 left-6 w-16 h-16">
+        <div className="absolute bottom-0 left-0 w-full h-[2px] bg-gradient-to-r from-amber-500/80 to-transparent" />
+        <div className="absolute bottom-0 left-0 h-full w-[2px] bg-gradient-to-t from-amber-500/80 to-transparent" />
+        <div className="absolute bottom-2 left-2 w-2 h-2 bg-amber-500/60 rotate-45" />
+      </div>
+      <div className="absolute bottom-6 right-6 w-16 h-16">
+        <div className="absolute bottom-0 right-0 w-full h-[2px] bg-gradient-to-l from-amber-500/80 to-transparent" />
+        <div className="absolute bottom-0 right-0 h-full w-[2px] bg-gradient-to-t from-amber-500/80 to-transparent" />
+        <div className="absolute bottom-2 right-2 w-2 h-2 bg-amber-500/60 rotate-45" />
+      </div>
 
-          {/* Shield emblem */}
-          <div className="flex justify-center mb-4">
-            <div className="relative">
-              {/* Glow */}
-              <div className="absolute inset-0 bg-amber-500/30 rounded-full blur-2xl animate-pulse" />
+      {/* === MAIN CONTENT === */}
 
-              {/* Diamond shape */}
-              <div className="relative w-16 h-16 md:w-20 md:h-20">
-                <div className="absolute inset-2 bg-gradient-to-br from-amber-400 to-amber-600 rotate-45 rounded-lg border-2 border-amber-300 shadow-lg" />
+      <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4">
+
+        {/* Logo Section */}
+        <div className={`transform transition-all duration-1000 ease-out ${
+          phase === 'ready' ? 'translate-y-0 opacity-100' : '-translate-y-12 opacity-0'
+        }`}>
+
+          {/* Emblem */}
+          <div className="flex justify-center mb-6">
+            <div className="relative group">
+              {/* Outer glow ring */}
+              <div className="absolute -inset-4 bg-gradient-to-r from-amber-500/20 via-yellow-400/30 to-amber-500/20 rounded-full blur-xl animate-pulse" />
+
+              {/* Shield container */}
+              <div className="relative w-20 h-20 md:w-24 md:h-24">
+                {/* Diamond background */}
+                <div className="absolute inset-1 rotate-45 rounded-lg bg-gradient-to-br from-amber-400 via-amber-500 to-amber-600 shadow-lg" />
+                <div className="absolute inset-2 rotate-45 rounded-lg bg-gradient-to-br from-amber-300 via-amber-400 to-amber-500" />
+                <div className="absolute inset-3 rotate-45 rounded-md bg-gradient-to-br from-amber-500 to-amber-700 shadow-inner" />
+
+                {/* Icon */}
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <Swords className="w-7 h-7 md:w-9 md:h-9 text-amber-900 drop-shadow-sm" />
+                  <Swords className="w-9 h-9 md:w-11 md:h-11 text-amber-100 drop-shadow-lg" strokeWidth={1.5} />
                 </div>
+
+                {/* Shine effect */}
+                <div className="absolute inset-3 rotate-45 rounded-md bg-gradient-to-br from-white/30 via-transparent to-transparent" />
               </div>
             </div>
           </div>
 
-          {/* Main title - GBA style */}
-          <div className="relative text-center mb-2">
-            <h1
-              className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black tracking-tight"
-              style={{
-                fontFamily: '"Press Start 2P", system-ui, sans-serif',
-                fontSize: 'clamp(1.5rem, 5vw, 3.5rem)'
-              }}
-            >
+          {/* Title */}
+          <div className="text-center mb-3">
+            <h1 className="relative inline-block">
+              {/* Shadow layer */}
               <span
-                className="text-white drop-shadow-[0_2px_0_#1e3a8a]"
-                style={{ textShadow: '0 4px 0 #1e3a8a, 0 0 40px rgba(59,130,246,0.5)' }}
+                className="absolute inset-0 text-black/50 blur-sm"
+                style={{
+                  fontFamily: '"Press Start 2P", system-ui',
+                  fontSize: 'clamp(1.8rem, 6vw, 4rem)',
+                  transform: 'translate(3px, 3px)'
+                }}
+                aria-hidden="true"
               >
-                POKÉ
+                POKÉTACTICS
               </span>
+
+              {/* Main text */}
               <span
-                className="text-amber-400 drop-shadow-[0_2px_0_#92400e]"
-                style={{ textShadow: '0 4px 0 #92400e, 0 0 40px rgba(251,191,36,0.5)' }}
+                className="relative"
+                style={{
+                  fontFamily: '"Press Start 2P", system-ui',
+                  fontSize: 'clamp(1.8rem, 6vw, 4rem)',
+                }}
               >
-                TACTICS
+                <span className="bg-gradient-to-b from-white via-blue-100 to-blue-300 bg-clip-text text-transparent drop-shadow-lg">
+                  POKÉ
+                </span>
+                <span className="bg-gradient-to-b from-amber-300 via-amber-400 to-amber-600 bg-clip-text text-transparent drop-shadow-lg">
+                  TACTICS
+                </span>
               </span>
             </h1>
           </div>
 
-          {/* Subtitle banner */}
-          <div className="flex items-center justify-center gap-3 mb-6">
-            <div className="h-0.5 w-8 md:w-16 bg-gradient-to-r from-transparent to-amber-500/70" />
-            <span className="text-[10px] md:text-xs tracking-[0.25em] text-amber-500/90 font-bold uppercase">
-              Tactical Battle
-            </span>
-            <div className="h-0.5 w-8 md:w-16 bg-gradient-to-l from-transparent to-amber-500/70" />
+          {/* Tagline */}
+          <div className="flex items-center justify-center gap-4 mb-5">
+            <div className="h-px w-12 md:w-20 bg-gradient-to-r from-transparent via-amber-500/50 to-amber-500/80" />
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-3 h-3 text-amber-400/70" />
+              <span className="text-[10px] md:text-xs tracking-[0.3em] text-amber-400/90 font-semibold uppercase">
+                Tactical Battle
+              </span>
+              <Sparkles className="w-3 h-3 text-amber-400/70" />
+            </div>
+            <div className="h-px w-12 md:w-20 bg-gradient-to-l from-transparent via-amber-500/50 to-amber-500/80" />
           </div>
 
-          {/* Version badge - GBA style panel */}
+          {/* Version */}
           <div className="flex justify-center">
-            <div className="
-              relative px-4 py-1.5
-              bg-gradient-to-b from-slate-800 to-slate-900
-              border-2 border-slate-600
-              rounded-sm
-              shadow-[2px_2px_0_0_rgba(0,0,0,0.4)]
-            ">
-              <div className="absolute inset-[1px] border border-slate-700/50 rounded-sm pointer-events-none" />
-              <span className="relative text-[9px] md:text-[10px] font-mono tracking-widest text-slate-400">
-                v{VERSION} • ALPHA
+            <div className="px-4 py-1 bg-black/40 backdrop-blur-sm border border-amber-500/20 rounded-full">
+              <span className="text-[9px] md:text-[10px] font-mono tracking-widest text-amber-500/70">
+                v{VERSION} ALPHA
               </span>
             </div>
           </div>
         </div>
 
-        {/* Menu panel - GBA style */}
-        <div className={`mt-8 md:mt-12 w-full max-w-sm transform transition-all duration-700 delay-200 ${showContent ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'}`}>
+        {/* Menu Section */}
+        <div className={`mt-10 md:mt-14 w-full max-w-md transform transition-all duration-1000 delay-200 ease-out ${
+          phase === 'ready' ? 'translate-y-0 opacity-100' : 'translate-y-12 opacity-0'
+        }`}>
 
-          {/* GBA-style menu container */}
-          <div className="
-            relative
-            bg-gradient-to-b from-amber-50 to-amber-100
-            border-[3px] border-amber-900
-            rounded-sm
-            shadow-[4px_4px_0_0_rgba(0,0,0,0.5)]
-            overflow-hidden
-          ">
-            {/* Inner border */}
-            <div className="absolute inset-[2px] border border-amber-300 rounded-sm pointer-events-none" />
+          {/* Menu Container - Premium panel */}
+          <div className="relative">
+            {/* Outer glow */}
+            <div className="absolute -inset-1 bg-gradient-to-b from-amber-500/20 to-amber-700/20 rounded-lg blur-md" />
 
-            {/* Title bar */}
-            <div className="
-              bg-gradient-to-r from-amber-700 via-amber-600 to-amber-700
-              px-4 py-2
-              border-b-2 border-amber-900
-              flex items-center justify-center gap-2
-            ">
-              <Crown className="w-3.5 h-3.5 text-amber-200" />
-              <span className="text-[10px] md:text-xs font-bold uppercase tracking-[0.2em] text-amber-100 drop-shadow-[1px_1px_0_rgba(0,0,0,0.5)]">
-                Menú Principal
-              </span>
-              <Crown className="w-3.5 h-3.5 text-amber-200" />
-            </div>
+            {/* Main panel */}
+            <div className="relative bg-gradient-to-b from-[#2a2520] via-[#1f1b18] to-[#151310] rounded-lg border border-amber-900/50 overflow-hidden shadow-2xl">
 
-            {/* Menu items */}
-            <div className="p-2 md:p-3 space-y-2">
+              {/* Top accent line */}
+              <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-amber-500/50 to-transparent" />
 
-              {/* Local Battle */}
-              <MenuButton
-                icon={<Swords className="w-5 h-5" />}
-                label="Batalla Local"
-                sublabel="2 jugadores • Mismo dispositivo"
-                onClick={onStartGame}
-                variant="blue"
-                delay={0}
-              />
+              {/* Header */}
+              <div className="relative px-6 py-3 bg-gradient-to-b from-amber-900/30 to-transparent border-b border-amber-900/30">
+                <div className="flex items-center justify-center gap-3">
+                  <Shield className="w-4 h-4 text-amber-600/80" />
+                  <span className="text-xs font-bold tracking-[0.2em] text-amber-500/90 uppercase">
+                    Menú Principal
+                  </span>
+                  <Shield className="w-4 h-4 text-amber-600/80" />
+                </div>
+              </div>
 
-              {/* Multiplayer */}
-              {onMultiplayer && (
-                <MenuButton
-                  icon={<Users className="w-5 h-5" />}
-                  label="Multijugador"
-                  sublabel="Online • Crear o unirse"
-                  onClick={onMultiplayer}
-                  variant="green"
-                  delay={1}
+              {/* Menu Items */}
+              <div className="p-4 space-y-3">
+                <PremiumButton
+                  icon={<Swords className="w-5 h-5" />}
+                  label="Batalla Local"
+                  sublabel="2 jugadores • Hot Seat"
+                  onClick={onStartGame}
+                  variant="primary"
+                  delay={0}
+                  ready={phase === 'ready'}
                 />
-              )}
 
-              {/* How to Play */}
-              <MenuButton
-                icon={<BookOpen className="w-5 h-5" />}
-                label="Cómo Jugar"
-                sublabel="Reglas y mecánicas"
-                onClick={onHowToPlay}
-                variant="default"
-                delay={2}
-              />
+                {onMultiplayer && (
+                  <PremiumButton
+                    icon={<Users className="w-5 h-5" />}
+                    label="Multijugador"
+                    sublabel="Online • Crear o unirse"
+                    onClick={onMultiplayer}
+                    variant="secondary"
+                    delay={1}
+                    ready={phase === 'ready'}
+                  />
+                )}
+
+                <PremiumButton
+                  icon={<BookOpen className="w-5 h-5" />}
+                  label="Cómo Jugar"
+                  sublabel="Tutorial y mecánicas"
+                  onClick={onHowToPlay}
+                  variant="tertiary"
+                  delay={2}
+                  ready={phase === 'ready'}
+                />
+              </div>
+
+              {/* Bottom accent */}
+              <div className="absolute bottom-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-amber-800/30 to-transparent" />
             </div>
           </div>
-        </div>
-
-        {/* Feature badges */}
-        <div className={`mt-8 flex flex-wrap justify-center gap-3 md:gap-4 transform transition-all duration-700 delay-400 ${showContent ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'}`}>
-          {[
-            { icon: Zap, label: '17 Tipos', color: 'text-yellow-500 border-yellow-500/30' },
-            { icon: Target, label: 'Fog of War', color: 'text-purple-400 border-purple-400/30' },
-            { icon: Shield, label: 'Evolución', color: 'text-emerald-400 border-emerald-400/30' },
-          ].map(({ icon: Icon, label, color }, i) => (
-            <div
-              key={label}
-              className={`
-                flex items-center gap-2 px-3 py-1.5
-                bg-slate-900/80 backdrop-blur-sm
-                border rounded-full
-                ${color}
-              `}
-              style={{ animationDelay: `${i * 100}ms` }}
-            >
-              <Icon className="w-3.5 h-3.5" />
-              <span className="text-[10px] font-bold uppercase tracking-wide text-slate-300">{label}</span>
-            </div>
-          ))}
         </div>
 
         {/* Footer */}
-        <div className={`absolute bottom-4 left-0 right-0 text-center transform transition-all duration-700 delay-600 ${showContent ? 'opacity-100' : 'opacity-0'}`}>
-          <div className="flex items-center justify-center gap-2 text-slate-600">
-            <div className="w-2 h-2 rounded-full bg-amber-500/50 animate-pulse" />
-            <p className="text-[9px] md:text-[10px] tracking-[0.15em] uppercase font-medium">
+        <div className={`absolute bottom-8 left-0 right-0 flex flex-col items-center gap-3 transition-all duration-1000 delay-500 ${
+          phase === 'ready' ? 'opacity-100' : 'opacity-0'
+        }`}>
+          {/* Prompt */}
+          <div className="flex items-center gap-3">
+            <div className="w-1.5 h-1.5 rounded-full bg-amber-500/60 animate-pulse" />
+            <span className="text-[10px] tracking-[0.2em] text-slate-500 uppercase font-medium">
               Selecciona una opción
-            </p>
-            <div className="w-2 h-2 rounded-full bg-amber-500/50 animate-pulse" />
+            </span>
+            <div className="w-1.5 h-1.5 rounded-full bg-amber-500/60 animate-pulse" style={{ animationDelay: '0.5s' }} />
           </div>
         </div>
       </div>
 
-      {/* Styles */}
+      {/* === STYLES === */}
       <style>{`
-        @keyframes stripes-scroll {
-          0% { background-position: 0 0; }
-          100% { background-position: 120px 0; }
+        @keyframes float-particle {
+          0%, 100% {
+            transform: translateY(0) translateX(0);
+            opacity: 0.3;
+          }
+          25% {
+            transform: translateY(-20px) translateX(5px);
+            opacity: 0.6;
+          }
+          50% {
+            transform: translateY(-10px) translateX(-5px);
+            opacity: 0.4;
+          }
+          75% {
+            transform: translateY(-30px) translateX(3px);
+            opacity: 0.5;
+          }
         }
 
-        .border-3 {
-          border-width: 3px;
+        .animate-float-particle {
+          animation: float-particle 8s ease-in-out infinite;
         }
 
-        @keyframes menu-button-enter {
+        @keyframes pokemon-idle {
+          0%, 100% {
+            transform: translateY(0);
+          }
+          50% {
+            transform: translateY(-8px);
+          }
+        }
+
+        .animate-pokemon-idle {
+          animation: pokemon-idle 3s ease-in-out infinite;
+        }
+
+        @keyframes button-enter {
           0% {
             opacity: 0;
-            transform: translateX(-12px);
+            transform: translateY(10px);
           }
           100% {
             opacity: 1;
-            transform: translateX(0);
+            transform: translateY(0);
           }
         }
 
-        .animate-menu-button {
+        .animate-button-enter {
           opacity: 0;
-          animation: menu-button-enter 0.3s ease-out forwards;
+          animation: button-enter 0.5s ease-out forwards;
+        }
+
+        @keyframes shimmer {
+          0% {
+            transform: translateX(-100%);
+          }
+          100% {
+            transform: translateX(100%);
+          }
         }
       `}</style>
     </div>
   );
 }
 
-interface MenuButtonProps {
+interface PremiumButtonProps {
   icon: React.ReactNode;
   label: string;
   sublabel: string;
   onClick: () => void;
-  variant: 'blue' | 'green' | 'default';
+  variant: 'primary' | 'secondary' | 'tertiary';
   delay: number;
+  ready: boolean;
 }
 
-function MenuButton({ icon, label, sublabel, onClick, variant, delay }: MenuButtonProps) {
-  const variantStyles = {
-    blue: 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 text-white border-blue-400 shadow-blue-500/30',
-    green: 'bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white border-emerald-400 shadow-emerald-500/30',
-    default: 'bg-gradient-to-r from-slate-200 to-slate-100 hover:from-slate-100 hover:to-white text-slate-800 border-slate-300 shadow-slate-500/20'
+function PremiumButton({ icon, label, sublabel, onClick, variant, delay, ready }: PremiumButtonProps) {
+  const variants = {
+    primary: {
+      bg: 'from-blue-600 via-blue-500 to-blue-600',
+      hover: 'hover:from-blue-500 hover:via-blue-400 hover:to-blue-500',
+      border: 'border-blue-400/50',
+      glow: 'group-hover:shadow-[0_0_30px_rgba(59,130,246,0.3)]',
+      iconBg: 'bg-blue-400/20',
+      text: 'text-white',
+      subtext: 'text-blue-100/80'
+    },
+    secondary: {
+      bg: 'from-emerald-600 via-emerald-500 to-emerald-600',
+      hover: 'hover:from-emerald-500 hover:via-emerald-400 hover:to-emerald-500',
+      border: 'border-emerald-400/50',
+      glow: 'group-hover:shadow-[0_0_30px_rgba(16,185,129,0.3)]',
+      iconBg: 'bg-emerald-400/20',
+      text: 'text-white',
+      subtext: 'text-emerald-100/80'
+    },
+    tertiary: {
+      bg: 'from-slate-700 via-slate-600 to-slate-700',
+      hover: 'hover:from-slate-600 hover:via-slate-500 hover:to-slate-600',
+      border: 'border-slate-500/50',
+      glow: 'group-hover:shadow-[0_0_20px_rgba(100,116,139,0.2)]',
+      iconBg: 'bg-slate-500/20',
+      text: 'text-slate-100',
+      subtext: 'text-slate-300/80'
+    }
   };
 
-  const iconBgStyles = {
-    blue: 'bg-blue-400/30',
-    green: 'bg-emerald-400/30',
-    default: 'bg-slate-400/20'
-  };
+  const v = variants[variant];
 
   return (
     <button
       onClick={onClick}
       className={`
         group relative w-full overflow-hidden
-        flex items-center gap-3
-        px-4 py-3 md:py-4
-        rounded-sm
-        border-2
-        shadow-[3px_3px_0_0_rgba(0,0,0,0.2)]
-        transition-all duration-150
-        hover:shadow-[1px_1px_0_0_rgba(0,0,0,0.2)]
-        hover:translate-x-[2px] hover:translate-y-[2px]
-        active:shadow-none
-        active:translate-x-[3px] active:translate-y-[3px]
-        animate-menu-button
-        ${variantStyles[variant]}
+        animate-button-enter
+        transition-all duration-200
+        ${v.glow}
       `}
-      style={{ animationDelay: `${delay * 80 + 300}ms` }}
+      style={{ animationDelay: `${delay * 100 + 400}ms` }}
     >
-      {/* Shine effect */}
-      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-500" />
+      {/* Button container */}
+      <div className={`
+        relative flex items-center gap-4
+        px-5 py-4
+        bg-gradient-to-r ${v.bg} ${v.hover}
+        rounded-lg border ${v.border}
+        transition-all duration-200
+        group-active:scale-[0.98]
+      `}>
+        {/* Shimmer effect */}
+        <div
+          className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100"
+          style={{ animation: 'shimmer 0.8s ease-out' }}
+        />
 
-      {/* Icon */}
-      <div className={`relative p-2 rounded-lg ${iconBgStyles[variant]}`}>
-        {icon}
-      </div>
+        {/* Top highlight */}
+        <div className="absolute top-0 inset-x-4 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
 
-      {/* Text */}
-      <div className="relative flex-1 text-left">
-        <div className="font-bold text-sm md:text-base tracking-wide uppercase">
-          {label}
+        {/* Icon */}
+        <div className={`relative flex-shrink-0 p-2.5 rounded-lg ${v.iconBg}`}>
+          {icon}
         </div>
-        <div className={`text-[10px] md:text-xs ${variant === 'default' ? 'text-slate-500' : 'opacity-80'}`}>
-          {sublabel}
-        </div>
-      </div>
 
-      {/* Arrow */}
-      <ChevronRight className="relative w-5 h-5 opacity-60 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+        {/* Text */}
+        <div className="relative flex-1 text-left">
+          <div className={`font-bold text-sm md:text-base tracking-wide ${v.text}`}>
+            {label}
+          </div>
+          <div className={`text-[10px] md:text-xs ${v.subtext}`}>
+            {sublabel}
+          </div>
+        </div>
+
+        {/* Arrow */}
+        <ChevronRight className={`
+          relative w-5 h-5 ${v.text} opacity-50
+          group-hover:opacity-100 group-hover:translate-x-1
+          transition-all duration-200
+        `} />
+      </div>
     </button>
   );
 }
