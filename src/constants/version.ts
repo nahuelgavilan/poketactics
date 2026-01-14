@@ -15,9 +15,10 @@
  * don't trigger version bumps unless they include breaking changes.
  */
 
-export const VERSION = '0.14.0';
+export const VERSION = '0.15.0';
 
 // Version history (Alpha - v0.x.x):
+// 0.15.0 - Premium GBA-style battle cinematic: VS intro, segmented HP bars, stat panels, particles, typewriter text
 // 0.14.0 - True multiplayer: each player is P1/P2, own fog of war, no turn transition screen, server-authoritative
 // 0.13.1 - Refined main menu: layered backgrounds, ambient particles, signature Pokemon glows, premium buttons
 // 0.13.0 - Premium GBA-style main menu: diagonal split design, rotating Pokemon, tactical aesthetic
