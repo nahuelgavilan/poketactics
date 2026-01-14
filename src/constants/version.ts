@@ -15,9 +15,10 @@
  * don't trigger version bumps unless they include breaking changes.
  */
 
-export const VERSION = '0.21.0';
+export const VERSION = '0.21.1';
 
 // Version history (Alpha - v0.x.x):
+// 0.21.1 - Tutorial fix: accurate floating action menu, real gameplay grids with Pokemon on tiles, attack range preview
 // 0.21.0 - Premium tutorial: GBA-style slides, animated ring preview, action menu mockup, battle preview, terrain guide
 // 0.20.0 - Ultra-premium capture: cinematic attack (slide-in/out), juicy ring with orbiting particles, GBA-style buttons
 // 0.19.0 - GBA-style capture: mini battle with attack/capture/flee, HP weakening, probability-based, ring timing

@@ -353,67 +353,103 @@ function SlideMenuAccion() {
   return (
     <div className="space-y-3">
       <p className="text-slate-300 text-sm">
-        Al elegir destino, aparece el <span className="text-amber-400 font-semibold">menú de acción</span>:
+        Al seleccionar tu Pokémon, aparece el <span className="text-amber-400 font-semibold">menú de acción</span> en la parte inferior:
       </p>
 
-      {/* Premium action menu mockup */}
+      {/* Gameplay preview with grid and floating menu */}
       <div
-        className="flex items-center justify-center gap-2 p-3 rounded-xl mx-auto"
+        className="relative rounded-xl overflow-hidden"
         style={{
-          background: 'linear-gradient(180deg, rgba(15,23,42,0.95) 0%, rgba(2,6,23,0.98) 100%)',
-          border: '2px solid rgba(71,85,105,0.6)',
-          boxShadow: '0 0 30px rgba(0,0,0,0.5), inset 0 0 20px rgba(59,130,246,0.1)',
+          background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)',
+          border: '3px solid #334155',
         }}
       >
-        {/* Pokemon badge */}
-        <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-blue-950/80 border border-blue-800/50">
-          <img
-            src={PIKACHU_SPRITE}
-            className="w-5 h-5 object-contain"
-            style={{ imageRendering: 'pixelated' }}
-            alt=""
-          />
-          <span className="text-[9px] font-bold text-blue-200">Pikachu</span>
+        {/* Mini game board showing Pokemon selected */}
+        <div className="grid grid-cols-4 gap-0.5 p-2">
+          <TutorialTile x={0} y={0} terrain={TERRAIN.GRASS} />
+          <TutorialTile x={1} y={0} terrain={TERRAIN.GRASS} canMove />
+          <TutorialTile x={2} y={0} terrain={TERRAIN.FOREST} />
+          <TutorialTile x={3} y={0} terrain={TERRAIN.GRASS} />
+
+          <TutorialTile x={0} y={1} terrain={TERRAIN.GRASS} canMove />
+          <TutorialTile x={1} y={1} terrain={TERRAIN.GRASS} isSelected>
+            <div className="relative w-[90%] h-[90%]">
+              <img src={PIKACHU_SPRITE} className="w-full h-full object-contain scale-x-[-1] drop-shadow-lg" style={{ imageRendering: 'pixelated' }} alt="" />
+              <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-8 h-1.5 bg-slate-900 rounded-full overflow-hidden border border-white/20">
+                <div className="h-full w-full bg-green-400" />
+              </div>
+              <div className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-blue-500 border border-slate-900" />
+            </div>
+          </TutorialTile>
+          <TutorialTile x={2} y={1} terrain={TERRAIN.GRASS} canMove canAttack>
+            <div className="relative w-[90%] h-[90%]">
+              <img src={CHARMANDER_SPRITE} className="w-full h-full object-contain drop-shadow-lg" style={{ imageRendering: 'pixelated' }} alt="" />
+              <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-8 h-1.5 bg-slate-900 rounded-full overflow-hidden border border-white/20">
+                <div className="h-full w-3/4 bg-yellow-400" />
+              </div>
+              <div className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-red-500 border border-slate-900" />
+            </div>
+          </TutorialTile>
+          <TutorialTile x={3} y={1} terrain={TERRAIN.TALL_GRASS} />
+
+          <TutorialTile x={0} y={2} terrain={TERRAIN.GRASS} />
+          <TutorialTile x={1} y={2} terrain={TERRAIN.GRASS} canMove />
+          <TutorialTile x={2} y={2} terrain={TERRAIN.GRASS} canMove />
+          <TutorialTile x={3} y={2} terrain={TERRAIN.WATER} />
         </div>
 
-        <div className="w-px h-6 bg-slate-600" />
+        {/* REAL floating action menu (matches ActionMenu.tsx) */}
+        <div
+          className="mx-2 mb-2 flex items-center gap-2 px-3 py-2 rounded-2xl"
+          style={{
+            background: 'rgba(2,6,23,0.95)',
+            backdropFilter: 'blur(12px)',
+            border: '1px solid rgba(71,85,105,0.6)',
+            boxShadow: '0 10px 40px rgba(0,0,0,0.5)',
+          }}
+        >
+          {/* Background glow */}
+          <div className="absolute inset-0 rounded-2xl bg-blue-600/10 blur-xl" />
 
-        {/* Action buttons */}
-        <div className="flex items-center gap-1">
-          <TutorialActionButton icon={Move} label="Mover" color="blue" />
-          <TutorialActionButton icon={Swords} label="Atacar" color="red" highlight />
-          <TutorialActionButton icon={Clock} label="Esperar" color="amber" />
-        </div>
+          {/* Unit badge */}
+          <div className="relative flex items-center gap-1.5 px-2 py-1 rounded-xl bg-blue-950/80 border border-blue-800/50">
+            <img src={PIKACHU_SPRITE} className="w-4 h-4 object-contain" style={{ imageRendering: 'pixelated' }} alt="" />
+            <span className="text-[8px] font-bold text-blue-200">Pikachu</span>
+          </div>
 
-        <div className="w-px h-6 bg-slate-600" />
+          {/* Divider */}
+          <div className="w-px h-6 bg-gradient-to-b from-transparent via-slate-600 to-transparent" />
 
-        <div className="p-1.5 rounded-lg bg-slate-800/80">
-          <X className="w-3 h-3 text-slate-400" />
+          {/* Action buttons */}
+          <div className="flex items-center gap-1">
+            <TutorialActionButton icon={Move} label="Mover" color="blue" />
+            <TutorialActionButton icon={Swords} label="Atacar" color="red" highlight />
+            <TutorialActionButton icon={Clock} label="Esperar" color="amber" />
+          </div>
+
+          {/* Divider */}
+          <div className="w-px h-6 bg-gradient-to-b from-transparent via-slate-600 to-transparent" />
+
+          {/* Cancel */}
+          <div className="p-1.5 rounded-xl bg-slate-800/80">
+            <X className="w-3 h-3 text-slate-400" />
+          </div>
         </div>
       </div>
 
-      {/* Button explanations */}
-      <div className="space-y-2 mt-3">
-        <div className="flex items-center gap-2 p-2 rounded-lg bg-blue-500/10 border border-blue-500/20">
-          <Move className="w-4 h-4 text-blue-400" />
-          <div>
-            <span className="text-xs font-bold text-blue-300">MOVER</span>
-            <span className="text-[10px] text-slate-400 ml-2">Ir a otra casilla</span>
-          </div>
+      {/* Brief explanation */}
+      <div className="grid grid-cols-3 gap-1.5 text-center">
+        <div className="p-1.5 rounded-lg bg-blue-500/10 border border-blue-500/20">
+          <Move className="w-3 h-3 text-blue-400 mx-auto mb-0.5" />
+          <div className="text-[8px] font-bold text-blue-300">MOVER</div>
         </div>
-        <div className="flex items-center gap-2 p-2 rounded-lg bg-red-500/10 border border-red-500/20">
-          <Swords className="w-4 h-4 text-red-400" />
-          <div>
-            <span className="text-xs font-bold text-red-300">ATACAR</span>
-            <span className="text-[10px] text-slate-400 ml-2">Enemigos en rango</span>
-          </div>
+        <div className="p-1.5 rounded-lg bg-red-500/10 border border-red-500/20">
+          <Swords className="w-3 h-3 text-red-400 mx-auto mb-0.5" />
+          <div className="text-[8px] font-bold text-red-300">ATACAR</div>
         </div>
-        <div className="flex items-center gap-2 p-2 rounded-lg bg-amber-500/10 border border-amber-500/20">
-          <Clock className="w-4 h-4 text-amber-400" />
-          <div>
-            <span className="text-xs font-bold text-amber-300">ESPERAR</span>
-            <span className="text-[10px] text-slate-400 ml-2">Terminar turno</span>
-          </div>
+        <div className="p-1.5 rounded-lg bg-amber-500/10 border border-amber-500/20">
+          <Clock className="w-3 h-3 text-amber-400 mx-auto mb-0.5" />
+          <div className="text-[8px] font-bold text-amber-300">ESPERAR</div>
         </div>
       </div>
     </div>
@@ -424,81 +460,71 @@ function SlideCombate() {
   return (
     <div className="space-y-3">
       <p className="text-slate-300 text-sm">
-        Los <span className="text-red-400 font-semibold">indicadores rojos</span> muestran enemigos a tu alcance.
+        Pulsa <span className="text-red-400 font-semibold">Atacar</span> y las casillas <span className="text-red-400 font-semibold">rojas</span> mostrarán enemigos en rango.
       </p>
 
-      {/* Battle preview mockup */}
+      {/* REAL gameplay - Pokemon on tiles attacking */}
       <div
-        className="relative p-3 rounded-lg overflow-hidden"
+        className="relative rounded-xl overflow-hidden"
         style={{
-          background: 'linear-gradient(135deg, #0C0A09 0%, #1C1917 100%)',
-          border: '3px solid #44403C',
-          boxShadow: 'inset 0 2px 15px rgba(0,0,0,0.6)',
+          background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)',
+          border: '3px solid #334155',
         }}
       >
-        {/* VS Display */}
-        <div className="flex items-center justify-between">
-          {/* Attacker */}
-          <div className="text-center">
-            <div className="relative w-16 h-16 mx-auto mb-1">
-              <div className="absolute inset-0 bg-blue-500/20 rounded-full blur-xl animate-pulse" />
-              <img
-                src={PIKACHU_SPRITE}
-                className="w-full h-full object-contain scale-x-[-1] relative z-10"
-                style={{ imageRendering: 'pixelated' }}
-                alt=""
-              />
-            </div>
-            <div
-              className="text-[9px] font-bold text-blue-400"
-              style={{ fontFamily: '"Press Start 2P", monospace' }}
-            >
-              Pikachu
-            </div>
-            {/* HP Bar */}
-            <div className="w-16 h-2 bg-slate-800 rounded-full mt-1 overflow-hidden border border-slate-700">
-              <div className="h-full w-full bg-gradient-to-r from-green-500 to-green-400" />
-            </div>
-          </div>
-
-          {/* VS + Damage preview */}
-          <div className="flex flex-col items-center gap-1">
-            <div
-              className="text-lg font-black text-amber-500"
-              style={{ fontFamily: '"Press Start 2P", monospace', textShadow: '2px 2px 0 #000' }}
-            >
-              VS
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-1 px-2 py-1 rounded bg-red-500/20 border border-red-500/30">
-                <Zap className="w-3 h-3 text-yellow-400" />
-                <span className="text-[10px] font-bold text-red-400">-45</span>
+        {/* Mini game board showing attack scenario */}
+        <div className="grid grid-cols-4 gap-0.5 p-2">
+          <TutorialTile x={0} y={0} terrain={TERRAIN.FOREST} />
+          <TutorialTile x={1} y={0} terrain={TERRAIN.GRASS}>
+            <div className="relative w-[90%] h-[90%]">
+              <img src={SQUIRTLE_SPRITE} className="w-full h-full object-contain scale-x-[-1] drop-shadow-lg" style={{ imageRendering: 'pixelated' }} alt="" />
+              <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-8 h-1.5 bg-slate-900 rounded-full overflow-hidden border border-white/20">
+                <div className="h-full w-full bg-green-400" />
               </div>
+              <div className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-blue-500 border border-slate-900" />
             </div>
-          </div>
+          </TutorialTile>
+          <TutorialTile x={2} y={0} terrain={TERRAIN.GRASS} />
+          <TutorialTile x={3} y={0} terrain={TERRAIN.MOUNTAIN} />
 
-          {/* Defender */}
-          <div className="text-center">
-            <div className="relative w-16 h-16 mx-auto mb-1">
-              <div className="absolute inset-0 bg-red-500/20 rounded-full blur-xl animate-pulse" />
-              <img
-                src={SQUIRTLE_SPRITE}
-                className="w-full h-full object-contain relative z-10"
-                style={{ imageRendering: 'pixelated' }}
-                alt=""
-              />
+          <TutorialTile x={0} y={1} terrain={TERRAIN.GRASS} />
+          <TutorialTile x={1} y={1} terrain={TERRAIN.GRASS} isSelected>
+            <div className="relative w-[90%] h-[90%]">
+              <img src={PIKACHU_SPRITE} className="w-full h-full object-contain scale-x-[-1] drop-shadow-lg" style={{ imageRendering: 'pixelated' }} alt="" />
+              <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-8 h-1.5 bg-slate-900 rounded-full overflow-hidden border border-white/20">
+                <div className="h-full w-full bg-green-400" />
+              </div>
+              <div className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-blue-500 border border-slate-900" />
             </div>
-            <div
-              className="text-[9px] font-bold text-red-400"
-              style={{ fontFamily: '"Press Start 2P", monospace' }}
-            >
-              Squirtle
+          </TutorialTile>
+          <TutorialTile x={2} y={1} terrain={TERRAIN.GRASS} canAttack>
+            <div className="relative w-[90%] h-[90%]">
+              <img src={CHARMANDER_SPRITE} className="w-full h-full object-contain drop-shadow-lg" style={{ imageRendering: 'pixelated' }} alt="" />
+              <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-8 h-1.5 bg-slate-900 rounded-full overflow-hidden border border-white/20">
+                <div className="h-full w-2/3 bg-yellow-400" />
+              </div>
+              <div className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-red-500 border border-slate-900" />
             </div>
-            {/* HP Bar */}
-            <div className="w-16 h-2 bg-slate-800 rounded-full mt-1 overflow-hidden border border-slate-700">
-              <div className="h-full w-3/4 bg-gradient-to-r from-yellow-500 to-yellow-400" />
+          </TutorialTile>
+          <TutorialTile x={3} y={1} terrain={TERRAIN.TALL_GRASS} />
+
+          <TutorialTile x={0} y={2} terrain={TERRAIN.WATER} />
+          <TutorialTile x={1} y={2} terrain={TERRAIN.GRASS} />
+          <TutorialTile x={2} y={2} terrain={TERRAIN.GRASS}>
+            <div className="relative w-[90%] h-[90%]">
+              <img src={BULBASAUR_SPRITE} className="w-full h-full object-contain drop-shadow-lg" style={{ imageRendering: 'pixelated' }} alt="" />
+              <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-8 h-1.5 bg-slate-900 rounded-full overflow-hidden border border-white/20">
+                <div className="h-full w-1/2 bg-yellow-400" />
+              </div>
+              <div className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-red-500 border border-slate-900" />
             </div>
-          </div>
+          </TutorialTile>
+          <TutorialTile x={3} y={2} terrain={TERRAIN.GRASS} />
+        </div>
+
+        {/* Attack indicator label */}
+        <div className="mx-2 mb-2 flex items-center justify-center gap-2 px-3 py-1.5 rounded-lg bg-red-500/20 border border-red-500/30">
+          <Swords className="w-4 h-4 text-red-400" />
+          <span className="text-[10px] font-bold text-red-300">Charmander está en rango de ataque</span>
         </div>
       </div>
 
