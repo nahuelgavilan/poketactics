@@ -14,8 +14,6 @@ import {
 import { CaptureMinigame } from './components/CaptureMinigame';
 import { StartScreen } from './components/StartScreen';
 import { HowToPlay } from './components/HowToPlay';
-import { TurnControls } from './components/TurnControls';
-import { HelpCircle } from 'lucide-react';
 import type { Position, TerrainType } from './types/game';
 
 export default function Game() {
@@ -161,17 +159,23 @@ export default function Game() {
 
   return (
     <div className="fixed inset-0 bg-slate-900 text-slate-100 flex flex-col select-none overflow-hidden">
-      {/* Header - compact */}
+      {/* Header - compact with dropdown menu */}
       <Header
         currentPlayer={currentPlayer}
         onRestart={initGame}
         onMenu={() => window.location.reload()}
+        onEndTurn={triggerTurnTransition}
+        onHowToPlay={() => setShowHowToPlay(true)}
         myPlayer={myPlayer}
         isMultiplayer={isMultiplayer}
+        movedCount={playerUnits.filter(u => u.hasMoved).length}
+        totalCount={playerUnits.length}
+        gamePhase={gamePhase}
       />
 
       {/* Main game area - fills remaining space, centers board, no scroll */}
-      <main className="flex-1 min-h-0 relative flex items-center justify-center p-1 md:p-3 overflow-hidden">
+      {/* Hidden during transition to prevent any flash of game state */}
+      <main className={`flex-1 min-h-0 relative flex items-center justify-center p-1 md:p-3 overflow-hidden ${gameState === 'transition' ? 'invisible' : ''}`}>
         {/* Game Board */}
         <GameBoard
           map={map}
@@ -191,6 +195,37 @@ export default function Game() {
           onWait={selectWait}
           onCancel={cancelAction}
         />
+
+        {/* Phase indicator - floating top-right during MOVING/ATTACKING */}
+        {gameState === 'playing' && (gamePhase === 'MOVING' || gamePhase === 'ATTACKING') && (
+          <div className="absolute top-1 right-1 md:top-3 md:right-3 z-20 animate-in">
+            <div className={`
+              px-3 py-1.5 md:px-4 md:py-2 rounded-lg
+              text-[10px] md:text-xs font-bold uppercase tracking-wide
+              backdrop-blur-sm shadow-lg
+              ${gamePhase === 'MOVING'
+                ? 'bg-blue-900/90 border border-blue-500/50 text-blue-300 shadow-blue-500/20'
+                : 'bg-red-900/90 border border-red-500/50 text-red-300 shadow-red-500/30'
+              }
+            `}>
+              {gamePhase === 'MOVING' ? 'Elige destino' : 'Elige objetivo'}
+            </div>
+          </div>
+        )}
+
+        {/* Multiplayer waiting indicator */}
+        {gameState === 'playing' && isMultiplayer && !isMyTurn && gamePhase === 'SELECT' && (
+          <div className="absolute top-1 right-1 md:top-3 md:right-3 z-20">
+            <div className="
+              px-3 py-1.5 md:px-4 md:py-2 rounded-lg
+              text-[10px] md:text-xs font-bold uppercase tracking-wide
+              bg-amber-900/90 border border-amber-500/50 text-amber-300
+              backdrop-blur-sm shadow-lg
+            ">
+              <span className="animate-pulse">Esperando rival...</span>
+            </div>
+          </div>
+        )}
 
         {/* Selected Unit Info - floating top-left on desktop */}
         {selectedUnit && !isMobile && (
@@ -249,27 +284,6 @@ export default function Game() {
             </div>
           </div>
         )}
-
-        {/* Turn Controls - GBA style phase indicator + end turn button */}
-        {gameState === 'playing' && (
-          <TurnControls
-            currentPlayer={currentPlayer}
-            isMyTurn={isMyTurn}
-            movedCount={playerUnits.filter(u => u.hasMoved).length}
-            totalCount={playerUnits.length}
-            gamePhase={gamePhase}
-            onEndTurn={triggerTurnTransition}
-            isMultiplayer={isMultiplayer}
-          />
-        )}
-
-        {/* Help button - bottom right, smaller on mobile */}
-        <button
-          onClick={() => setShowHowToPlay(true)}
-          className="absolute bottom-2 right-2 md:bottom-4 md:right-4 p-1.5 md:p-2 bg-slate-800/80 hover:bg-slate-700 rounded-full text-slate-400 hover:text-white transition-colors z-20"
-        >
-          <HelpCircle className="w-4 h-4 md:w-5 md:h-5" />
-        </button>
 
         {/* Mobile: Selected unit stats panel - bottom of screen */}
         {selectedUnit && isMobile && (
@@ -348,6 +362,18 @@ export default function Game() {
         )}
 
       </main>
+
+      {/* INSTANT blocking overlay for turn transition - prevents any flash */}
+      {gameState === 'transition' && (
+        <div
+          className="fixed inset-0 z-40 bg-slate-950"
+          style={{
+            // Force synchronous paint - no animation delay
+            willChange: 'auto',
+            contain: 'strict'
+          }}
+        />
+      )}
 
       {/* Overlays - full screen modals */}
       {gameState === 'transition' && (
