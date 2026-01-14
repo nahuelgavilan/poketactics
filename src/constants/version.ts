@@ -15,9 +15,10 @@
  * don't trigger version bumps unless they include breaking changes.
  */
 
-export const VERSION = '0.15.0';
+export const VERSION = '0.16.0';
 
 // Version history (Alpha - v0.x.x):
+// 0.16.0 - Premium capture system: dramatic encounter intro, ring-based minigame, Pokeball physics, GBA-style modal
 // 0.15.0 - Premium GBA-style battle cinematic: VS intro, segmented HP bars, stat panels, particles, typewriter text
 // 0.14.0 - True multiplayer: each player is P1/P2, own fog of war, no turn transition screen, server-authoritative
 // 0.13.1 - Refined main menu: layered backgrounds, ambient particles, signature Pokemon glows, premium buttons
