@@ -15,9 +15,10 @@
  * don't trigger version bumps unless they include breaking changes.
  */
 
-export const VERSION = '0.21.2';
+export const VERSION = '0.21.3';
 
 // Version history (Alpha - v0.x.x):
+// 0.21.3 - Tutorial fix: REAL UnitActionMenu (Fire Emblem style next to tile, not floating bar), correct icons
 // 0.21.2 - Tutorial fix: EXACT ActionMenu.tsx styling (buttons, spacing, icons, badge), proper Sword icon
 // 0.21.1 - Tutorial fix: accurate floating action menu, real gameplay grids with Pokemon on tiles, attack range preview
 // 0.21.0 - Premium tutorial: GBA-style slides, animated ring preview, action menu mockup, battle preview, terrain guide
