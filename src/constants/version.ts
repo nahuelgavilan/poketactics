@@ -15,9 +15,10 @@
  * don't trigger version bumps unless they include breaking changes.
  */
 
-export const VERSION = '1.10.1';
+export const VERSION = '1.10.2';
 
 // Version history:
+// 1.10.2 - Tutorial uses actual game Tile component - identical graphics, real PathSegment arrows
 // 1.10.1 - Fix: terrain panel UX - click anywhere to close (toggle same tile, click panel, or click elsewhere)
 // 1.10.0 - Terrain info panel (click empty tile), updated tutorial with Pikachu and action menu graphics
 // 1.9.1 - Distinctive terrain visuals: grass blades, tree canopies, mountain peaks, water waves, healing cross
