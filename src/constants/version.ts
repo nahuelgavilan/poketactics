@@ -15,9 +15,10 @@
  * don't trigger version bumps unless they include breaking changes.
  */
 
-export const VERSION = '0.17.0';
+export const VERSION = '0.18.0';
 
 // Version history (Alpha - v0.x.x):
+// 0.18.0 - Premium screens: GBA boot sequence, letter-by-letter title, team showcase, confetti victory, version badges
 // 0.17.0 - Micro-combat capture: type-specific attack patterns, swipe controls, combo system, flee mechanic, skill-based
 // 0.16.1 - Challenging capture: will bar, multiple attempts, Pokemon movement, escalating difficulty, flee chance
 // 0.16.0 - Premium capture system: dramatic encounter intro, ring-based minigame, Pokeball physics, GBA-style modal
