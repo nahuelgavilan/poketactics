@@ -4,6 +4,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Target,
+  Sword,
   Swords,
   TreePine,
   Sparkles,
@@ -85,41 +86,52 @@ function TutorialTile({
   );
 }
 
-// Premium GBA-style action button for tutorial
+// EXACT copy of ActionButton from ActionMenu.tsx for tutorial accuracy
 function TutorialActionButton({
   icon: Icon,
   label,
   color,
-  disabled = false,
   highlight = false,
 }: {
   icon: React.ElementType;
   label: string;
   color: 'blue' | 'red' | 'green' | 'amber';
-  disabled?: boolean;
   highlight?: boolean;
 }) {
   const colorStyles = {
-    blue: 'from-blue-600 to-blue-700 border-blue-400/50 shadow-blue-500/40',
-    red: 'from-red-600 to-red-700 border-red-400/50 shadow-red-500/40',
-    green: 'from-emerald-600 to-emerald-700 border-emerald-400/50 shadow-emerald-500/40',
-    amber: 'from-amber-600 to-amber-700 border-amber-400/50 shadow-amber-500/40',
+    blue: {
+      base: 'from-blue-600 to-blue-700 border-blue-400/50 shadow-blue-500/40',
+      glow: 'bg-blue-500'
+    },
+    red: {
+      base: 'from-red-600 to-red-700 border-red-400/50 shadow-red-500/40',
+      glow: 'bg-red-500'
+    },
+    green: {
+      base: 'from-emerald-600 to-emerald-700 border-emerald-400/50 shadow-emerald-500/40',
+      glow: 'bg-emerald-500'
+    },
+    amber: {
+      base: 'from-amber-600 to-amber-700 border-amber-400/50 shadow-amber-500/40',
+      glow: 'bg-amber-500'
+    }
   };
+
+  const style = colorStyles[color];
 
   return (
     <div
       className={`
-        relative flex items-center justify-center gap-1
-        px-2 py-1.5 min-w-[52px]
-        bg-gradient-to-b ${colorStyles[color]}
-        border-b-2 rounded-lg
-        text-white text-[9px] font-bold uppercase tracking-wide
-        transition-all duration-300
-        ${disabled ? 'opacity-30 grayscale' : ''}
-        ${highlight ? 'ring-2 ring-yellow-400 ring-offset-1 ring-offset-slate-900 animate-pulse' : ''}
+        relative flex items-center justify-center gap-1.5
+        px-3 py-2.5 min-w-[72px]
+        bg-gradient-to-b ${style.base}
+        border-b-2 rounded-xl
+        text-white text-xs font-bold uppercase tracking-wide
+        shadow-lg
+        ${highlight ? 'ring-2 ring-amber-400 ring-offset-2 ring-offset-slate-950' : ''}
       `}
     >
-      <Icon className="w-3 h-3" />
+      <Icon className="w-4 h-4" />
       <span>{label}</span>
     </div>
   );
@@ -350,13 +362,16 @@ function SlideMovimiento() {
 }
 
 function SlideMenuAccion() {
+  // Static sprite URL for Pikachu icon (same as used in ActionMenu)
+  const pikachuIcon = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/25.png';
+
   return (
     <div className="space-y-3">
       <p className="text-slate-300 text-sm">
         Al seleccionar tu Pokémon, aparece el <span className="text-amber-400 font-semibold">menú de acción</span> en la parte inferior:
       </p>
 
-      {/* Gameplay preview with grid and floating menu */}
+      {/* Gameplay preview with grid */}
       <div
         className="relative rounded-xl overflow-hidden"
         style={{
@@ -364,75 +379,69 @@ function SlideMenuAccion() {
           border: '3px solid #334155',
         }}
       >
-        {/* Mini game board showing Pokemon selected */}
-        <div className="grid grid-cols-4 gap-0.5 p-2">
+        {/* Mini game board - smaller tiles */}
+        <div className="grid grid-cols-5 gap-0.5 p-1.5">
           <TutorialTile x={0} y={0} terrain={TERRAIN.GRASS} />
           <TutorialTile x={1} y={0} terrain={TERRAIN.GRASS} canMove />
-          <TutorialTile x={2} y={0} terrain={TERRAIN.FOREST} />
-          <TutorialTile x={3} y={0} terrain={TERRAIN.GRASS} />
+          <TutorialTile x={2} y={0} terrain={TERRAIN.GRASS} canMove />
+          <TutorialTile x={3} y={0} terrain={TERRAIN.FOREST} />
+          <TutorialTile x={4} y={0} terrain={TERRAIN.MOUNTAIN} />
 
           <TutorialTile x={0} y={1} terrain={TERRAIN.GRASS} canMove />
           <TutorialTile x={1} y={1} terrain={TERRAIN.GRASS} isSelected>
             <div className="relative w-[90%] h-[90%]">
               <img src={PIKACHU_SPRITE} className="w-full h-full object-contain scale-x-[-1] drop-shadow-lg" style={{ imageRendering: 'pixelated' }} alt="" />
-              <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-8 h-1.5 bg-slate-900 rounded-full overflow-hidden border border-white/20">
+              <div className="absolute -top-0.5 left-1/2 -translate-x-1/2 w-6 h-1 bg-slate-900 rounded-full overflow-hidden border border-white/20">
                 <div className="h-full w-full bg-green-400" />
               </div>
-              <div className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-blue-500 border border-slate-900" />
+              <div className="absolute bottom-0 right-0 w-2 h-2 rounded-full bg-blue-500 border border-slate-900" />
             </div>
           </TutorialTile>
-          <TutorialTile x={2} y={1} terrain={TERRAIN.GRASS} canMove canAttack>
-            <div className="relative w-[90%] h-[90%]">
-              <img src={CHARMANDER_SPRITE} className="w-full h-full object-contain drop-shadow-lg" style={{ imageRendering: 'pixelated' }} alt="" />
-              <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-8 h-1.5 bg-slate-900 rounded-full overflow-hidden border border-white/20">
-                <div className="h-full w-3/4 bg-yellow-400" />
-              </div>
-              <div className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-red-500 border border-slate-900" />
-            </div>
-          </TutorialTile>
-          <TutorialTile x={3} y={1} terrain={TERRAIN.TALL_GRASS} />
-
-          <TutorialTile x={0} y={2} terrain={TERRAIN.GRASS} />
-          <TutorialTile x={1} y={2} terrain={TERRAIN.GRASS} canMove />
-          <TutorialTile x={2} y={2} terrain={TERRAIN.GRASS} canMove />
-          <TutorialTile x={3} y={2} terrain={TERRAIN.WATER} />
+          <TutorialTile x={2} y={1} terrain={TERRAIN.GRASS} canMove />
+          <TutorialTile x={3} y={1} terrain={TERRAIN.GRASS} canMove />
+          <TutorialTile x={4} y={1} terrain={TERRAIN.WATER} />
         </div>
 
-        {/* REAL floating action menu (matches ActionMenu.tsx) */}
+        {/* EXACT ActionMenu.tsx styling */}
         <div
-          className="mx-2 mb-2 flex items-center gap-2 px-3 py-2 rounded-2xl"
+          className="relative flex items-center gap-3 mx-1.5 mb-1.5 px-4 py-3 rounded-2xl"
           style={{
             background: 'rgba(2,6,23,0.95)',
-            backdropFilter: 'blur(12px)',
+            backdropFilter: 'blur(16px)',
             border: '1px solid rgba(71,85,105,0.6)',
-            boxShadow: '0 10px 40px rgba(0,0,0,0.5)',
+            boxShadow: '0 25px 50px -12px rgba(0,0,0,0.6)',
           }}
         >
-          {/* Background glow */}
-          <div className="absolute inset-0 rounded-2xl bg-blue-600/10 blur-xl" />
+          {/* Background glow (P1 = blue) */}
+          <div className="absolute inset-0 rounded-2xl bg-blue-600 opacity-20 blur-2xl" />
 
-          {/* Unit badge */}
-          <div className="relative flex items-center gap-1.5 px-2 py-1 rounded-xl bg-blue-950/80 border border-blue-800/50">
-            <img src={PIKACHU_SPRITE} className="w-4 h-4 object-contain" style={{ imageRendering: 'pixelated' }} alt="" />
-            <span className="text-[8px] font-bold text-blue-200">Pikachu</span>
+          {/* Unit name badge with sprite - EXACT from ActionMenu.tsx */}
+          <div className="relative flex items-center gap-2 px-2 py-1 rounded-xl text-xs font-bold bg-blue-950/80 text-blue-200 border border-blue-800/50">
+            <img
+              src={pikachuIcon}
+              className="w-5 h-5 object-contain"
+              style={{ imageRendering: 'pixelated' }}
+              alt=""
+            />
+            <span>Pikachu</span>
           </div>
 
-          {/* Divider */}
-          <div className="w-px h-6 bg-gradient-to-b from-transparent via-slate-600 to-transparent" />
+          {/* Divider - EXACT from ActionMenu.tsx */}
+          <div className="w-px h-8 bg-gradient-to-b from-transparent via-slate-600 to-transparent" />
 
-          {/* Action buttons */}
-          <div className="flex items-center gap-1">
+          {/* Action buttons - EXACT styling */}
+          <div className="flex items-center gap-1.5">
             <TutorialActionButton icon={Move} label="Mover" color="blue" />
-            <TutorialActionButton icon={Swords} label="Atacar" color="red" highlight />
+            <TutorialActionButton icon={Sword} label="Atacar" color="red" highlight />
             <TutorialActionButton icon={Clock} label="Esperar" color="amber" />
           </div>
 
           {/* Divider */}
-          <div className="w-px h-6 bg-gradient-to-b from-transparent via-slate-600 to-transparent" />
+          <div className="w-px h-8 bg-gradient-to-b from-transparent via-slate-600 to-transparent" />
 
-          {/* Cancel */}
-          <div className="p-1.5 rounded-xl bg-slate-800/80">
-            <X className="w-3 h-3 text-slate-400" />
+          {/* Cancel button - EXACT from ActionMenu.tsx */}
+          <div className="relative p-2 rounded-xl bg-slate-800/80 text-slate-400">
+            <X className="w-4 h-4" />
           </div>
         </div>
       </div>
@@ -440,16 +449,16 @@ function SlideMenuAccion() {
       {/* Brief explanation */}
       <div className="grid grid-cols-3 gap-1.5 text-center">
         <div className="p-1.5 rounded-lg bg-blue-500/10 border border-blue-500/20">
-          <Move className="w-3 h-3 text-blue-400 mx-auto mb-0.5" />
-          <div className="text-[8px] font-bold text-blue-300">MOVER</div>
+          <Move className="w-3.5 h-3.5 text-blue-400 mx-auto mb-0.5" />
+          <div className="text-[9px] font-bold text-blue-300">MOVER</div>
         </div>
         <div className="p-1.5 rounded-lg bg-red-500/10 border border-red-500/20">
-          <Swords className="w-3 h-3 text-red-400 mx-auto mb-0.5" />
-          <div className="text-[8px] font-bold text-red-300">ATACAR</div>
+          <Sword className="w-3.5 h-3.5 text-red-400 mx-auto mb-0.5" />
+          <div className="text-[9px] font-bold text-red-300">ATACAR</div>
         </div>
         <div className="p-1.5 rounded-lg bg-amber-500/10 border border-amber-500/20">
-          <Clock className="w-3 h-3 text-amber-400 mx-auto mb-0.5" />
-          <div className="text-[8px] font-bold text-amber-300">ESPERAR</div>
+          <Clock className="w-3.5 h-3.5 text-amber-400 mx-auto mb-0.5" />
+          <div className="text-[9px] font-bold text-amber-300">ESPERAR</div>
         </div>
       </div>
     </div>
