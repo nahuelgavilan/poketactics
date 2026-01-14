@@ -428,7 +428,7 @@ Turn counter increments when P1's turn begins.
 | `CaptureMinigame` | Timing-based capture UI |
 | `CaptureModal` | Wild Pokémon capture result |
 | `EvolutionCinematic` | Evolution animation with stat comparison |
-| `TurnTransition` | Turn change overlay |
+| `TurnTransition` | Fire Emblem style turn change: diagonal slash, shield emblem, GBA button |
 | `VictoryScreen` | End game celebration |
 | `MultiplayerLobby` | Room creation/joining UI |
 
