@@ -8,8 +8,7 @@ import {
   TurnTransition,
   VictoryScreen,
   EvolutionCinematic,
-  MultiplayerLobby,
-  UnitActionMenu
+  MultiplayerLobby
 } from './components';
 import { CaptureMinigame } from './components/CaptureMinigame';
 import { StartScreen } from './components/StartScreen';
@@ -151,6 +150,12 @@ export default function Game() {
           isMobile={isMobile}
           currentPlayer={fogPlayer}
           visibility={visibility}
+          // Action menu (Fire Emblem style - appears next to tile)
+          showActionMenu={gamePhase === 'ACTION_MENU' && !!pendingPosition}
+          canAttack={attackRange.length > 0}
+          onAttack={selectAttack}
+          onWait={selectWait}
+          onCancel={cancelAction}
         />
 
         {/* Selected Unit Info - floating top-left on desktop */}
@@ -347,20 +352,6 @@ export default function Game() {
           </div>
         )}
 
-        {/* Action Menu - compact, top-right */}
-        {gamePhase === 'ACTION_MENU' && selectedUnit && pendingPosition && gameState === 'playing' && (
-          <div className="absolute top-1 right-1 md:top-3 md:right-3 z-40 animate-scale-in">
-            <div className="bg-slate-900/90 backdrop-blur-md rounded-xl p-1.5 md:p-2 border border-slate-700/50 shadow-xl">
-              <UnitActionMenu
-                canAttack={attackRange.length > 0}
-                onAttack={selectAttack}
-                onWait={selectWait}
-                onCancel={cancelAction}
-                isMobile={isMobile}
-              />
-            </div>
-          </div>
-        )}
       </main>
 
       {/* Overlays - full screen modals */}
@@ -422,6 +413,37 @@ export default function Game() {
         @keyframes slideInLeft {
           from { opacity: 0; transform: translateX(-20px); }
           to { opacity: 1; transform: translateX(0); }
+        }
+
+        /* Fire Emblem style action menu animations */
+        .animate-menu-pop {
+          animation: menuPop 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        @keyframes menuPop {
+          from {
+            opacity: 0;
+            transform: translateY(-50%) scale(0.8);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(-50%) scale(1);
+          }
+        }
+
+        .animate-menu-item-slide {
+          animation: menuItemSlide 0.12s ease-out both;
+        }
+
+        @keyframes menuItemSlide {
+          from {
+            opacity: 0;
+            transform: translateX(-8px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0);
+          }
         }
       `}</style>
     </div>

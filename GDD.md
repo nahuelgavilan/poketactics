@@ -13,27 +13,38 @@
 
 ## Core Gameplay Loop
 
-1. **Click unit** → see movement range immediately (blue overlay)
-2. **Click destination** → unit moves (or click same tile to stay)
-3. **Random encounter** → 30% chance on tall grass triggers capture minigame
-4. **If enemies in range** → attack targets shown (red overlay), click to attack
-5. **Auto-wait** → if no attacks available, turn ends automatically
-6. **Turn auto-ends** when all units have acted
-7. **Repeat** until one team is eliminated
+1. **Select unit** → see movement range (blue overlay)
+2. **Click destination** → preview path with red arrow, see attack range from that position
+3. **Action Menu appears** → next to the destination tile (Fire Emblem style)
+4. **Choose action**: Atacar (if enemies in range), Esperar (confirm move), Cancelar (go back)
+5. **Combat** → if attacking, battle cinematic plays
+6. **Random encounter** → 30% chance on tall grass triggers capture minigame
+7. **Turn auto-ends** when all units have acted
+8. **Repeat** until one team is eliminated
 
-### Fluid Movement System (Advance Wars Style)
+### Fire Emblem Style Preview System
 
-The game uses direct clicking for maximum fluidity - no menus:
+The game uses a **preview-then-confirm** flow like Fire Emblem:
 
-| Action | How |
-|--------|-----|
-| **Select unit** | Click on your unit |
-| **Move** | Click blue highlighted tile |
-| **Stay in place** | Click on the unit's current position |
-| **Attack** | After moving, click red highlighted enemy |
-| **Skip attack** | Click elsewhere to auto-wait |
-| **Switch unit** | Click on another of your units |
-| **Cancel** | Click empty space |
+| Phase | What Happens |
+|-------|--------------|
+| **SELECT** | Click your unit to see movement range (blue tiles) |
+| **MOVING** | Click destination to preview path (red arrow shows route) |
+| **ACTION_MENU** | Contextual menu appears next to tile with options |
+| **ATTACKING** | If "Atacar" chosen, click red tile to select target |
+| **WAITING** | Unit's turn ends, marked as moved |
+
+### Contextual Action Menu
+
+When you select a destination, a **Fire Emblem style menu** appears next to the tile:
+
+- **Position**: Appears to the LEFT of tile if on right half of board, otherwise RIGHT
+- **Notch pointer**: Small arrow connecting menu to the tile
+- **Options**:
+  - **Atacar** (red) - Only shown if enemies in attack range
+  - **Esperar** (green) - Confirm move and end unit's turn
+  - **Cancelar** (gray) - Go back to movement selection
+- **Change destination**: During ACTION_MENU, click another valid tile to change destination
 
 ### Random Encounters
 
@@ -58,8 +69,9 @@ When moving to **Tall Grass**, there's a **30% chance** of triggering a wild Pok
 | Phase | Description |
 |-------|-------------|
 | `SELECT` | Player selecting a unit |
-| `MOVING` | Player selecting move destination |
-| `ATTACKING` | Player selecting attack target |
+| `MOVING` | Player selecting move destination (shows blue tiles) |
+| `ACTION_MENU` | Contextual menu shown, player chooses action |
+| `ATTACKING` | Player selecting attack target (shows red tiles) |
 | `WAITING` | Unit waiting (ending turn) |
 
 ---
@@ -106,8 +118,8 @@ Each Pokémon has base stats and typing:
 
 ### Board Dimensions
 
-- **Width**: 8 tiles
-- **Height**: 6 tiles
+- **Width**: 6 tiles
+- **Height**: 8 tiles
 
 ### Terrain Types
 
@@ -352,12 +364,15 @@ Turn counter increments when P1's turn begins.
 ```
 ┌─────────────────────────────────────────────┐
 │                   Header                     │
-├──────────────────────────┬──────────────────┤
-│                          │                  │
-│        Game Board        │     Sidebar      │
-│         (8×6 grid)       │   (Team Info)    │
-│                          │                  │
-└──────────────────────────┴──────────────────┘
+├─────────────────────────────────────────────┤
+│  ┌──────────┐                               │
+│  │Unit Info │     ┌─────────────────────┐   │
+│  └──────────┘     │                     │   │
+│                   │    Game Board       │   │
+│                   │      (6×8 grid)     │   │
+│                   │                     │   │
+│                   └─────────────────────┘   │
+└─────────────────────────────────────────────┘
 ```
 
 ### Mobile Layout
@@ -368,10 +383,10 @@ Turn counter increments when P1's turn begins.
 ├─────────────────────────┤
 │                         │
 │       Game Board        │
-│     (fullscreen)        │
+│     (fills screen)      │
 │                         │
 ├─────────────────────────┤
-│    Mobile Action Bar    │
+│  Selected Unit Stats    │
 └─────────────────────────┘
 ```
 
@@ -379,19 +394,18 @@ Turn counter increments when P1's turn begins.
 
 | Component | Purpose |
 |-----------|---------|
-| `StartScreen` | Animated main menu |
+| `StartScreen` | Animated main menu with logo |
 | `HowToPlay` | 5-slide tutorial modal |
-| `GameBoard` | Interactive tile grid |
-| `Header` | Turn/player info, controls |
-| `Sidebar` | Team roster, combat log |
-| `GameHUD` | Team HP overview panel |
-| `AttackPreview` | Damage prediction panel |
-| `UnitTooltip` | Hover info for units |
+| `GameBoard` | Interactive tile grid with units |
+| `Header` | Turn/player info, restart/menu buttons |
+| `UnitActionMenu` | Fire Emblem style contextual menu (appears next to tile) |
 | `BattleCinematic` | Combat animation sequence |
-| `CaptureModal` | Wild Pokémon capture UI |
+| `CaptureMinigame` | Timing-based capture UI |
+| `CaptureModal` | Wild Pokémon capture result |
+| `EvolutionCinematic` | Evolution animation with stat comparison |
 | `TurnTransition` | Turn change overlay |
 | `VictoryScreen` | End game celebration |
-| `MobileActionBar` | Touch action buttons |
+| `MultiplayerLobby` | Room creation/joining UI |
 
 ---
 
@@ -692,6 +706,11 @@ This project uses **Semantic Versioning** (semver) with **Conventional Commits**
 
 | Version | Changes |
 |---------|---------|
+| **1.9.0** | Fire Emblem style contextual action menu: appears next to unit with notch pointer, smart positioning |
+| **1.8.1** | Fix: click other tiles during ACTION_MENU to change destination, fix arrow direction |
+| **1.8.0** | Fire Emblem style preview: click destination → preview path + attack range → confirm with menu |
+| **1.7.0** | Action menu after moving: Atacar/Esperar buttons, fixed path arrows clipping |
+| **1.6.0** | Multiplayer perspective: each player sees own fog/turn, "Tu turno" vs "Turno enemigo" UI |
 | **1.5.0** | Fire Emblem style pathfinding arrows with gap bridging, smooth curves at corners |
 | **1.4.0** | Server-authoritative multiplayer: fog of war per player, validated turns, full server game state |
 | **1.3.0** | Remove action menu, Advance Wars style direct flow, random encounters (30%) on tall grass |

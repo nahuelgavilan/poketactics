@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback } from 'react';
 import { Tile } from './Tile';
+import { UnitActionMenu } from '../UnitActionMenu';
 import { BOARD_WIDTH } from '../../constants/board';
 import { isInRange, isInAttackRange, findPath } from '../../utils/pathfinding';
 import type { GameMap, Unit, Position, AttackTarget, Player, VisibilityMap } from '../../types/game';
@@ -15,6 +16,12 @@ interface GameBoardProps {
   isMobile?: boolean;
   currentPlayer: Player;
   visibility: VisibilityMap | null;
+  // Action menu props
+  showActionMenu?: boolean;
+  canAttack?: boolean;
+  onAttack?: () => void;
+  onWait?: () => void;
+  onCancel?: () => void;
 }
 
 export function GameBoard({
@@ -27,7 +34,12 @@ export function GameBoard({
   onTileClick,
   isMobile = false,
   currentPlayer,
-  visibility
+  visibility,
+  showActionMenu = false,
+  canAttack = false,
+  onAttack,
+  onWait,
+  onCancel
 }: GameBoardProps) {
   // Styling based on device - larger gaps for 3D tiles
   const gap = isMobile ? 'gap-1' : 'gap-2';
@@ -110,31 +122,47 @@ export function GameBoard({
             // Only show unit if visible (fog of war check)
             const visibleUnit = unit && isUnitVisible(unit) ? unit : undefined;
             const isSelected = selectedUnit?.x === x && selectedUnit?.y === y;
-            const canMove = isInRange({ x, y }, moveRange);
-            const canAttack = isInAttackRange({ x, y }, attackRange);
+            const canMoveTo = isInRange({ x, y }, moveRange);
+            const tileCanAttack = isInAttackRange({ x, y }, attackRange);
 
             // Visibility state for fog of war
             const isVisible = visibility ? visibility.visible[y]?.[x] ?? true : true;
             const isExplored = visibility ? visibility.explored[y]?.[x] ?? true : true;
 
+            // Check if this tile should show the action menu
+            const isPendingTile = pendingPosition && pendingPosition.x === x && pendingPosition.y === y;
+            const shouldShowMenu = showActionMenu && isPendingTile && onAttack && onWait && onCancel;
+
             return (
-              <Tile
-                key={`${x}-${y}`}
-                x={x}
-                y={y}
-                terrain={terrain}
-                unit={visibleUnit}
-                isSelected={isSelected}
-                canMove={canMove}
-                canAttack={canAttack}
-                onClick={() => onTileClick(x, y)}
-                onHover={() => handleTileHover(x, y)}
-                onHoverEnd={handleTileHoverEnd}
-                isMobile={isMobile}
-                isVisible={isVisible}
-                isExplored={isExplored}
-                path={activePath}
-              />
+              <div key={`${x}-${y}`} className="relative overflow-visible">
+                <Tile
+                  x={x}
+                  y={y}
+                  terrain={terrain}
+                  unit={visibleUnit}
+                  isSelected={isSelected}
+                  canMove={canMoveTo}
+                  canAttack={tileCanAttack}
+                  onClick={() => onTileClick(x, y)}
+                  onHover={() => handleTileHover(x, y)}
+                  onHoverEnd={handleTileHoverEnd}
+                  isMobile={isMobile}
+                  isVisible={isVisible}
+                  isExplored={isExplored}
+                  path={activePath}
+                />
+                {/* Action menu - rendered at pending tile position */}
+                {shouldShowMenu && (
+                  <UnitActionMenu
+                    canAttack={canAttack}
+                    onAttack={onAttack}
+                    onWait={onWait}
+                    onCancel={onCancel}
+                    gridX={x}
+                    gridY={y}
+                  />
+                )}
+              </div>
             );
           })
         )}
