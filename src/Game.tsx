@@ -14,7 +14,8 @@ import {
 import { CaptureMinigame } from './components/CaptureMinigame';
 import { StartScreen } from './components/StartScreen';
 import { HowToPlay } from './components/HowToPlay';
-import { Clock, HelpCircle } from 'lucide-react';
+import { TurnControls } from './components/TurnControls';
+import { HelpCircle } from 'lucide-react';
 import type { Position, TerrainType } from './types/game';
 
 export default function Game() {
@@ -249,64 +250,17 @@ export default function Game() {
           </div>
         )}
 
-        {/* Phase indicator - floating top-right, hidden during ACTION_MENU (action menu takes its place) */}
-        {gameState === 'playing' && gamePhase !== 'ACTION_MENU' && (
-          <div className="absolute top-1 right-1 md:top-3 md:right-3 flex flex-col gap-1.5 md:gap-2 items-end z-20">
-            {/* Phase badge - show waiting state when not your turn in multiplayer */}
-            {isMultiplayer && !isMyTurn ? (
-              <div className="
-                relative px-3 py-1.5 md:px-4 md:py-2 rounded-lg
-                text-[10px] md:text-xs font-bold uppercase tracking-wide
-                border backdrop-blur-sm shadow-lg
-                bg-amber-900/90 border-amber-500/50 text-amber-300
-              ">
-                <span className="animate-pulse">Esperando...</span>
-              </div>
-            ) : (
-              <div className={`
-                relative px-2 py-1 md:px-3 md:py-1.5 rounded-lg
-                text-[10px] md:text-xs font-bold uppercase tracking-wide
-                border backdrop-blur-sm shadow-lg
-                transition-all duration-300
-                ${gamePhase === 'SELECT'
-                  ? 'bg-slate-800/90 border-slate-600 text-slate-300'
-                  : ''
-                }
-                ${gamePhase === 'MOVING'
-                  ? 'bg-blue-900/90 border-blue-500/50 text-blue-300 shadow-blue-500/20'
-                  : ''
-                }
-                ${gamePhase === 'ATTACKING'
-                  ? 'bg-red-900/90 border-red-500/50 text-red-300 shadow-red-500/30'
-                  : ''
-                }
-              `}>
-                {gamePhase === 'SELECT' && 'Selecciona'}
-                {gamePhase === 'MOVING' && 'Destino'}
-                {gamePhase === 'ATTACKING' && 'Objetivo'}
-              </div>
-            )}
-
-            {/* End turn button - only show when it's your turn */}
-            {isMyTurn && playerUnits.some(u => u.hasMoved) && !allMoved && (
-              <button
-                onClick={triggerTurnTransition}
-                className="
-                  group flex items-center gap-1.5 px-2 py-1.5 md:px-3 md:py-2
-                  bg-gradient-to-r from-slate-700 to-slate-800
-                  hover:from-slate-600 hover:to-slate-700
-                  border border-slate-600/50 hover:border-slate-500
-                  rounded-lg text-[10px] md:text-xs font-semibold
-                  transition-all duration-200
-                  shadow-lg hover:shadow-xl hover:scale-105
-                "
-              >
-                <Clock className="w-3 h-3 md:w-3.5 md:h-3.5 text-amber-400" />
-                <span className="hidden md:inline">Terminar turno</span>
-                <span className="md:hidden">Fin</span>
-              </button>
-            )}
-          </div>
+        {/* Turn Controls - GBA style phase indicator + end turn button */}
+        {gameState === 'playing' && (
+          <TurnControls
+            currentPlayer={currentPlayer}
+            isMyTurn={isMyTurn}
+            movedCount={playerUnits.filter(u => u.hasMoved).length}
+            totalCount={playerUnits.length}
+            gamePhase={gamePhase}
+            onEndTurn={triggerTurnTransition}
+            isMultiplayer={isMultiplayer}
+          />
         )}
 
         {/* Help button - bottom right, smaller on mobile */}
