@@ -10,16 +10,17 @@ interface CaptureMinigameProps {
 }
 
 type Phase =
-  | 'encounter_flash'      // White flash
-  | 'encounter_alert'      // "!" icon appears
-  | 'encounter_reveal'     // Silhouette then reveal
-  | 'encounter_intro'      // Name plate appears
-  | 'ready'                // Ring minigame active
-  | 'throwing'             // Pokeball arc
-  | 'impact'               // Ball hits Pokemon
-  | 'absorbing'            // Pokemon gets absorbed
-  | 'catching'             // Ball shakes
-  | 'result';              // Success or fail
+  | 'encounter_flash'
+  | 'encounter_alert'
+  | 'encounter_reveal'
+  | 'encounter_intro'
+  | 'ready'
+  | 'throwing'
+  | 'impact'
+  | 'hit_react'        // NEW: Show hit feedback
+  | 'miss_react'       // NEW: Show miss feedback
+  | 'catching'
+  | 'result';
 
 // Type colors for visual effects
 const TYPE_COLORS: Record<PokemonType, { primary: string; secondary: string; glow: string }> = {
@@ -42,14 +43,19 @@ const TYPE_COLORS: Record<PokemonType, { primary: string; secondary: string; glo
   fairy: { primary: '#EE99AC', secondary: '#9B6470', glow: 'rgba(238,153,172,0.6)' },
 };
 
-// Calculate catch difficulty based on Pokemon stats (0-1, higher = harder)
+// Calculate base difficulty (0-1)
 function calculateDifficulty(pokemon: PokemonTemplate): number {
   const totalStats = pokemon.hp + pokemon.atk + pokemon.def;
   const normalized = Math.min(1, Math.max(0, (totalStats - 120) / 250));
   return normalized;
 }
 
-// Generate grass particles for encounter
+// Calculate max will based on difficulty (2-5 segments)
+function calculateMaxWill(difficulty: number): number {
+  return Math.floor(2 + difficulty * 3);
+}
+
+// Generate particles
 function generateGrassParticles(count: number) {
   return Array.from({ length: count }, (_, i) => ({
     id: i,
@@ -62,7 +68,6 @@ function generateGrassParticles(count: number) {
   }));
 }
 
-// Generate sparkle particles
 function generateSparkles(count: number) {
   return Array.from({ length: count }, (_, i) => ({
     id: i,
@@ -73,7 +78,6 @@ function generateSparkles(count: number) {
   }));
 }
 
-// Generate confetti
 function generateConfetti(count: number) {
   return Array.from({ length: count }, (_, i) => ({
     id: i,
@@ -85,6 +89,38 @@ function generateConfetti(count: number) {
   }));
 }
 
+// Will Bar Component
+function WillBar({ current, max, color }: { current: number; max: number; color: string }) {
+  return (
+    <div className="flex items-center gap-2">
+      <span
+        className="text-[10px] text-slate-400 font-bold"
+        style={{ fontFamily: "'Press Start 2P', monospace" }}
+      >
+        VOLUNTAD
+      </span>
+      <div className="flex gap-1">
+        {Array.from({ length: max }, (_, i) => (
+          <div
+            key={i}
+            className={`w-6 h-4 rounded-sm border-2 transition-all duration-300 ${
+              i < current
+                ? 'border-white/50'
+                : 'border-slate-700 bg-slate-800'
+            }`}
+            style={{
+              background: i < current
+                ? `linear-gradient(to bottom, ${color}, ${color}aa)`
+                : undefined,
+              boxShadow: i < current ? `0 0 8px ${color}60` : undefined,
+            }}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function CaptureMinigame({ pokemon, player, onSuccess, onFail }: CaptureMinigameProps) {
   const [phase, setPhase] = useState<Phase>('encounter_flash');
   const [ringScale, setRingScale] = useState(2.5);
@@ -92,24 +128,44 @@ export function CaptureMinigame({ pokemon, player, onSuccess, onFail }: CaptureM
   const [catchResult, setCatchResult] = useState<'success' | 'fail' | null>(null);
   const [shakeCount, setShakeCount] = useState(0);
   const [pokeballPos, setPokeballPos] = useState({ x: 50, y: 120, rotation: 0, scale: 1 });
-  const [showCritical, setShowCritical] = useState(false);
+  const [lastHitQuality, setLastHitQuality] = useState<'perfect' | 'good' | 'ok' | 'miss'>('miss');
+
+  // NEW: Multi-phase resistance system
+  const [attempt, setAttempt] = useState(0);
+  const [will, setWill] = useState(0);
+  const [maxWill, setMaxWill] = useState(0);
+  const [pokemonOffset, setPokemonOffset] = useState({ x: 0, y: 0 });
+  const [isAngry, setIsAngry] = useState(false);
+
   const animationRef = useRef<number | null>(null);
+  const pokemonMoveRef = useRef<number | null>(null);
   const throwStartTime = useRef<number>(0);
 
   const difficulty = calculateDifficulty(pokemon);
   const typeColors = TYPE_COLORS[pokemon.types[0]] || TYPE_COLORS.normal;
 
-  // Ring sizes for catch zones
-  const perfectZone = { min: 0.9, max: 1.1 };
-  const goodZone = { min: 0.7, max: 1.3 };
-  const okZone = { min: 0.5, max: 1.5 };
+  // Ring zones
+  const perfectZone = { min: 0.85, max: 1.15 };
+  const goodZone = { min: 0.6, max: 1.4 };
+  const okZone = { min: 0.4, max: 1.6 };
 
-  // Ring speed based on difficulty
-  const ringSpeed = 0.015 + difficulty * 0.012;
+  // Ring speed increases with each attempt
+  const baseRingSpeed = 0.018 + difficulty * 0.015;
+  const ringSpeed = baseRingSpeed * (1 + attempt * 0.25);
+
+  // Pokemon movement amplitude increases with attempts
+  const moveAmplitude = 10 + attempt * 8;
 
   const grassParticles = useMemo(() => generateGrassParticles(12), []);
   const sparkles = useMemo(() => generateSparkles(16), []);
   const confetti = useMemo(() => generateConfetti(30), []);
+
+  // Initialize will on first render
+  useEffect(() => {
+    const calculatedMaxWill = calculateMaxWill(difficulty);
+    setMaxWill(calculatedMaxWill);
+    setWill(calculatedMaxWill);
+  }, [difficulty]);
 
   // Phase progression
   useEffect(() => {
@@ -123,10 +179,45 @@ export function CaptureMinigame({ pokemon, player, onSuccess, onFail }: CaptureM
       timers.push(setTimeout(() => setPhase('encounter_intro'), 1200));
     } else if (phase === 'encounter_intro') {
       timers.push(setTimeout(() => setPhase('ready'), 1500));
+    } else if (phase === 'hit_react') {
+      // After hit reaction, check if captured or continue
+      timers.push(setTimeout(() => {
+        if (will <= 0) {
+          // Will depleted - start catching phase
+          setPhase('catching');
+          animateCatch(true);
+        } else {
+          // Reset for next attempt
+          setAttempt(a => a + 1);
+          setRingScale(2.5);
+          setRingDirection(-1);
+          setPokeballPos({ x: 50, y: 120, rotation: 0, scale: 1 });
+          setPhase('ready');
+        }
+      }, 800));
+    } else if (phase === 'miss_react') {
+      // After miss reaction, Pokemon might flee or continue
+      timers.push(setTimeout(() => {
+        const fleeChance = 0.1 + attempt * 0.1 + difficulty * 0.15;
+        if (Math.random() < fleeChance) {
+          // Pokemon flees!
+          setPhase('result');
+          setCatchResult('fail');
+          setTimeout(() => onFail(), 1500);
+        } else {
+          // Continue - Pokemon gets angrier
+          setIsAngry(false);
+          setAttempt(a => a + 1);
+          setRingScale(2.5);
+          setRingDirection(-1);
+          setPokeballPos({ x: 50, y: 120, rotation: 0, scale: 1 });
+          setPhase('ready');
+        }
+      }, 1000));
     }
 
     return () => timers.forEach(t => clearTimeout(t));
-  }, [phase]);
+  }, [phase, will, attempt, difficulty, onFail]);
 
   // Ring animation
   useEffect(() => {
@@ -135,9 +226,9 @@ export function CaptureMinigame({ pokemon, player, onSuccess, onFail }: CaptureM
     const animate = () => {
       setRingScale(prev => {
         let next = prev + ringDirection * ringSpeed;
-        if (next <= 0.4) {
+        if (next <= 0.3) {
           setRingDirection(1);
-          next = 0.4;
+          next = 0.3;
         } else if (next >= 2.5) {
           setRingDirection(-1);
           next = 2.5;
@@ -153,47 +244,78 @@ export function CaptureMinigame({ pokemon, player, onSuccess, onFail }: CaptureM
     };
   }, [phase, ringDirection, ringSpeed]);
 
+  // Pokemon movement animation (after first attempt)
+  useEffect(() => {
+    if (phase !== 'ready' || attempt === 0) {
+      setPokemonOffset({ x: 0, y: 0 });
+      return;
+    }
+
+    let time = 0;
+    const animate = () => {
+      time += 0.05;
+      // Lissajous-like movement pattern
+      const x = Math.sin(time * 1.3) * moveAmplitude;
+      const y = Math.sin(time * 2.1) * (moveAmplitude * 0.6);
+      setPokemonOffset({ x, y });
+      pokemonMoveRef.current = requestAnimationFrame(animate);
+    };
+
+    pokemonMoveRef.current = requestAnimationFrame(animate);
+    return () => {
+      if (pokemonMoveRef.current) cancelAnimationFrame(pokemonMoveRef.current);
+    };
+  }, [phase, attempt, moveAmplitude]);
+
   // Handle throw action
   const handleThrow = useCallback(() => {
     if (phase !== 'ready') return;
 
     if (animationRef.current) cancelAnimationFrame(animationRef.current);
+    if (pokemonMoveRef.current) cancelAnimationFrame(pokemonMoveRef.current);
 
-    // Determine catch quality
+    // Determine hit quality
     const inPerfect = ringScale >= perfectZone.min && ringScale <= perfectZone.max;
     const inGood = ringScale >= goodZone.min && ringScale <= goodZone.max;
     const inOk = ringScale >= okZone.min && ringScale <= okZone.max;
 
-    let success = false;
+    let hitQuality: 'perfect' | 'good' | 'ok' | 'miss' = 'miss';
+    let willDamage = 0;
+
     if (inPerfect) {
-      success = true;
-      setShowCritical(true);
+      hitQuality = 'perfect';
+      willDamage = 2; // Perfect hits do double damage
     } else if (inGood) {
-      success = Math.random() > 0.2 + difficulty * 0.3;
+      hitQuality = 'good';
+      willDamage = 1;
     } else if (inOk) {
-      success = Math.random() > 0.5 + difficulty * 0.3;
+      hitQuality = 'ok';
+      willDamage = Math.random() > 0.5 ? 1 : 0; // 50% chance to deal damage
     } else {
-      success = false;
+      hitQuality = 'miss';
+      willDamage = 0;
     }
 
+    setLastHitQuality(hitQuality);
     setPhase('throwing');
     throwStartTime.current = Date.now();
 
-    // Animate pokeball throw arc
+    // Animate pokeball throw
+    const targetX = 50 + pokemonOffset.x * 0.5;
+    const targetY = 50 + pokemonOffset.y * 0.3;
+
     const animateThrow = () => {
       const elapsed = Date.now() - throwStartTime.current;
-      const duration = 600;
+      const duration = 500;
       const progress = Math.min(1, elapsed / duration);
 
-      // Parabolic arc
-      const x = 50;
       const startY = 120;
-      const endY = 50;
-      const arcHeight = -40;
+      const arcHeight = -50;
 
-      const y = startY + (endY - startY) * progress + arcHeight * Math.sin(progress * Math.PI);
+      const x = 50 + (targetX - 50) * progress;
+      const y = startY + (targetY - startY) * progress + arcHeight * Math.sin(progress * Math.PI);
       const rotation = progress * 720;
-      const scale = 1 - progress * 0.3;
+      const scale = 1 - progress * 0.25;
 
       setPokeballPos({ x, y, rotation, scale });
 
@@ -201,22 +323,26 @@ export function CaptureMinigame({ pokemon, player, onSuccess, onFail }: CaptureM
         requestAnimationFrame(animateThrow);
       } else {
         setPhase('impact');
+
         setTimeout(() => {
-          setPhase('absorbing');
-          setTimeout(() => {
-            setPhase('catching');
-            animateCatch(success);
-          }, 800);
-        }, 200);
+          if (hitQuality === 'miss') {
+            setIsAngry(true);
+            setPhase('miss_react');
+          } else {
+            // Deal damage to will
+            setWill(w => Math.max(0, w - willDamage));
+            setPhase('hit_react');
+          }
+        }, 300);
       }
     };
 
     requestAnimationFrame(animateThrow);
-  }, [phase, ringScale, difficulty, perfectZone, goodZone, okZone]);
+  }, [phase, ringScale, pokemonOffset, perfectZone, goodZone, okZone]);
 
   const animateCatch = (success: boolean) => {
     let shakes = 0;
-    const maxShakes = success ? 3 : 1 + Math.floor(Math.random() * 2);
+    const maxShakes = 3;
 
     const doShake = () => {
       shakes++;
@@ -227,15 +353,8 @@ export function CaptureMinigame({ pokemon, player, onSuccess, onFail }: CaptureM
       } else {
         setTimeout(() => {
           setPhase('result');
-          setCatchResult(success ? 'success' : 'fail');
-
-          setTimeout(() => {
-            if (success) {
-              onSuccess();
-            } else {
-              onFail();
-            }
-          }, success ? 2500 : 1500);
+          setCatchResult('success');
+          setTimeout(() => onSuccess(), 2500);
         }, 700);
       }
     };
@@ -263,6 +382,18 @@ export function CaptureMinigame({ pokemon, player, onSuccess, onFail }: CaptureM
     return '#EF4444';
   };
 
+  // Get hit quality text and color
+  const getHitFeedback = () => {
+    switch (lastHitQuality) {
+      case 'perfect': return { text: '¡PERFECTO!', color: '#FFD700', damage: '-2' };
+      case 'good': return { text: '¡BIEN!', color: '#22C55E', damage: '-1' };
+      case 'ok': return { text: 'OK', color: '#EAB308', damage: '-1' };
+      case 'miss': return { text: '¡FALLO!', color: '#EF4444', damage: '' };
+    }
+  };
+
+  const hitFeedback = getHitFeedback();
+
   return (
     <div
       className="fixed inset-0 z-[60] overflow-hidden"
@@ -274,7 +405,9 @@ export function CaptureMinigame({ pokemon, player, onSuccess, onFail }: CaptureM
         style={{
           background: phase === 'encounter_flash'
             ? '#FFFFFF'
-            : `radial-gradient(ellipse at center, ${typeColors.glow} 0%, #0a0a0a 70%)`,
+            : isAngry
+              ? `radial-gradient(ellipse at center, rgba(239,68,68,0.4) 0%, #0a0a0a 70%)`
+              : `radial-gradient(ellipse at center, ${typeColors.glow} 0%, #0a0a0a 70%)`,
         }}
       />
 
@@ -313,7 +446,6 @@ export function CaptureMinigame({ pokemon, player, onSuccess, onFail }: CaptureM
               >
                 !
               </div>
-              {/* Shockwave rings */}
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="w-32 h-32 border-4 border-yellow-400/60 rounded-full animate-shockwave" />
               </div>
@@ -325,21 +457,29 @@ export function CaptureMinigame({ pokemon, player, onSuccess, onFail }: CaptureM
         </div>
       )}
 
-      {/* Pokemon reveal */}
+      {/* Pokemon reveal and game */}
       {(phase === 'encounter_reveal' || phase === 'encounter_intro' || phase === 'ready' ||
-        phase === 'throwing' || phase === 'impact') && (
+        phase === 'throwing' || phase === 'impact' || phase === 'hit_react' || phase === 'miss_react') && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <div
-            className={`relative transition-all duration-700 ${
+            className={`relative transition-all duration-300 ${
               phase === 'encounter_reveal' ? 'animate-pokemon-emerge' : ''
-            }`}
+            } ${phase === 'miss_react' ? 'animate-pokemon-angry' : ''}`}
+            style={{
+              transform: phase === 'ready'
+                ? `translate(${pokemonOffset.x}px, ${pokemonOffset.y}px)`
+                : undefined,
+            }}
           >
             {/* Type-colored glow */}
             <div
-              className="absolute inset-0 rounded-full blur-3xl animate-pulse"
+              className={`absolute inset-0 rounded-full blur-3xl transition-all duration-300 ${
+                isAngry ? 'bg-red-500/40' : ''
+              }`}
               style={{
-                background: typeColors.glow,
+                background: isAngry ? undefined : typeColors.glow,
                 transform: 'scale(2)',
+                animation: phase === 'ready' ? 'pulse 2s ease-in-out infinite' : undefined,
               }}
             />
 
@@ -349,19 +489,14 @@ export function CaptureMinigame({ pokemon, player, onSuccess, onFail }: CaptureM
               alt={pokemon.name}
               className={`w-40 h-40 sm:w-48 sm:h-48 object-contain relative z-10 transition-all duration-300 ${
                 phase === 'encounter_reveal' ? 'brightness-0' : 'brightness-100'
-              } ${phase === 'impact' ? 'animate-impact-flash scale-110' : ''}`}
+              } ${phase === 'impact' || phase === 'hit_react' ? 'animate-impact-flash' : ''}`}
               style={{ imageRendering: 'pixelated' }}
             />
 
             {/* Targeting ring - only in ready phase */}
             {phase === 'ready' && (
               <>
-                {/* Outer static ring */}
-                <div
-                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 rounded-full border-4 border-white/30 pointer-events-none"
-                />
-
-                {/* Shrinking/growing ring */}
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 rounded-full border-4 border-white/30 pointer-events-none" />
                 <div
                   className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-[6px] pointer-events-none transition-colors duration-100"
                   style={{
@@ -371,8 +506,6 @@ export function CaptureMinigame({ pokemon, player, onSuccess, onFail }: CaptureM
                     boxShadow: `0 0 20px ${getRingColor()}, inset 0 0 20px ${getRingColor()}40`,
                   }}
                 />
-
-                {/* Perfect zone indicator */}
                 <div
                   className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-dashed border-yellow-400/50 pointer-events-none"
                   style={{
@@ -382,46 +515,51 @@ export function CaptureMinigame({ pokemon, player, onSuccess, onFail }: CaptureM
                 />
               </>
             )}
-          </div>
-        </div>
-      )}
 
-      {/* Pokemon absorbing into ball */}
-      {phase === 'absorbing' && (
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div className="relative animate-absorb-shrink">
-            <img
-              src={getAnimatedFrontSprite(pokemon.id)}
-              alt={pokemon.name}
-              className="w-40 h-40 sm:w-48 sm:h-48 object-contain"
-              style={{
-                imageRendering: 'pixelated',
-                filter: 'brightness(3) saturate(0)',
-              }}
-            />
+            {/* Hit feedback popup */}
+            {phase === 'hit_react' && (
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-full animate-hit-popup">
+                <div
+                  className="text-2xl font-black whitespace-nowrap px-4 py-2"
+                  style={{
+                    fontFamily: "'Press Start 2P', monospace",
+                    color: hitFeedback.color,
+                    textShadow: `0 0 20px ${hitFeedback.color}`,
+                  }}
+                >
+                  {hitFeedback.text}
+                </div>
+                {hitFeedback.damage && (
+                  <div
+                    className="text-center text-lg font-bold text-white"
+                    style={{ fontFamily: "'Press Start 2P', monospace" }}
+                  >
+                    {hitFeedback.damage}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Miss feedback */}
+            {phase === 'miss_react' && (
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-full animate-miss-popup">
+                <div
+                  className="text-2xl font-black text-red-500 whitespace-nowrap"
+                  style={{
+                    fontFamily: "'Press Start 2P', monospace",
+                    textShadow: '0 0 20px #EF4444',
+                  }}
+                >
+                  ¡FALLO!
+                </div>
+              </div>
+            )}
           </div>
-          {/* Energy particles flowing to ball */}
-          {sparkles.map(s => (
-            <div
-              key={s.id}
-              className="absolute top-1/2 left-1/2 animate-absorb-particle"
-              style={{
-                width: s.size,
-                height: s.size,
-                background: typeColors.primary,
-                borderRadius: '50%',
-                boxShadow: `0 0 ${s.size}px ${typeColors.primary}`,
-                '--angle': `${s.angle}deg`,
-                '--distance': `${s.distance}px`,
-                animationDelay: `${s.delay}s`,
-              } as React.CSSProperties}
-            />
-          ))}
         </div>
       )}
 
       {/* Pokeball */}
-      {(phase === 'throwing' || phase === 'impact' || phase === 'absorbing' ||
+      {(phase === 'throwing' || phase === 'impact' || phase === 'hit_react' ||
         phase === 'catching' || phase === 'result') && (
         <div
           className={`absolute pointer-events-none transition-all ${
@@ -434,43 +572,29 @@ export function CaptureMinigame({ pokemon, player, onSuccess, onFail }: CaptureM
           }}
         >
           <div className={`relative ${phase === 'result' && catchResult === 'success' ? 'animate-catch-success' : ''}`}>
-            {/* Pokeball shadow */}
             <div
               className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-16 h-4 bg-black/30 rounded-full blur-sm"
               style={{ transform: 'translateX(-50%) scaleX(1.2)' }}
             />
-
-            {/* Pokeball body */}
             <div className="w-20 h-20 rounded-full relative overflow-hidden shadow-2xl border-2 border-slate-900">
-              {/* Top half - red */}
               <div className="absolute inset-0 bg-gradient-to-b from-red-500 via-red-600 to-red-700"
                    style={{ clipPath: 'polygon(0 0, 100% 0, 100% 50%, 0 50%)' }} />
-              {/* Top shine */}
               <div className="absolute top-1 left-2 w-6 h-3 bg-white/40 rounded-full blur-sm" />
-
-              {/* Bottom half - white */}
               <div className="absolute inset-0 bg-gradient-to-b from-gray-100 via-white to-gray-200"
                    style={{ clipPath: 'polygon(0 50%, 100% 50%, 100% 100%, 0 100%)' }} />
-
-              {/* Center band */}
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full h-3 bg-slate-900" />
               </div>
-
-              {/* Center button */}
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="w-8 h-8 rounded-full bg-slate-900 flex items-center justify-center">
                   <div className={`w-5 h-5 rounded-full bg-white border-2 border-slate-700 transition-all ${
                     phase === 'catching' && shakeCount > 0 ? 'animate-button-glow' : ''
                   } ${phase === 'result' && catchResult === 'success' ? 'bg-yellow-400 border-yellow-600' : ''}`}>
-                    {/* Button shine */}
                     <div className="w-2 h-2 bg-white/60 rounded-full mt-0.5 ml-0.5" />
                   </div>
                 </div>
               </div>
             </div>
-
-            {/* Shake stars */}
             {phase === 'catching' && shakeCount > 0 && (
               <>
                 {[...Array(4)].map((_, i) => (
@@ -494,7 +618,26 @@ export function CaptureMinigame({ pokemon, player, onSuccess, onFail }: CaptureM
         </div>
       )}
 
-      {/* Pokemon breaking free */}
+      {/* Miss - pokeball bouncing away */}
+      {phase === 'miss_react' && (
+        <div
+          className="absolute pointer-events-none animate-ball-miss"
+          style={{
+            left: `${pokeballPos.x}%`,
+            top: `${pokeballPos.y}%`,
+          }}
+        >
+          <div className="w-16 h-16 rounded-full relative overflow-hidden shadow-lg border-2 border-slate-900 opacity-60">
+            <div className="absolute inset-0 bg-red-500" style={{ clipPath: 'polygon(0 0, 100% 0, 100% 50%, 0 50%)' }} />
+            <div className="absolute inset-0 bg-white" style={{ clipPath: 'polygon(0 50%, 100% 50%, 100% 100%, 0 100%)' }} />
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full h-2 bg-slate-900" />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Pokemon breaking free on result fail */}
       {phase === 'result' && catchResult === 'fail' && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <div className="animate-break-free">
@@ -532,11 +675,30 @@ export function CaptureMinigame({ pokemon, player, onSuccess, onFail }: CaptureM
 
       {/* UI Overlay */}
       <div className="absolute inset-0 flex flex-col items-center justify-between py-8 px-4 pointer-events-none">
-        {/* Top: Title and Pokemon info */}
-        <div className="text-center">
+        {/* Top: Title, Will Bar, Pokemon info */}
+        <div className="text-center w-full max-w-md">
+          {/* Will bar - show during gameplay */}
+          {(phase === 'ready' || phase === 'throwing' || phase === 'impact' ||
+            phase === 'hit_react' || phase === 'miss_react') && maxWill > 0 && (
+            <div className="mb-4 animate-fade-in">
+              <WillBar current={will} max={maxWill} color={typeColors.primary} />
+            </div>
+          )}
+
           {/* Encounter text */}
-          {(phase === 'encounter_intro' || phase === 'ready' || phase === 'throwing') && (
+          {(phase === 'encounter_intro' || phase === 'ready' || phase === 'throwing' ||
+            phase === 'hit_react' || phase === 'miss_react') && (
             <div className="animate-slide-down">
+              {/* Attempt counter */}
+              {attempt > 0 && phase === 'ready' && (
+                <div
+                  className="text-[10px] text-yellow-400 mb-2"
+                  style={{ fontFamily: "'Press Start 2P', monospace" }}
+                >
+                  INTENTO {attempt + 1}
+                </div>
+              )}
+
               <div
                 className="text-lg sm:text-xl font-bold text-white/80 mb-2 tracking-wider"
                 style={{ fontFamily: "'Press Start 2P', monospace", fontSize: '0.75rem' }}
@@ -544,7 +706,6 @@ export function CaptureMinigame({ pokemon, player, onSuccess, onFail }: CaptureM
                 ¡POKEMON SALVAJE!
               </div>
 
-              {/* Name plate - GBA style */}
               <div
                 className="relative inline-block px-8 py-3 bg-gradient-to-b from-slate-700 to-slate-900 border-4 border-slate-600 rounded-lg shadow-xl"
                 style={{ borderStyle: 'outset' }}
@@ -559,8 +720,6 @@ export function CaptureMinigame({ pokemon, player, onSuccess, onFail }: CaptureM
                 >
                   {pokemon.name}
                 </h2>
-
-                {/* Type badges */}
                 <div className="flex justify-center gap-2 mt-2">
                   {pokemon.types.map(type => (
                     <span
@@ -590,8 +749,6 @@ export function CaptureMinigame({ pokemon, player, onSuccess, onFail }: CaptureM
               >
                 {shakeCount === 0 ? 'CAPTURANDO...' : `${shakeCount}...`}
               </div>
-
-              {/* Shake indicators */}
               <div className="flex justify-center gap-3 mt-4">
                 {[1, 2, 3].map(i => (
                   <div
@@ -619,7 +776,7 @@ export function CaptureMinigame({ pokemon, player, onSuccess, onFail }: CaptureM
                     : '0 0 20px #EF4444',
                 }}
               >
-                {catchResult === 'success' ? 'GOTCHA!' : '¡ESCAPÓ!'}
+                {catchResult === 'success' ? 'GOTCHA!' : '¡HUYÓ!'}
               </div>
               {catchResult === 'success' && (
                 <div
@@ -631,28 +788,12 @@ export function CaptureMinigame({ pokemon, player, onSuccess, onFail }: CaptureM
               )}
             </div>
           )}
-
-          {/* Critical hit indicator */}
-          {showCritical && phase === 'throwing' && (
-            <div className="absolute top-1/3 left-1/2 -translate-x-1/2 animate-critical-flash">
-              <div
-                className="text-2xl font-black text-yellow-400 whitespace-nowrap"
-                style={{
-                  fontFamily: "'Press Start 2P', monospace",
-                  textShadow: '0 0 20px #FFD700, 0 0 40px #FFD700',
-                }}
-              >
-                ¡CRÍTICO!
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Bottom: Instructions and difficulty */}
         <div className="text-center">
           {phase === 'ready' && (
             <div className="animate-slide-up">
-              {/* Difficulty indicator */}
               <div
                 className="mb-4 px-4 py-2 bg-slate-900/80 rounded-lg border-2 border-slate-700"
                 style={{ fontFamily: "'Press Start 2P', monospace" }}
@@ -664,22 +805,37 @@ export function CaptureMinigame({ pokemon, player, onSuccess, onFail }: CaptureM
                 }`}>
                   {difficulty < 0.3 ? 'FÁCIL' : difficulty < 0.6 ? 'NORMAL' : 'DIFÍCIL'}
                 </span>
+
+                {/* Speed indicator for higher attempts */}
+                {attempt > 0 && (
+                  <span className="text-[10px] text-orange-400 ml-3">
+                    {'⚡'.repeat(Math.min(attempt, 3))}
+                  </span>
+                )}
               </div>
 
-              {/* Instructions */}
               <div
                 className="text-[10px] text-slate-400 animate-pulse"
                 style={{ fontFamily: "'Press Start 2P', monospace" }}
               >
-                TOCA CUANDO EL ANILLO SEA PEQUEÑO
+                {attempt === 0 ? 'TOCA CUANDO EL ANILLO SEA PEQUEÑO' : '¡SE MUEVE! APUNTA BIEN'}
               </div>
 
-              {/* Ring legend */}
               <div className="flex justify-center gap-4 mt-3 text-[8px]" style={{ fontFamily: "'Press Start 2P', monospace" }}>
-                <span className="text-yellow-400">● PERFECTO</span>
+                <span className="text-yellow-400">● PERFECTO x2</span>
                 <span className="text-emerald-400">● BUENO</span>
-                <span className="text-amber-400">● OK</span>
+                <span className="text-amber-400">● OK 50%</span>
               </div>
+            </div>
+          )}
+
+          {/* Angry warning */}
+          {phase === 'miss_react' && (
+            <div
+              className="text-red-400 text-[10px] animate-pulse"
+              style={{ fontFamily: "'Press Start 2P', monospace" }}
+            >
+              ¡{pokemon.name} está furioso!
             </div>
           )}
         </div>
@@ -720,6 +876,17 @@ export function CaptureMinigame({ pokemon, player, onSuccess, onFail }: CaptureM
           animation: pokemon-emerge 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
         }
 
+        @keyframes pokemon-angry {
+          0%, 100% { transform: translateX(0); }
+          20% { transform: translateX(-10px); }
+          40% { transform: translateX(10px); }
+          60% { transform: translateX(-10px); }
+          80% { transform: translateX(10px); }
+        }
+        .animate-pokemon-angry {
+          animation: pokemon-angry 0.4s ease-in-out;
+        }
+
         @keyframes impact-flash {
           0%, 100% { filter: brightness(1); }
           50% { filter: brightness(3) saturate(0); }
@@ -728,26 +895,31 @@ export function CaptureMinigame({ pokemon, player, onSuccess, onFail }: CaptureM
           animation: impact-flash 0.2s ease-out;
         }
 
-        @keyframes absorb-shrink {
-          0% { transform: scale(1); opacity: 1; }
-          100% { transform: scale(0); opacity: 0; }
+        @keyframes hit-popup {
+          0% { transform: translate(-50%, 0) scale(0.5); opacity: 0; }
+          50% { transform: translate(-50%, -20px) scale(1.2); opacity: 1; }
+          100% { transform: translate(-50%, -40px) scale(1); opacity: 0; }
         }
-        .animate-absorb-shrink {
-          animation: absorb-shrink 0.6s ease-in forwards;
+        .animate-hit-popup {
+          animation: hit-popup 0.8s ease-out forwards;
         }
 
-        @keyframes absorb-particle {
-          0% {
-            transform: translate(-50%, -50%) rotate(var(--angle)) translateX(var(--distance));
-            opacity: 1;
-          }
-          100% {
-            transform: translate(-50%, -50%) rotate(var(--angle)) translateX(0);
-            opacity: 0;
-          }
+        @keyframes miss-popup {
+          0% { transform: translate(-50%, 0) scale(0.5); opacity: 0; }
+          30% { transform: translate(-50%, -10px) scale(1.3); opacity: 1; }
+          100% { transform: translate(-50%, -30px) scale(1); opacity: 0; }
         }
-        .animate-absorb-particle {
-          animation: absorb-particle 0.6s ease-in forwards;
+        .animate-miss-popup {
+          animation: miss-popup 0.6s ease-out forwards;
+        }
+
+        @keyframes ball-miss {
+          0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+          50% { transform: translate(calc(-50% + 50px), calc(-50% - 30px)) scale(0.8) rotate(180deg); opacity: 0.8; }
+          100% { transform: translate(calc(-50% + 100px), calc(-50% + 100px)) scale(0.5) rotate(360deg); opacity: 0; }
+        }
+        .animate-ball-miss {
+          animation: ball-miss 0.8s ease-out forwards;
         }
 
         @keyframes pokeball-shake-heavy {
@@ -770,14 +942,8 @@ export function CaptureMinigame({ pokemon, player, onSuccess, onFail }: CaptureM
         }
 
         @keyframes shake-star {
-          0% {
-            transform: translate(-50%, -50%) rotate(var(--star-angle)) translateX(0) scale(0);
-            opacity: 1;
-          }
-          100% {
-            transform: translate(-50%, -50%) rotate(var(--star-angle)) translateX(60px) scale(1);
-            opacity: 0;
-          }
+          0% { transform: translate(-50%, -50%) rotate(var(--star-angle)) translateX(0) scale(0); opacity: 1; }
+          100% { transform: translate(-50%, -50%) rotate(var(--star-angle)) translateX(60px) scale(1); opacity: 0; }
         }
         .animate-shake-star {
           animation: shake-star 0.4s ease-out forwards;
@@ -813,14 +979,8 @@ export function CaptureMinigame({ pokemon, player, onSuccess, onFail }: CaptureM
         }
 
         @keyframes confetti-fall {
-          0% {
-            transform: translateY(0) rotate(0deg);
-            opacity: 1;
-          }
-          100% {
-            transform: translateY(100vh) rotate(var(--rotation));
-            opacity: 0;
-          }
+          0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+          100% { transform: translateY(100vh) rotate(var(--rotation)); opacity: 0; }
         }
         .animate-confetti-fall {
           animation: confetti-fall linear forwards;
@@ -857,15 +1017,6 @@ export function CaptureMinigame({ pokemon, player, onSuccess, onFail }: CaptureM
         }
         .animate-result-pop {
           animation: result-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-        }
-
-        @keyframes critical-flash {
-          0% { transform: translate(-50%, 0) scale(0.5); opacity: 0; }
-          50% { transform: translate(-50%, 0) scale(1.3); opacity: 1; }
-          100% { transform: translate(-50%, -20px) scale(1); opacity: 0; }
-        }
-        .animate-critical-flash {
-          animation: critical-flash 0.8s ease-out forwards;
         }
       `}</style>
     </div>
