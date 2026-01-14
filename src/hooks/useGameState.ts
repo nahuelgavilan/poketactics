@@ -57,6 +57,9 @@ interface UseGameStateReturn {
   triggerTurnTransition: () => void;
   updateExplored: (player: Player, explored: boolean[][]) => void;
   setMultiplayerState: (state: MultiplayerGameState) => void;
+  // Action menu
+  selectAttack: () => void;
+  selectWait: () => void;
 }
 
 // State received from server in multiplayer
@@ -335,19 +338,15 @@ export function useGameState(): UseGameStateReturn {
         return;
       }
 
-      // Click on current position: stay in place, check for attacks
+      // Click on current position: stay in place, show action menu
       if (x === selectedUnit.x && y === selectedUnit.y) {
         setMoveRange([]);
         setUnitHasMoved(true);
 
+        // Calculate available attacks for action menu
         const attacks = calculateAttackRange(selectedUnit, units);
-        if (attacks.length > 0) {
-          setAttackRange(attacks);
-          setGamePhase('ATTACKING');
-        } else {
-          // No attacks available, auto-wait
-          waitUnit(selectedUnit.uid, units);
-        }
+        setAttackRange(attacks);
+        setGamePhase('ACTION_MENU');
         return;
       }
 
@@ -365,15 +364,10 @@ export function useGameState(): UseGameStateReturn {
           return; // Encounter triggered, will continue after minigame
         }
 
-        // Check for attacks after moving
+        // Calculate available attacks for action menu
         const attacks = calculateAttackRange(movedUnit, nextUnits);
-        if (attacks.length > 0) {
-          setAttackRange(attacks);
-          setGamePhase('ATTACKING');
-        } else {
-          // No attacks available, auto-wait
-          waitUnit(movedUnit.uid, nextUnits);
-        }
+        setAttackRange(attacks);
+        setGamePhase('ACTION_MENU');
         return;
       }
 
@@ -604,6 +598,18 @@ export function useGameState(): UseGameStateReturn {
     }
   }, []);
 
+  // Action menu: select attack
+  const selectAttack = useCallback(() => {
+    if (!selectedUnit || attackRange.length === 0) return;
+    setGamePhase('ATTACKING');
+  }, [selectedUnit, attackRange]);
+
+  // Action menu: select wait
+  const selectWait = useCallback(() => {
+    if (!selectedUnit) return;
+    waitUnit(selectedUnit.uid, units);
+  }, [selectedUnit, units, waitUnit]);
+
   return {
     map,
     units,
@@ -639,6 +645,9 @@ export function useGameState(): UseGameStateReturn {
     confirmTurnChange,
     triggerTurnTransition,
     updateExplored,
-    setMultiplayerState
+    setMultiplayerState,
+    // Action menu
+    selectAttack,
+    selectWait
   };
 }

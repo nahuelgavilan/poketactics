@@ -8,7 +8,8 @@ import {
   TurnTransition,
   VictoryScreen,
   EvolutionCinematic,
-  MultiplayerLobby
+  MultiplayerLobby,
+  UnitActionMenu
 } from './components';
 import { CaptureMinigame } from './components/CaptureMinigame';
 import { StartScreen } from './components/StartScreen';
@@ -45,7 +46,10 @@ export default function Game() {
     confirmEvolution,
     confirmTurnChange,
     triggerTurnTransition,
-    updateExplored
+    updateExplored,
+    // Action menu
+    selectAttack,
+    selectWait
   } = useGameState();
 
   const [showHowToPlay, setShowHowToPlay] = useState(false);
@@ -340,6 +344,23 @@ export default function Game() {
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Action Menu - floating after unit moves */}
+        {gamePhase === 'ACTION_MENU' && selectedUnit && gameState === 'playing' && (
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-40 animate-slide-up">
+            <div className="bg-slate-900/95 backdrop-blur-xl rounded-2xl p-3 border-2 border-slate-700 shadow-2xl">
+              <div className="text-center text-xs text-slate-400 mb-2 font-semibold uppercase tracking-wide">
+                ¿Qué quieres hacer?
+              </div>
+              <UnitActionMenu
+                canAttack={attackRange.length > 0}
+                onAttack={selectAttack}
+                onWait={selectWait}
+                isMobile={isMobile}
+              />
             </div>
           </div>
         )}

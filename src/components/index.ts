@@ -16,3 +16,4 @@ export { GameHUD } from './GameHUD';
 export { EvolutionCinematic } from './EvolutionCinematic';
 export { TurnTransition, VictoryScreen } from './overlays';
 export { MultiplayerLobby } from './MultiplayerLobby';
+export { UnitActionMenu } from './UnitActionMenu';

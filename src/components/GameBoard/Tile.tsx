@@ -152,10 +152,10 @@ export function Tile({
         {isSelected && (
           <div className="absolute inset-0 rounded-xl border-4 border-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.5)] pointer-events-none" />
         )}
-
-        {/* === PATH SEGMENT === */}
-        {path.length > 0 && <PathSegment x={x} y={y} path={path} />}
       </div>
+
+      {/* === PATH SEGMENT - Outside main tile to avoid clipping === */}
+      {path.length > 0 && <PathSegment x={x} y={y} path={path} />}
 
       {/* === POKEMON UNIT === */}
       {unit && (
