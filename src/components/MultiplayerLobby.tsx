@@ -1,40 +1,43 @@
 import { useState, useEffect } from 'react';
 import { ArrowLeft, Copy, Users, Wifi, WifiOff, Loader2, Play, CheckCircle } from 'lucide-react';
-import { useMultiplayer } from '../hooks/useMultiplayer';
+import type { ConnectionStatus, RoomStatus } from '../hooks/useMultiplayer';
+import type { Player } from '../types/game';
 
 interface MultiplayerLobbyProps {
   onBack: () => void;
-  onGameStart: () => void;
+  // Multiplayer connection props (passed from Game.tsx)
+  connectionStatus: ConnectionStatus;
+  roomStatus: RoomStatus;
+  roomId: string | null;
+  myPlayer: Player | null;
+  error: string | null;
+  connect: () => void;
+  createRoom: () => void;
+  joinRoom: (code: string) => void;
+  startGame: () => void;
 }
 
-export function MultiplayerLobby({ onBack, onGameStart }: MultiplayerLobbyProps) {
-  const {
-    connectionStatus,
-    roomStatus,
-    roomId,
-    myPlayer,
-    error,
-    connect,
-    disconnect,
-    createRoom,
-    joinRoom,
-    startGame,
-    onGameStarted
-  } = useMultiplayer();
-
+export function MultiplayerLobby({
+  onBack,
+  connectionStatus,
+  roomStatus,
+  roomId,
+  myPlayer,
+  error,
+  connect,
+  createRoom,
+  joinRoom,
+  startGame
+}: MultiplayerLobbyProps) {
   const [joinCode, setJoinCode] = useState('');
   const [copied, setCopied] = useState(false);
 
-  // Connect on mount
+  // Connect on mount (but don't disconnect on unmount - Game needs connection)
   useEffect(() => {
-    connect();
-    return () => disconnect();
-  }, [connect, disconnect]);
-
-  // Set up game start callback
-  useEffect(() => {
-    onGameStarted.current = onGameStart;
-  }, [onGameStart, onGameStarted]);
+    if (connectionStatus === 'disconnected') {
+      connect();
+    }
+  }, [connect, connectionStatus]);
 
   const handleCopyCode = () => {
     if (roomId) {

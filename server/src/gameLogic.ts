@@ -638,7 +638,7 @@ export function executeCapture(game: ServerGameState, playerId: Player, unitId: 
 }
 
 /**
- * Check and execute end of turn
+ * Check and execute end of turn (automatic - when all units have moved)
  */
 export function checkTurnEnd(game: ServerGameState): { turnEnded: boolean; nextPlayer: Player; turn: number } {
   const currentPlayerUnits = game.units.filter(u => u.owner === game.currentPlayer);
@@ -649,6 +649,26 @@ export function checkTurnEnd(game: ServerGameState): { turnEnded: boolean; nextP
   }
 
   // End turn
+  return executeTurnEnd(game);
+}
+
+/**
+ * Force end turn (manual - player clicks "End Turn" button)
+ */
+export function executeEndTurn(game: ServerGameState, playerId: Player): { success: boolean; nextPlayer: Player; turn: number; error?: string } {
+  // Check it's the player's turn
+  if (game.currentPlayer !== playerId) {
+    return { success: false, nextPlayer: game.currentPlayer, turn: game.turn, error: 'No es tu turno' };
+  }
+
+  const result = executeTurnEnd(game);
+  return { success: true, nextPlayer: result.nextPlayer, turn: result.turn };
+}
+
+/**
+ * Internal function to execute turn end logic
+ */
+function executeTurnEnd(game: ServerGameState): { turnEnded: boolean; nextPlayer: Player; turn: number } {
   const nextPlayer: Player = game.currentPlayer === 'P1' ? 'P2' : 'P1';
   const newTurn = nextPlayer === 'P1' ? game.turn + 1 : game.turn;
 

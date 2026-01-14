@@ -59,6 +59,7 @@ interface UseMultiplayerReturn {
   sendAttack: (attackerId: string, defenderId: string) => void;
   sendWait: (unitId: string) => void;
   sendCapture: (unitId: string) => void;
+  sendEndTurn: () => void;
   requestState: () => void;
 
   // Event handlers (set these to receive game events)
@@ -231,6 +232,12 @@ export function useMultiplayer(): UseMultiplayerReturn {
     socketRef.current.emit('action-capture', { unitId });
   }, []);
 
+  // End turn - tells server player is done (even if units haven't all moved)
+  const sendEndTurn = useCallback(() => {
+    if (!socketRef.current?.connected) return;
+    socketRef.current.emit('action-end-turn');
+  }, []);
+
   const requestState = useCallback(() => {
     if (!socketRef.current?.connected) return;
     socketRef.current.emit('request-state');
@@ -260,6 +267,7 @@ export function useMultiplayer(): UseMultiplayerReturn {
     sendAttack,
     sendWait,
     sendCapture,
+    sendEndTurn,
     requestState,
     onGameStarted,
     onStateUpdate,

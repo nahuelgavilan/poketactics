@@ -256,6 +256,14 @@ export function useGameState(): UseGameStateReturn {
       setGameState('victory');
     } else if (state.status === 'playing') {
       setGameState('playing');
+      // Reset to SELECT phase - server has processed the action
+      setGamePhase('SELECT');
+      // Clear any local selection state
+      setSelectedUnit(null);
+      setMoveRange([]);
+      setAttackRange([]);
+      setPendingPosition(null);
+      setUnitHasMoved(false);
     }
 
     // Update explored tiles based on server visibility

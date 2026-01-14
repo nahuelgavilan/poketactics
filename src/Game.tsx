@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useGameState, useVision } from './hooks';
+import { useMultiplayer, ClientGameState, ActionResult } from './hooks/useMultiplayer';
 import {
   Header,
   GameBoard,
@@ -14,7 +15,7 @@ import {
 import { CaptureMinigame } from './components/CaptureMinigame';
 import { StartScreen } from './components/StartScreen';
 import { HowToPlay } from './components/HowToPlay';
-import type { Position, TerrainType } from './types/game';
+import type { Position, TerrainType, Unit, GameMap } from './types/game';
 
 export default function Game() {
   const {
@@ -49,11 +50,98 @@ export default function Game() {
     confirmTurnChange,
     triggerTurnTransition,
     updateExplored,
+    setMultiplayerState,
     // Action menu
     selectAttack,
     selectWait,
     cancelAction
   } = useGameState();
+
+  // Multiplayer hook at Game level (persists across lobby → game)
+  const multiplayer = useMultiplayer();
+  const {
+    onGameStarted,
+    onStateUpdate,
+    onActionResult,
+    sendMove,
+    sendAttack,
+    sendWait,
+    sendCapture,
+    sendEndTurn,
+    roomStatus
+  } = multiplayer;
+
+  // Track if we're in a multiplayer game (started from lobby)
+  const isInMultiplayerGame = useRef(false);
+
+  // Multiplayer-aware action handlers
+  // In multiplayer, send to server; locally, use local handlers
+  const handleSelectWait = useCallback(() => {
+    if (isInMultiplayerGame.current && selectedUnit && pendingPosition) {
+      // In multiplayer: send move + wait to server
+      console.log('[Multiplayer] Sending move + wait:', selectedUnit.uid, pendingPosition);
+      sendMove(selectedUnit.uid, pendingPosition.x, pendingPosition.y);
+      sendWait(selectedUnit.uid);
+      // Reset local selection - server will send state-update
+      cancelAction();
+    } else {
+      // Local game: use local handler
+      selectWait();
+    }
+  }, [selectedUnit, pendingPosition, sendMove, sendWait, selectWait, cancelAction]);
+
+  const handleSelectAttack = useCallback(() => {
+    if (isInMultiplayerGame.current && selectedUnit && pendingPosition) {
+      // In multiplayer: first move unit, then enter attack phase
+      // Server will validate the move and send state update
+      console.log('[Multiplayer] Sending move for attack:', selectedUnit.uid, pendingPosition);
+      sendMove(selectedUnit.uid, pendingPosition.x, pendingPosition.y);
+      // Continue to attack phase locally (so user can select target)
+      selectAttack();
+    } else {
+      // Local game
+      selectAttack();
+    }
+  }, [selectedUnit, pendingPosition, sendMove, selectAttack]);
+
+  // When battle ends - in multiplayer, the server already has the result
+  // Local endBattle updates UI; server state-update will sync final state
+  const handleEndBattle = useCallback(() => {
+    // In multiplayer, the attack was already sent when clicking the target
+    // Just run local end battle for UI updates
+    endBattle();
+  }, [endBattle]);
+
+  // Handle end turn - in multiplayer sends to server, locally shows transition
+  const handleEndTurn = useCallback(() => {
+    if (isInMultiplayerGame.current) {
+      // Multiplayer: tell server we're ending our turn
+      console.log('[Multiplayer] Sending end turn');
+      sendEndTurn();
+      // Server will change currentPlayer and send state-update to both players
+      // NO local transition screen - that's only for local "pass the phone"
+    } else {
+      // Local game: show transition screen to pass the phone
+      triggerTurnTransition();
+    }
+  }, [sendEndTurn, triggerTurnTransition]);
+
+  // Handle tile clicks - in multiplayer ATTACKING phase, send attack to server
+  const handleTileClickMultiplayer = useCallback((x: number, y: number) => {
+    if (isInMultiplayerGame.current && gamePhase === 'ATTACKING' && selectedUnit) {
+      // Check if clicking on a valid attack target
+      const target = units.find(u => u.x === x && u.y === y && u.owner !== selectedUnit.owner);
+      if (target && attackRange.some(a => a.x === x && a.y === y)) {
+        console.log('[Multiplayer] Sending attack:', selectedUnit.uid, target.uid);
+        sendAttack(selectedUnit.uid, target.uid);
+        // Server will send action-result with battle outcome, then state-update
+        // For now, let local handler continue to show battle animation
+        // The state-update will sync final state
+      }
+    }
+    // Use local handler for all clicks (handles phase transitions, selection, etc)
+    handleTileClick(x, y);
+  }, [gamePhase, selectedUnit, units, attackRange, sendAttack, handleTileClick]);
 
   const [showHowToPlay, setShowHowToPlay] = useState(false);
   const [showMultiplayer, setShowMultiplayer] = useState(false);
@@ -79,9 +167,9 @@ export default function Game() {
     // Clear terrain selection when doing any game action
     setSelectedTerrain(null);
 
-    // Pass to game logic
-    handleTileClick(x, y);
-  }, [units, gamePhase, selectedUnit, map, handleTileClick, selectedTerrain]);
+    // Pass to multiplayer-aware handler
+    handleTileClickMultiplayer(x, y);
+  }, [units, gamePhase, selectedUnit, map, handleTileClickMultiplayer, selectedTerrain]);
 
   // Clear terrain selection when game state changes
   useEffect(() => {
@@ -126,16 +214,67 @@ export default function Game() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
+  // Wire up multiplayer callbacks - receives game state from server
+  useEffect(() => {
+    // When server says game started, use server state (not local initGame)
+    onGameStarted.current = (serverState: ClientGameState) => {
+      console.log('[Multiplayer] Game started with server state:', serverState);
+      isInMultiplayerGame.current = true;
+      setShowMultiplayer(false);
+
+      // Convert server state to local format and apply
+      // Cast map from number[][] to GameMap (TerrainType[][])
+      setMultiplayerState({
+        map: serverState.map as GameMap,
+        units: serverState.units as Unit[],
+        turn: serverState.turn,
+        currentPlayer: serverState.currentPlayer,
+        myPlayer: serverState.myPlayer,
+        status: serverState.status,
+        winner: serverState.winner,
+        visibility: serverState.visibility
+      });
+    };
+
+    // When server sends state update (after opponent's turn, etc)
+    onStateUpdate.current = (serverState: ClientGameState) => {
+      console.log('[Multiplayer] State update from server:', serverState);
+      if (!isInMultiplayerGame.current) return;
+
+      setMultiplayerState({
+        map: serverState.map as GameMap,
+        units: serverState.units as Unit[],
+        turn: serverState.turn,
+        currentPlayer: serverState.currentPlayer,
+        myPlayer: serverState.myPlayer,
+        status: serverState.status,
+        winner: serverState.winner,
+        visibility: serverState.visibility
+      });
+    };
+
+    // When server sends action result (move validated, attack result, etc)
+    onActionResult.current = (result: ActionResult) => {
+      console.log('[Multiplayer] Action result from server:', result);
+      // For now, we rely on state-update to sync. Could add visual feedback here.
+    };
+  }, [onGameStarted, onStateUpdate, onActionResult, setMultiplayerState]);
+
   // Show start screen
   if (gameState === 'menu') {
     if (showMultiplayer) {
       return (
         <MultiplayerLobby
           onBack={() => setShowMultiplayer(false)}
-          onGameStart={() => {
-            setShowMultiplayer(false);
-            initGame();
-          }}
+          connectionStatus={multiplayer.connectionStatus}
+          roomStatus={multiplayer.roomStatus}
+          roomId={multiplayer.roomId}
+          myPlayer={multiplayer.myPlayer}
+          error={multiplayer.error}
+          connect={multiplayer.connect}
+          createRoom={multiplayer.createRoom}
+          joinRoom={multiplayer.joinRoom}
+          startGame={multiplayer.startGame}
         />
       );
     }
@@ -164,7 +303,7 @@ export default function Game() {
         currentPlayer={currentPlayer}
         onRestart={initGame}
         onMenu={() => window.location.reload()}
-        onEndTurn={triggerTurnTransition}
+        onEndTurn={handleEndTurn}
         onHowToPlay={() => setShowHowToPlay(true)}
         myPlayer={myPlayer}
         isMultiplayer={isMultiplayer}
@@ -174,8 +313,8 @@ export default function Game() {
       />
 
       {/* Main game area - fills remaining space, centers board, no scroll */}
-      {/* Hidden during transition to prevent any flash of game state */}
-      <main className={`flex-1 min-h-0 relative flex items-center justify-center p-1 md:p-3 overflow-hidden ${gameState === 'transition' ? 'invisible' : ''}`}>
+      {/* Hidden during transition to prevent flash (LOCAL GAME ONLY - multiplayer doesn't use transition screen) */}
+      <main className={`flex-1 min-h-0 relative flex items-center justify-center p-1 md:p-3 overflow-hidden ${gameState === 'transition' && !isInMultiplayerGame.current ? 'invisible' : ''}`}>
         {/* Game Board */}
         <GameBoard
           map={map}
@@ -191,8 +330,8 @@ export default function Game() {
           // Action menu (Fire Emblem style - appears next to tile)
           showActionMenu={gamePhase === 'ACTION_MENU' && !!pendingPosition}
           canAttack={attackRange.length > 0}
-          onAttack={selectAttack}
-          onWait={selectWait}
+          onAttack={handleSelectAttack}
+          onWait={handleSelectWait}
           onCancel={cancelAction}
         />
 
@@ -363,8 +502,9 @@ export default function Game() {
 
       </main>
 
-      {/* INSTANT blocking overlay for turn transition - prevents any flash */}
-      {gameState === 'transition' && (
+      {/* INSTANT blocking overlay for turn transition - LOCAL GAME ONLY */}
+      {/* In multiplayer, there's no "pass the phone" screen */}
+      {gameState === 'transition' && !isInMultiplayerGame.current && (
         <div
           className="fixed inset-0 z-40 bg-slate-950"
           style={{
@@ -376,7 +516,8 @@ export default function Game() {
       )}
 
       {/* Overlays - full screen modals */}
-      {gameState === 'transition' && (
+      {/* TurnTransition is LOCAL GAME ONLY - for passing the phone */}
+      {gameState === 'transition' && !isInMultiplayerGame.current && (
         <TurnTransition
           currentPlayer={currentPlayer}
           onConfirm={confirmTurnChange}
@@ -384,7 +525,7 @@ export default function Game() {
       )}
 
       {gameState === 'battle' && battleData && (
-        <BattleCinematic {...battleData} onComplete={endBattle} />
+        <BattleCinematic {...battleData} onComplete={handleEndBattle} />
       )}
 
       {gameState === 'capture_minigame' && captureData && (

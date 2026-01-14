@@ -10,7 +10,8 @@ import {
   executeAttack,
   executeWait,
   executeCapture,
-  checkTurnEnd
+  checkTurnEnd,
+  executeEndTurn
 } from './gameLogic';
 import type { ClientToServerEvents, ServerToClientEvents, Player } from './types';
 
@@ -332,6 +333,40 @@ io.on('connection', (socket) => {
     broadcastStateUpdate(room.id);
 
     console.log(`Capture attempt by ${unitId}: ${result.captured ? 'SUCCESS' : 'FAILED'}`);
+  });
+
+  // Handle manual end turn (player clicks "End Turn" button)
+  socket.on('action-end-turn', () => {
+    const room = roomManager.getPlayerRoom(socket.id);
+    if (!room?.game) {
+      socket.emit('error', 'No hay juego activo');
+      return;
+    }
+
+    const player = roomManager.getPlayerRole(socket.id);
+    if (!player) {
+      socket.emit('error', 'No eres un jugador válido');
+      return;
+    }
+
+    const result = executeEndTurn(room.game, player);
+
+    if (!result.success) {
+      socket.emit('error', result.error || 'No puedes terminar el turno');
+      return;
+    }
+
+    // Send turn-end result to both players
+    io.to(room.id).emit('action-result', {
+      type: 'turn-end',
+      nextPlayer: result.nextPlayer,
+      turn: result.turn
+    });
+
+    // Broadcast updated state
+    broadcastStateUpdate(room.id);
+
+    console.log(`End turn: ${player} -> ${result.nextPlayer} (turn ${result.turn}) in room ${room.id}`);
   });
 
   // Request current state (for reconnection or sync)
