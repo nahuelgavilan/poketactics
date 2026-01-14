@@ -371,6 +371,29 @@ export function useGameState(): UseGameStateReturn {
       return;
     }
 
+    // Phase: ACTION_MENU - can click another tile to change destination
+    if (gamePhase === 'ACTION_MENU' && selectedUnit) {
+      const isCurrentPosition = x === selectedUnit.x && y === selectedUnit.y;
+      const isValidDestination = moveRange.some(m => m.x === x && m.y === y);
+
+      // Click on valid tile (including current position): change pending destination
+      if (isCurrentPosition || isValidDestination) {
+        setPendingPosition({ x, y });
+
+        // Recalculate attacks from new position
+        const virtualUnit = { ...selectedUnit, x, y };
+        const attacks = calculateAttackRange(virtualUnit, units);
+        setAttackRange(attacks);
+        return;
+      }
+
+      // Click elsewhere: cancel and go back to MOVING
+      setPendingPosition(null);
+      setAttackRange([]);
+      setGamePhase('MOVING');
+      return;
+    }
+
     // Phase: ATTACKING - selecting attack target
     if (gamePhase === 'ATTACKING' && selectedUnit) {
       // Click on valid target: attack

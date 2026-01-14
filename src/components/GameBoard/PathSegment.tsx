@@ -70,27 +70,44 @@ export function PathSegment({ x, y, path }: PathSegmentProps) {
     );
   }
 
-  // 2. END POINT (Arrow) - Points OPPOSITE of where it came from
+  // 2. END POINT (Arrow) - Points in travel direction
   if (prev && !next) {
-    // Rotation: Arrow points in travel direction (opposite of 'from')
-    // Default arrow points DOWN, so:
-    let rotation = 0;
-    if (from === 'up') rotation = 0;      // Came from above → points down
-    if (from === 'down') rotation = 180;  // Came from below → points up
-    if (from === 'left') rotation = 270;  // Came from left → points right
-    if (from === 'right') rotation = 90;  // Came from right → points left
+    // Draw arrow directly in the correct direction (no CSS rotation needed)
+    // 'from' tells us where we came from, arrow points opposite direction
+    let linePath = '';
+    let arrowPath = '';
+
+    if (from === 'up') {
+      // Came from above → traveling DOWN → arrow points down
+      linePath = `M 50 ${-EXT} L 50 35`;
+      arrowPath = 'M 25 35 L 50 75 L 75 35 L 50 45 Z';
+    } else if (from === 'down') {
+      // Came from below → traveling UP → arrow points up
+      linePath = `M 50 ${100 + EXT} L 50 65`;
+      arrowPath = 'M 25 65 L 50 25 L 75 65 L 50 55 Z';
+    } else if (from === 'left') {
+      // Came from left → traveling RIGHT → arrow points right
+      linePath = `M ${-EXT} 50 L 35 50`;
+      arrowPath = 'M 35 25 L 75 50 L 35 75 L 45 50 Z';
+    } else if (from === 'right') {
+      // Came from right → traveling LEFT → arrow points left
+      linePath = `M ${100 + EXT} 50 L 65 50`;
+      arrowPath = 'M 65 25 L 25 50 L 65 75 L 55 50 Z';
+    } else {
+      // Fallback: arrow points down
+      linePath = `M 50 ${-EXT} L 50 35`;
+      arrowPath = 'M 25 35 L 50 75 L 75 35 L 50 45 Z';
+    }
 
     return (
-      <div className="absolute inset-0 z-20 pointer-events-none flex items-center justify-center overflow-visible">
+      <div className="absolute inset-0 z-20 pointer-events-none overflow-visible">
         <svg
           viewBox="0 0 100 100"
           className="w-full h-full overflow-visible animate-bounce-subtle"
-          style={{ filter: glow, transform: `rotate(${rotation}deg)` }}
+          style={{ filter: glow }}
         >
-          {/* Line extending from top (entry point before rotation) */}
-          <line x1="50" y1={-EXT} x2="50" y2="30" stroke={stroke} strokeWidth={strokeWidth} strokeLinecap="square" />
-          {/* Diamond arrow pointing down (before rotation) */}
-          <path d="M 20 30 L 50 70 L 80 30 L 50 40 Z" fill={stroke} />
+          <path d={linePath} stroke={stroke} strokeWidth={strokeWidth} strokeLinecap="round" fill="none" />
+          <path d={arrowPath} fill={stroke} />
         </svg>
       </div>
     );
