@@ -445,6 +445,25 @@ export default function Game() {
             transform: translateX(0);
           }
         }
+
+        /* Terrain animations */
+        .animate-wave {
+          animation: wave 3s ease-in-out infinite;
+        }
+
+        @keyframes wave {
+          0%, 100% { transform: translateX(0); }
+          50% { transform: translateX(-10px); }
+        }
+
+        .animate-heal-pulse {
+          animation: healPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes healPulse {
+          0%, 100% { opacity: 0.3; transform: scale(0.9); }
+          50% { opacity: 0.6; transform: scale(1.1); }
+        }
       `}</style>
     </div>
   );

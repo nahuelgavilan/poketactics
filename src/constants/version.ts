@@ -15,9 +15,10 @@
  * don't trigger version bumps unless they include breaking changes.
  */
 
-export const VERSION = '1.9.0';
+export const VERSION = '1.9.1';
 
 // Version history:
+// 1.9.1 - Distinctive terrain visuals: grass blades, tree canopies, mountain peaks, water waves, healing cross
 // 1.9.0 - Fire Emblem style contextual action menu: appears next to unit with notch pointer, smart positioning
 // 1.8.1 - Fix: click other tiles during ACTION_MENU to change destination, fix arrow direction
 // 1.8.0 - Fire Emblem style preview: click destination → preview path + attack range → confirm with Mover/Atacar/Cancelar

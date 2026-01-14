@@ -133,6 +133,20 @@ Each Pokémon has base stats and typing:
 | Base | +10% | 1 | None | Spawn points |
 | Pokémon Center | +15% | 1 | None | Heals 20% HP per turn |
 
+### Terrain Visual Distinctions
+
+Each terrain has unique visual elements (no icons, CSS-only decorations):
+
+| Terrain | Color | Visual Elements |
+|---------|-------|-----------------|
+| **Plains** | Light green (lime → green) | Subtle horizontal mowed grass lines |
+| **Tall Grass** | Medium green | Vertical grass blade shapes with jagged tips |
+| **Forest** | Dark green (emerald) | Tree canopy circles with dappled light |
+| **Water** | Cyan → blue | Animated wave pattern + shimmer |
+| **Mountain** | Amber → stone | Triangle peaks with snow caps |
+| **Pokémon Center** | Pink/rose | Pulsing healing glow + white cross |
+| **Base** | Slate gray | Tech grid pattern + corner markers |
+
 ### Mountain Vision Bonus
 
 Units standing on mountains gain **+2 vision range** (total 5 tiles instead of 3). This makes mountains strategic scouting positions despite the high movement cost.
@@ -141,7 +155,7 @@ Units standing on mountains gain **+2 vision range** (total 5 tiles instead of 3
 
 - **1-2 centers** spawn per map in the middle area
 - Units on a Pokémon Center heal **20% of max HP** at the start of their owner's turn
-- Marked with a red cross icon on the tile
+- Visually marked with pink/rose gradient, white cross pattern, and pulsing healing glow
 - Provides light defensive bonus (+15%)
 
 ### Terrain Type Bonus
@@ -706,6 +720,7 @@ This project uses **Semantic Versioning** (semver) with **Conventional Commits**
 
 | Version | Changes |
 |---------|---------|
+| **1.9.1** | Distinctive terrain visuals: grass blades, tree canopies, mountain peaks, water waves, healing cross |
 | **1.9.0** | Fire Emblem style contextual action menu: appears next to unit with notch pointer, smart positioning |
 | **1.8.1** | Fix: click other tiles during ACTION_MENU to change destination, fix arrow direction |
 | **1.8.0** | Fire Emblem style preview: click destination → preview path + attack range → confirm with menu |
