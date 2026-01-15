@@ -97,23 +97,32 @@ export function GameBoard({
   };
 
 
+  // Desktop: constrain board to a reasonable size based on viewport height
+  // The board is 6 cols x 8 rows, so height > width. We size based on available height.
+  // Mobile: use viewport width (current approach)
+  // Desktop: use max height with aspect ratio, centered
+  const boardSizeClass = isMobile
+    ? 'w-[94vw]' // Mobile: width-based
+    : 'h-[min(80vh,600px)] w-auto aspect-[6/8]'; // Desktop: height-based with max
+
   return (
     <div
       className={`
         relative bg-slate-900 ${padding} rounded-3xl
         shadow-2xl border border-slate-800
         select-none touch-manipulation overflow-visible
-        ${isMobile ? 'w-[94vw]' : 'w-auto'}
+        ${boardSizeClass}
       `}
     >
       {/* Subtle inner glow */}
       <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-blue-500/5 to-red-500/5 pointer-events-none" />
 
       <div
-        className={`grid ${gap} relative overflow-visible`}
+        className={`grid ${gap} relative overflow-visible h-full`}
         style={{
-          // Width-based: 6 equal columns that fill the container
+          // Equal columns and rows that fill the container
           gridTemplateColumns: `repeat(${BOARD_WIDTH}, 1fr)`,
+          gridTemplateRows: `repeat(${map.length}, 1fr)`,
         }}
       >
         {map.map((row, y) =>

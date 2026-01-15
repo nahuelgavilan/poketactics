@@ -64,7 +64,7 @@ function TutorialTile({
   children?: React.ReactNode;
 }) {
   return (
-    <div className="relative">
+    <div className="relative w-full h-full">
       <Tile
         x={x}
         y={y}
@@ -370,36 +370,25 @@ function SlideMenuAccion() {
         Al elegir destino, aparece el <span className="text-amber-400 font-semibold">menú de acción</span> junto al tile:
       </p>
 
-      {/* Gameplay preview - EXACT like real game */}
+      {/* Gameplay preview */}
       <div
-        className="relative rounded-xl overflow-visible p-3"
+        className="relative rounded-xl overflow-visible p-4"
         style={{
           background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)',
           border: '3px solid #334155',
         }}
       >
-        {/* Mini game board with menu next to tile */}
-        <div className="flex items-center justify-center gap-2">
-          {/* Left tiles */}
-          <div className="grid grid-cols-2 gap-1">
-            <TutorialTile x={0} y={0} terrain={TERRAIN.GRASS} />
-            <TutorialTile x={1} y={0} terrain={TERRAIN.FOREST} />
-            <TutorialTile x={0} y={1} terrain={TERRAIN.GRASS}>
-              <div className="relative w-[90%] h-[90%]">
-                <img src={PIKACHU_SPRITE} className="w-full h-full object-contain scale-x-[-1] drop-shadow-lg opacity-50" style={{ imageRendering: 'pixelated' }} alt="" />
-                <div className="absolute -top-0.5 left-1/2 -translate-x-1/2 w-6 h-1 bg-slate-900 rounded-full overflow-hidden border border-white/20">
-                  <div className="h-full w-full bg-green-400" />
-                </div>
-                <div className="absolute bottom-0 right-0 w-2 h-2 rounded-full bg-blue-500 border border-slate-900" />
-              </div>
-            </TutorialTile>
+        {/* Layout: tile with Pikachu + menu next to it */}
+        <div className="flex items-center justify-center gap-3">
+          {/* Single tile with Pikachu (selected) - LARGER */}
+          <div className="w-16 h-16">
             <TutorialTile x={1} y={1} terrain={TERRAIN.GRASS} isSelected>
               <div className="relative w-[90%] h-[90%]">
                 <img src={PIKACHU_SPRITE} className="w-full h-full object-contain scale-x-[-1] drop-shadow-lg" style={{ imageRendering: 'pixelated' }} alt="" />
-                <div className="absolute -top-0.5 left-1/2 -translate-x-1/2 w-6 h-1 bg-slate-900 rounded-full overflow-hidden border border-white/20">
+                <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-10 h-1.5 bg-slate-900 rounded-full overflow-hidden border border-white/20">
                   <div className="h-full w-full bg-green-400" />
                 </div>
-                <div className="absolute bottom-0 right-0 w-2 h-2 rounded-full bg-blue-500 border border-slate-900" />
+                <div className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-blue-500 border border-slate-900" />
               </div>
             </TutorialTile>
           </div>
@@ -412,71 +401,55 @@ function SlideMenuAccion() {
 
             {/* Menu box - EXACT from UnitActionMenu.tsx */}
             <div
-              className="relative bg-gradient-to-b from-amber-50 to-amber-100 border-[3px] border-amber-900 rounded-sm overflow-hidden min-w-[100px]"
+              className="relative bg-gradient-to-b from-amber-50 to-amber-100 border-[3px] border-amber-900 rounded-sm overflow-hidden min-w-[120px]"
               style={{ boxShadow: '4px 4px 0 0 rgba(0,0,0,0.3)' }}
             >
               {/* Inner border */}
               <div className="absolute inset-[2px] border border-amber-300 rounded-sm pointer-events-none" />
 
               {/* Title bar */}
-              <div className="bg-gradient-to-r from-amber-700 via-amber-600 to-amber-700 px-3 py-1 border-b-2 border-amber-900">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-amber-100" style={{ textShadow: '1px 1px 0 rgba(0,0,0,0.5)' }}>
+              <div className="bg-gradient-to-r from-amber-700 via-amber-600 to-amber-700 px-3 py-1.5 border-b-2 border-amber-900">
+                <span className="text-[11px] font-bold uppercase tracking-widest text-amber-100" style={{ textShadow: '1px 1px 0 rgba(0,0,0,0.5)' }}>
                   Acción
                 </span>
               </div>
 
-              {/* Menu buttons - EXACT styling */}
-              <div className="p-1 flex flex-col gap-0.5">
-                <div className="flex items-center gap-2 w-full px-3 py-2 text-xs font-bold uppercase tracking-wide border rounded-sm bg-gradient-to-r from-red-100 to-red-50 text-red-900 border-red-300">
-                  <Swords className="w-4 h-4" />
+              {/* Menu buttons */}
+              <div className="p-1.5 flex flex-col gap-1">
+                <div className="flex items-center gap-2 w-full px-3 py-2 text-sm font-bold uppercase tracking-wide border rounded-sm bg-gradient-to-r from-red-100 to-red-50 text-red-900 border-red-300">
+                  <Swords className="w-5 h-5" />
                   <span>Atacar</span>
                 </div>
-                <div className="flex items-center gap-2 w-full px-3 py-2 text-xs font-bold uppercase tracking-wide border rounded-sm bg-gradient-to-r from-emerald-100 to-emerald-50 text-emerald-900 border-emerald-300">
-                  <Hand className="w-4 h-4" />
+                <div className="flex items-center gap-2 w-full px-3 py-2 text-sm font-bold uppercase tracking-wide border rounded-sm bg-gradient-to-r from-emerald-100 to-emerald-50 text-emerald-900 border-emerald-300">
+                  <Hand className="w-5 h-5" />
                   <span>Esperar</span>
                 </div>
-                <div className="flex items-center gap-2 w-full px-3 py-2 text-xs font-bold uppercase tracking-wide border rounded-sm bg-gradient-to-r from-slate-100 to-slate-50 text-slate-700 border-slate-300">
-                  <Undo2 className="w-4 h-4" />
+                <div className="flex items-center gap-2 w-full px-3 py-2 text-sm font-bold uppercase tracking-wide border rounded-sm bg-gradient-to-r from-slate-100 to-slate-50 text-slate-700 border-slate-300">
+                  <Undo2 className="w-5 h-5" />
                   <span>Cancelar</span>
                 </div>
               </div>
             </div>
-          </div>
-
-          {/* Right tiles with enemy */}
-          <div className="grid grid-cols-2 gap-1">
-            <TutorialTile x={2} y={0} terrain={TERRAIN.GRASS} />
-            <TutorialTile x={3} y={0} terrain={TERRAIN.MOUNTAIN} />
-            <TutorialTile x={2} y={1} terrain={TERRAIN.GRASS} canAttack>
-              <div className="relative w-[90%] h-[90%]">
-                <img src={CHARMANDER_SPRITE} className="w-full h-full object-contain drop-shadow-lg" style={{ imageRendering: 'pixelated' }} alt="" />
-                <div className="absolute -top-0.5 left-1/2 -translate-x-1/2 w-6 h-1 bg-slate-900 rounded-full overflow-hidden border border-white/20">
-                  <div className="h-full w-3/4 bg-yellow-400" />
-                </div>
-                <div className="absolute bottom-0 right-0 w-2 h-2 rounded-full bg-red-500 border border-slate-900" />
-              </div>
-            </TutorialTile>
-            <TutorialTile x={3} y={1} terrain={TERRAIN.WATER} />
           </div>
         </div>
       </div>
 
       {/* Brief explanation */}
       <div className="grid grid-cols-3 gap-1.5 text-center">
-        <div className="p-1.5 rounded-lg bg-red-500/10 border border-red-500/20">
-          <Swords className="w-3.5 h-3.5 text-red-400 mx-auto mb-0.5" />
-          <div className="text-[9px] font-bold text-red-300">ATACAR</div>
-          <div className="text-[7px] text-slate-500">Si hay enemigos</div>
+        <div className="p-2 rounded-lg bg-red-500/10 border border-red-500/20">
+          <Swords className="w-4 h-4 text-red-400 mx-auto mb-1" />
+          <div className="text-[10px] font-bold text-red-300">ATACAR</div>
+          <div className="text-[8px] text-slate-500">Si hay enemigos</div>
         </div>
-        <div className="p-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
-          <Hand className="w-3.5 h-3.5 text-emerald-400 mx-auto mb-0.5" />
-          <div className="text-[9px] font-bold text-emerald-300">ESPERAR</div>
-          <div className="text-[7px] text-slate-500">Confirmar</div>
+        <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+          <Hand className="w-4 h-4 text-emerald-400 mx-auto mb-1" />
+          <div className="text-[10px] font-bold text-emerald-300">ESPERAR</div>
+          <div className="text-[8px] text-slate-500">Confirmar</div>
         </div>
-        <div className="p-1.5 rounded-lg bg-slate-500/10 border border-slate-500/20">
-          <Undo2 className="w-3.5 h-3.5 text-slate-400 mx-auto mb-0.5" />
-          <div className="text-[9px] font-bold text-slate-300">CANCELAR</div>
-          <div className="text-[7px] text-slate-500">Volver atrás</div>
+        <div className="p-2 rounded-lg bg-slate-500/10 border border-slate-500/20">
+          <Undo2 className="w-4 h-4 text-slate-400 mx-auto mb-1" />
+          <div className="text-[10px] font-bold text-slate-300">CANCELAR</div>
+          <div className="text-[8px] text-slate-500">Volver atrás</div>
         </div>
       </div>
     </div>

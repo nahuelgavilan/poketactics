@@ -17,7 +17,8 @@ import type {
   BattleData,
   CaptureData,
   TerrainType,
-  EvolutionData
+  EvolutionData,
+  PokemonTemplate
 } from '../types/game';
 
 interface UseGameStateReturn {
@@ -63,6 +64,12 @@ interface UseGameStateReturn {
   selectAttack: () => void;
   selectWait: () => void;
   cancelAction: () => void;
+  // Multiplayer battle (triggered by server result)
+  startServerBattle: (attackerId: string, defenderId: string, damage: number, counterDamage: number) => void;
+  // Multiplayer encounter
+  triggerMultiplayerEncounter: (unit: Unit) => boolean;
+  // Multiplayer evolution (triggered by server result)
+  triggerServerEvolution: (unitId: string, newTemplate: PokemonTemplate) => void;
 }
 
 // State received from server in multiplayer
@@ -689,6 +696,91 @@ export function useGameState(): UseGameStateReturn {
     setGamePhase('MOVING');
   }, []);
 
+  // Start a battle using server-provided results (for multiplayer)
+  const startServerBattle = useCallback((attackerId: string, defenderId: string, damage: number, counterDamage: number) => {
+    const attacker = units.find(u => u.uid === attackerId);
+    const defender = units.find(u => u.uid === defenderId);
+
+    if (!attacker || !defender) {
+      console.error('[Multiplayer] Could not find attacker or defender for battle');
+      return;
+    }
+
+    // Calculate effectiveness from types
+    const effectiveness = attacker.template.moveType && defender.template.types
+      ? defender.template.types.reduce((acc, defType) => {
+          // Simple effectiveness calculation
+          return acc;
+        }, 1)
+      : 1;
+
+    // Create battle data with server-provided damage values
+    const battleData: BattleData = {
+      attacker,
+      defender,
+      attackerResult: {
+        damage,
+        effectiveness,
+        isCritical: false, // Server doesn't send this, default to false
+        terrainBonus: 0,
+        typeTerrainBonus: false
+      },
+      defenderResult: counterDamage > 0 ? {
+        damage: counterDamage,
+        effectiveness: 1,
+        isCritical: false,
+        terrainBonus: 0,
+        typeTerrainBonus: false
+      } : null,
+      terrainType: map[defender.y]?.[defender.x] ?? TERRAIN.GRASS,
+      damage,
+      effectiveness
+    };
+
+    // Reset selection state before starting battle
+    setSelectedUnit(null);
+    setMoveRange([]);
+    setAttackRange([]);
+    setPendingPosition(null);
+    setGamePhase('SELECT');
+
+    setBattleData(battleData);
+    setGameState('battle');
+  }, [units, map]);
+
+  // Trigger wild encounter for multiplayer (client-side check before server action)
+  const triggerMultiplayerEncounter = useCallback((unit: Unit): boolean => {
+    const isOnTallGrass = map[unit.y]?.[unit.x] === TERRAIN.TALL_GRASS;
+    if (!isOnTallGrass) return false;
+
+    // 30% chance of encounter
+    if (Math.random() > 0.3) return false;
+
+    const encounter = triggerWildEncounter(unit, map, units);
+    if (encounter) {
+      setGameState('capture_minigame');
+      setCaptureData(encounter);
+      return true;
+    }
+    return false;
+  }, [map, units]);
+
+  // Trigger evolution cinematic from server data (for multiplayer)
+  const triggerServerEvolution = useCallback((unitId: string, newTemplate: PokemonTemplate) => {
+    const unit = units.find(u => u.uid === unitId);
+    if (!unit) {
+      console.error('[Multiplayer] Could not find unit for evolution:', unitId);
+      return;
+    }
+
+    setEvolutionData({
+      unitId,
+      fromTemplate: unit.template,
+      toTemplate: newTemplate
+    });
+    setGameState('evolution');
+  }, [units]);
+
   return {
     map,
     units,
@@ -730,6 +822,10 @@ export function useGameState(): UseGameStateReturn {
     // Action menu
     selectAttack,
     selectWait,
-    cancelAction
+    cancelAction,
+    // Multiplayer
+    startServerBattle,
+    triggerMultiplayerEncounter,
+    triggerServerEvolution
   };
 }

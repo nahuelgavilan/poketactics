@@ -104,7 +104,7 @@ export interface ClientToServerEvents {
   'action-move': (data: { unitId: string; x: number; y: number }) => void;
   'action-attack': (data: { attackerId: string; defenderId: string }) => void;
   'action-wait': (data: { unitId: string }) => void;
-  'action-capture': (data: { unitId: string }) => void;
+  'action-capture': (data: { unitId: string; success?: boolean }) => void;
   'action-end-turn': () => void;
   'request-state': () => void;
 }

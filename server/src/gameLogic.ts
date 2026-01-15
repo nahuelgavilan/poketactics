@@ -561,7 +561,7 @@ export function executeWait(game: ServerGameState, playerId: Player, unitId: str
 /**
  * Execute capture action (30% chance)
  */
-export function executeCapture(game: ServerGameState, playerId: Player, unitId: string): {
+export function executeCapture(game: ServerGameState, playerId: Player, unitId: string, minigameSuccess?: boolean): {
   success: boolean;
   captured: boolean;
   newUnit?: ServerUnit;
@@ -582,8 +582,8 @@ export function executeCapture(game: ServerGameState, playerId: Player, unitId: 
     return { success: false, captured: false, error: 'No estás en hierba alta' };
   }
 
-  // 30% capture chance
-  const captured = Math.random() < 0.3;
+  // If client provided minigame result, use it; otherwise use server RNG (30% chance)
+  const captured = minigameSuccess !== undefined ? minigameSuccess : Math.random() < 0.3;
 
   if (!captured) {
     unit.hasMoved = true;

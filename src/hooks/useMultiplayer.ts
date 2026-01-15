@@ -58,7 +58,7 @@ interface UseMultiplayerReturn {
   sendMove: (unitId: string, x: number, y: number) => void;
   sendAttack: (attackerId: string, defenderId: string) => void;
   sendWait: (unitId: string) => void;
-  sendCapture: (unitId: string) => void;
+  sendCapture: (unitId: string, success?: boolean) => void;
   sendEndTurn: () => void;
   requestState: () => void;
 
@@ -227,9 +227,9 @@ export function useMultiplayer(): UseMultiplayerReturn {
     socketRef.current.emit('action-wait', { unitId });
   }, []);
 
-  const sendCapture = useCallback((unitId: string) => {
+  const sendCapture = useCallback((unitId: string, success?: boolean) => {
     if (!socketRef.current?.connected) return;
-    socketRef.current.emit('action-capture', { unitId });
+    socketRef.current.emit('action-capture', { unitId, success });
   }, []);
 
   // End turn - tells server player is done (even if units haven't all moved)

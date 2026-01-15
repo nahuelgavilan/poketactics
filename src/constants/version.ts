@@ -15,9 +15,13 @@
  * don't trigger version bumps unless they include breaking changes.
  */
 
-export const VERSION = '0.21.3';
+export const VERSION = '0.22.2';
 
 // Version history (Alpha - v0.x.x):
+// 0.22.2 - Desktop responsive design: board uses height-based sizing (max 600px), HP bars and badges scale with tiles
+// 0.22.1 - Multiplayer fix: evolution cinematic now shows after kills (was being ignored from server response)
+// 0.22.0 - Multiplayer fixes: attacks now wait for server confirmation (no race condition), wild Pokemon encounters work
+// 0.21.4 - Tutorial fix: TutorialTile wrapper fills container (w-full h-full) so tiles render at proper size
 // 0.21.3 - Tutorial fix: REAL UnitActionMenu (Fire Emblem style next to tile, not floating bar), correct icons
 // 0.21.2 - Tutorial fix: EXACT ActionMenu.tsx styling (buttons, spacing, icons, badge), proper Sword icon
 // 0.21.1 - Tutorial fix: accurate floating action menu, real gameplay grids with Pokemon on tiles, attack range preview

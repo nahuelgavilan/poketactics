@@ -15,7 +15,7 @@ import {
 import { CaptureMinigame } from './components/CaptureMinigame';
 import { StartScreen } from './components/StartScreen';
 import { HowToPlay } from './components/HowToPlay';
-import type { Position, TerrainType, Unit, GameMap } from './types/game';
+import type { Position, TerrainType, Unit, GameMap, PokemonTemplate, EvolutionData } from './types/game';
 
 export default function Game() {
   const {
@@ -55,7 +55,11 @@ export default function Game() {
     // Action menu
     selectAttack,
     selectWait,
-    cancelAction
+    cancelAction,
+    // Multiplayer
+    startServerBattle,
+    triggerMultiplayerEncounter,
+    triggerServerEvolution
   } = useGameState();
 
   // Multiplayer hook at Game level (persists across lobby → game)
@@ -79,17 +83,31 @@ export default function Game() {
   // In multiplayer, send to server; locally, use local handlers
   const handleSelectWait = useCallback(() => {
     if (isInMultiplayerGame.current && selectedUnit && pendingPosition) {
-      // In multiplayer: send move + wait to server
-      console.log('[Multiplayer] Sending move + wait:', selectedUnit.uid, pendingPosition);
+      // In multiplayer: send move, then check for encounter, then wait
+      console.log('[Multiplayer] Sending move:', selectedUnit.uid, pendingPosition);
       sendMove(selectedUnit.uid, pendingPosition.x, pendingPosition.y);
+
+      // Create a "moved" unit to check for encounters at the new position
+      const movedUnit = { ...selectedUnit, x: pendingPosition.x, y: pendingPosition.y };
+
+      // Check for wild encounter at the new position (client-side 30% chance)
+      if (triggerMultiplayerEncounter(movedUnit)) {
+        // Encounter triggered - minigame will show
+        // After minigame, capture result will be handled
+        // Don't send wait yet - it will happen after minigame resolves
+        console.log('[Multiplayer] Wild encounter triggered!');
+        cancelAction();
+        return;
+      }
+
+      // No encounter - send wait to server
       sendWait(selectedUnit.uid);
-      // Reset local selection - server will send state-update
       cancelAction();
     } else {
       // Local game: use local handler
       selectWait();
     }
-  }, [selectedUnit, pendingPosition, sendMove, sendWait, selectWait, cancelAction]);
+  }, [selectedUnit, pendingPosition, sendMove, sendWait, selectWait, cancelAction, triggerMultiplayerEncounter]);
 
   const handleSelectAttack = useCallback(() => {
     if (isInMultiplayerGame.current && selectedUnit && pendingPosition) {
@@ -111,7 +129,17 @@ export default function Game() {
     // In multiplayer, the attack was already sent when clicking the target
     // Just run local end battle for UI updates
     endBattle();
-  }, [endBattle]);
+
+    // In multiplayer, check if there's a pending evolution to show
+    if (isInMultiplayerGame.current && pendingEvolutionRef.current) {
+      const { unitId, newTemplate } = pendingEvolutionRef.current;
+      pendingEvolutionRef.current = null;
+      // Small delay to let battle state clear, then trigger evolution
+      setTimeout(() => {
+        triggerServerEvolution(unitId, newTemplate);
+      }, 100);
+    }
+  }, [endBattle, triggerServerEvolution]);
 
   // Handle end turn - in multiplayer sends to server, locally shows transition
   const handleEndTurn = useCallback(() => {
@@ -127,6 +155,55 @@ export default function Game() {
     }
   }, [sendEndTurn, triggerTurnTransition]);
 
+  // Track unit for multiplayer capture (need to send capture result after minigame)
+  const pendingCaptureUnitRef = useRef<string | null>(null);
+
+  // Multiplayer-aware capture handlers
+  const handleCaptureSuccess = useCallback(() => {
+    if (isInMultiplayerGame.current && selectedUnit) {
+      // Store unit ID for when capture modal completes
+      pendingCaptureUnitRef.current = selectedUnit.uid;
+    }
+    // Show the capture modal (works for both local and multiplayer)
+    onCaptureMinigameSuccess();
+  }, [selectedUnit, onCaptureMinigameSuccess]);
+
+  const handleCaptureFail = useCallback(() => {
+    if (isInMultiplayerGame.current && selectedUnit) {
+      // Tell server capture failed - just marks unit as moved
+      console.log('[Multiplayer] Capture failed, sending to server');
+      sendCapture(selectedUnit.uid, false);
+    }
+    // Run local handler (shows message, marks unit as moved locally)
+    onCaptureMinigameFail();
+  }, [selectedUnit, sendCapture, onCaptureMinigameFail]);
+
+  const handleCaptureFlee = useCallback(() => {
+    if (isInMultiplayerGame.current && selectedUnit) {
+      // Player fled - send wait to server (unit used their turn)
+      console.log('[Multiplayer] Player fled encounter, sending wait');
+      sendWait(selectedUnit.uid);
+    }
+    // Run local handler
+    onCaptureMinigameFlee();
+  }, [selectedUnit, sendWait, onCaptureMinigameFlee]);
+
+  const handleConfirmCapture = useCallback(() => {
+    if (isInMultiplayerGame.current && pendingCaptureUnitRef.current) {
+      // Tell server capture succeeded - server will create the new unit
+      console.log('[Multiplayer] Capture succeeded, sending to server');
+      sendCapture(pendingCaptureUnitRef.current, true);
+      pendingCaptureUnitRef.current = null;
+    }
+    // Run local handler (in multiplayer, server's state-update will sync the new unit)
+    confirmCapture();
+  }, [sendCapture, confirmCapture]);
+
+  // Track pending battle for multiplayer (to show animation after server confirms)
+  const pendingBattleRef = useRef<{ attackerId: string; defenderId: string } | null>(null);
+  // Track pending evolution for multiplayer (to show after battle animation)
+  const pendingEvolutionRef = useRef<{ unitId: string; newTemplate: PokemonTemplate } | null>(null);
+
   // Handle tile clicks - in multiplayer ATTACKING phase, send attack to server
   const handleTileClickMultiplayer = useCallback((x: number, y: number) => {
     if (isInMultiplayerGame.current && gamePhase === 'ATTACKING' && selectedUnit) {
@@ -134,13 +211,14 @@ export default function Game() {
       const target = units.find(u => u.x === x && u.y === y && u.owner !== selectedUnit.owner);
       if (target && attackRange.some(a => a.x === x && a.y === y)) {
         console.log('[Multiplayer] Sending attack:', selectedUnit.uid, target.uid);
+        // Store pending battle info to show animation when server confirms
+        pendingBattleRef.current = { attackerId: selectedUnit.uid, defenderId: target.uid };
         sendAttack(selectedUnit.uid, target.uid);
-        // Server will send action-result with battle outcome, then state-update
-        // For now, let local handler continue to show battle animation
-        // The state-update will sync final state
+        // DON'T run local battle - wait for server action-result
+        return;
       }
     }
-    // Use local handler for all clicks (handles phase transitions, selection, etc)
+    // Use local handler for non-attack clicks (handles phase transitions, selection, etc)
     handleTileClick(x, y);
   }, [gamePhase, selectedUnit, units, attackRange, sendAttack, handleTileClick]);
 
@@ -257,9 +335,22 @@ export default function Game() {
     // When server sends action result (move validated, attack result, etc)
     onActionResult.current = (result: ActionResult) => {
       console.log('[Multiplayer] Action result from server:', result);
-      // For now, we rely on state-update to sync. Could add visual feedback here.
+
+      // Handle attack results - trigger battle animation
+      if (result.type === 'attack' && pendingBattleRef.current) {
+        const { attackerId, defenderId } = pendingBattleRef.current;
+        pendingBattleRef.current = null;
+
+        // Store evolution data to trigger after battle animation
+        if (result.evolution) {
+          pendingEvolutionRef.current = result.evolution;
+        }
+
+        // Trigger battle animation with server-provided damage values
+        startServerBattle(attackerId, defenderId, result.damage, result.counterDamage);
+      }
     };
-  }, [onGameStarted, onStateUpdate, onActionResult, setMultiplayerState]);
+  }, [onGameStarted, onStateUpdate, onActionResult, setMultiplayerState, startServerBattle]);
 
   // Show start screen
   if (gameState === 'menu') {
@@ -534,14 +625,14 @@ export default function Game() {
           pokemon={captureData.pokemon}
           player={captureData.player}
           playerPokemon={selectedUnit?.template}
-          onSuccess={onCaptureMinigameSuccess}
-          onFail={onCaptureMinigameFail}
-          onFlee={onCaptureMinigameFlee}
+          onSuccess={handleCaptureSuccess}
+          onFail={handleCaptureFail}
+          onFlee={handleCaptureFlee}
         />
       )}
 
       {gameState === 'capture' && captureData && (
-        <CaptureModal {...captureData} onComplete={confirmCapture} />
+        <CaptureModal {...captureData} onComplete={handleConfirmCapture} />
       )}
 
       {gameState === 'evolution' && evolutionData && (

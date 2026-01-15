@@ -286,10 +286,10 @@ export function Tile({
               alt={unit.template.name}
             />
 
-            {/* HP Bar */}
+            {/* HP Bar - scales with tile size */}
             <div className={`
               absolute -top-1 left-1/2 -translate-x-1/2
-              ${isMobile ? 'w-10' : 'w-10'} h-1.5
+              w-[85%] h-1.5 md:h-2
               bg-slate-900 rounded-full overflow-hidden
               border border-white/20 shadow-sm
             `}>
@@ -305,9 +305,9 @@ export function Tile({
               />
             </div>
 
-            {/* Player indicator badge */}
+            {/* Player indicator badge - scales with tile */}
             <div className={`
-              absolute bottom-0 right-1 w-3 h-3 rounded-full
+              absolute bottom-0 right-[5%] w-[20%] max-w-4 aspect-square rounded-full
               border border-slate-900
               ${unit.owner === 'P1' ? 'bg-blue-500' : 'bg-red-500'}
             `} />

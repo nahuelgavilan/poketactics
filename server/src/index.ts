@@ -280,7 +280,8 @@ io.on('connection', (socket) => {
   });
 
   // Handle capture action
-  socket.on('action-capture', ({ unitId }) => {
+  // success: whether the client's minigame was successful (if undefined, use server RNG)
+  socket.on('action-capture', ({ unitId, success: minigameSuccess }) => {
     const room = roomManager.getPlayerRoom(socket.id);
     if (!room?.game) {
       socket.emit('error', 'No hay juego activo');
@@ -293,7 +294,7 @@ io.on('connection', (socket) => {
       return;
     }
 
-    const result = executeCapture(room.game, player, unitId);
+    const result = executeCapture(room.game, player, unitId, minigameSuccess);
 
     if (!result.success) {
       socket.emit('error', result.error || 'Captura inválida');
