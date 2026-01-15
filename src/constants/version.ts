@@ -15,9 +15,10 @@
  * don't trigger version bumps unless they include breaking changes.
  */
 
-export const VERSION = '0.23.1';
+export const VERSION = '0.24.0';
 
 // Version history (Alpha - v0.x.x):
+// 0.24.0 - Epic VS transition: board zoom, tiles with stats facing each other (position-aware), clockwise wipe. Removed redundant VS from BattleCinematic
 // 0.23.1 - Simplified battle transition: board zoom + classic Pokemon pixelated circular wipe (no VS screen)
 // 0.23.0 - Pre-battle zoom transition: zooms into game board on both Pokemon, Pokemon-style encounter effect. Fixed flee bug (unit turn ends after fleeing)
 // 0.22.6 - Wild Pokemon counter-attack damage now applies to player's Pokemon HP

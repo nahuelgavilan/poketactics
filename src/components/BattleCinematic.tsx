@@ -6,8 +6,6 @@ import { getImpactColor, getEffectivenessText } from '../utils/combat';
 import type { BattleData } from '../types/game';
 
 type BattlePhase =
-  | 'vs_intro'
-  | 'vs_transition'
   | 'intro'
   | 'charge'
   | 'lunge'
@@ -53,7 +51,7 @@ export function BattleCinematic({
   terrainType,
   onComplete
 }: BattleCinematicProps) {
-  const [phase, setPhase] = useState<BattlePhase>('vs_intro');
+  const [phase, setPhase] = useState<BattlePhase>('intro');
   const [defenderHp, setDefenderHp] = useState(defender.currentHp);
   const [attackerHp, setAttackerHp] = useState(attacker.currentHp);
   const [displayedText, setDisplayedText] = useState('');
@@ -111,9 +109,8 @@ export function BattleCinematic({
     const timers: ReturnType<typeof setTimeout>[] = [];
     let t = 0;
 
-    // VS Intro
-    timers.push(setTimeout(() => setPhase('vs_transition'), t += 1500));
-    timers.push(setTimeout(() => setPhase('intro'), t += 600));
+    // Short intro pause before attack
+    t += 400;
 
     // Attacker's turn
     timers.push(setTimeout(() => {
@@ -200,14 +197,12 @@ export function BattleCinematic({
     if (phase.startsWith('counter_')) {
       return phase.replace('counter_', '') as 'intro' | 'charge' | 'lunge' | 'impact' | 'result';
     }
-    if (phase === 'vs_intro' || phase === 'vs_transition') return 'intro';
     return phase as 'intro' | 'charge' | 'lunge' | 'impact' | 'result' | 'end';
   };
 
   const simplePhase = getSimplePhase();
   const defenderDied = !isCounterPhase && defender.currentHp - attackerDamage <= 0;
   const attackerDied = isCounterPhase && attacker.currentHp - counterDamage <= 0;
-  const isVsPhase = phase === 'vs_intro' || phase === 'vs_transition';
 
   // HP Bar with segments (Fire Emblem style)
   const HpBar = ({ current, max, isEnemy }: { current: number; max: number; isEnemy?: boolean }) => {
@@ -322,88 +317,11 @@ export function BattleCinematic({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black">
-      {/* VS Intro Screen */}
-      {isVsPhase && (
-        <div className={`
-          absolute inset-0 z-60 flex items-center justify-center
-          transition-all duration-500
-          ${phase === 'vs_transition' ? 'opacity-0 scale-110' : 'opacity-100 scale-100'}
-        `}>
-          {/* Diagonal split background */}
-          <div className="absolute inset-0 overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-900 via-blue-950 to-slate-950"
-              style={{ clipPath: 'polygon(0 0, 100% 0, 0 100%)' }}
-            />
-            <div className="absolute inset-0 bg-gradient-to-tl from-red-900 via-red-950 to-slate-950"
-              style={{ clipPath: 'polygon(100% 0, 100% 100%, 0 100%)' }}
-            />
-            {/* Center divider line */}
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-[150%] h-2 bg-gradient-to-r from-transparent via-amber-500 to-transparent rotate-[45deg] shadow-[0_0_30px_rgba(245,158,11,0.5)]" />
-            </div>
-          </div>
-
-          {/* Attacker side (left) */}
-          <div className="absolute left-0 top-0 w-1/2 h-full flex flex-col items-center justify-center p-8 animate-slide-in-left">
-            <div className="relative">
-              <div className="absolute -inset-4 bg-blue-500/20 rounded-full blur-2xl animate-pulse" />
-              <img
-                src={getAnimatedBackSprite(attacker.template.id)}
-                className="w-32 h-32 md:w-48 md:h-48 object-contain drop-shadow-[0_0_20px_rgba(59,130,246,0.5)]"
-                style={{ imageRendering: 'pixelated', transform: 'scaleX(-1)' }}
-                alt={attacker.template.name}
-              />
-            </div>
-            <div className="mt-4 text-center">
-              <div className="text-blue-400 text-xs font-bold uppercase tracking-widest mb-1">
-                P{attacker.owner === 'P1' ? '1' : '2'}
-              </div>
-              <div className="text-white text-xl md:text-2xl font-black uppercase tracking-wide">
-                {attacker.template.name}
-              </div>
-            </div>
-          </div>
-
-          {/* Defender side (right) */}
-          <div className="absolute right-0 top-0 w-1/2 h-full flex flex-col items-center justify-center p-8 animate-slide-in-right">
-            <div className="relative">
-              <div className="absolute -inset-4 bg-red-500/20 rounded-full blur-2xl animate-pulse" />
-              <img
-                src={getAnimatedFrontSprite(defender.template.id)}
-                className="w-32 h-32 md:w-48 md:h-48 object-contain drop-shadow-[0_0_20px_rgba(239,68,68,0.5)]"
-                style={{ imageRendering: 'pixelated' }}
-                alt={defender.template.name}
-              />
-            </div>
-            <div className="mt-4 text-center">
-              <div className="text-red-400 text-xs font-bold uppercase tracking-widest mb-1">
-                P{defender.owner === 'P1' ? '1' : '2'}
-              </div>
-              <div className="text-white text-xl md:text-2xl font-black uppercase tracking-wide">
-                {defender.template.name}
-              </div>
-            </div>
-          </div>
-
-          {/* VS Badge */}
-          <div className="absolute z-10 animate-vs-pop">
-            <div className="relative">
-              <div className="absolute -inset-4 bg-amber-500/30 rounded-full blur-xl animate-ping" />
-              <div className="relative bg-gradient-to-b from-amber-400 via-amber-500 to-amber-700 text-slate-900 font-black text-4xl md:text-6xl px-6 py-2 rounded-lg shadow-[0_4px_0_0_rgba(0,0,0,0.3),0_8px_20px_rgba(0,0,0,0.4)] border-2 border-amber-300">
-                VS
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Main Battle View */}
       <div className={`
         relative w-full max-w-5xl h-[70vh] md:h-[550px] overflow-hidden
         rounded-xl border-4 border-amber-700
         shadow-[0_0_0_2px_rgba(0,0,0,0.5),0_8px_32px_rgba(0,0,0,0.5)]
-        transition-opacity duration-300
-        ${isVsPhase ? 'opacity-0' : 'opacity-100'}
       `}>
         {/* Dynamic background */}
         <div className={`absolute inset-0 bg-gradient-to-b ${bgGradient}`}>
@@ -615,7 +533,7 @@ export function BattleCinematic({
                 {phase === 'end' && (
                   <span className="text-slate-400 italic">Fin del combate</span>
                 )}
-                {!['vs_intro', 'vs_transition', 'intro', 'end'].includes(phase) && displayedText && (
+                {!['intro', 'end'].includes(phase) && displayedText && (
                   <span className={`
                     ${currentResult?.isCritical && simplePhase === 'result' ? 'text-orange-400' : ''}
                     ${currentResult?.effectiveness && currentResult.effectiveness > 1 && simplePhase === 'result' ? 'text-emerald-400' : ''}
