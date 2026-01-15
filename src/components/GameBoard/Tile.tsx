@@ -269,16 +269,16 @@ export function Tile({
           )}
 
           <div className={`
-            relative w-[115%] h-[115%] transition-transform duration-300
+            relative w-[70%] h-[70%] transition-transform duration-300
             ${isSelected ? 'scale-110 -translate-y-3' : ''}
             ${unit.hasMoved ? 'opacity-40 saturate-0' : ''}
           `}>
-            {/* Pokemon sprite */}
+            {/* Pokemon sprite - pixel art icons scaled up 2.5x */}
             <img
               src={getIconSprite(unit.template.id)}
               className={`
-                w-full h-full object-contain
-                ${unit.owner === 'P1' ? 'scale-x-[-1]' : ''}
+                w-full h-full object-contain scale-[2.5]
+                ${unit.owner === 'P1' ? 'scale-x-[-2.5]' : ''}
                 drop-shadow-lg
               `}
               style={{ imageRendering: 'pixelated' }}
