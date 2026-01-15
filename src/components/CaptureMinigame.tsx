@@ -6,9 +6,9 @@ interface CaptureMinigameProps {
   pokemon: PokemonTemplate;
   player: Player;
   playerPokemon?: PokemonTemplate;
-  onSuccess: () => void;
-  onFail: () => void;
-  onFlee: () => void;
+  onSuccess: (damageTaken: number) => void;
+  onFail: (damageTaken: number) => void;
+  onFlee: (damageTaken: number) => void;
 }
 
 type Phase =
@@ -271,15 +271,15 @@ export function CaptureMinigame({
     return () => shakeTimers.forEach(t => clearTimeout(t));
   }, [phase, baseRate, hpBonus, ringBonus]);
 
-  // Result handler
+  // Result handler - pass damageTaken to callbacks
   useEffect(() => {
     if (phase !== 'result') return;
     const timer = setTimeout(() => {
-      if (captureSuccess) onSuccess();
-      else onFail();
+      if (captureSuccess) onSuccess(damageTaken);
+      else onFail(damageTaken);
     }, 2500);
     return () => clearTimeout(timer);
-  }, [phase, captureSuccess, onSuccess, onFail]);
+  }, [phase, captureSuccess, damageTaken, onSuccess, onFail]);
 
   // Cleanup
   useEffect(() => {
@@ -290,8 +290,8 @@ export function CaptureMinigame({
 
   const handleFlee = useCallback(() => {
     if (phase !== 'battle') return;
-    onFlee();
-  }, [phase, onFlee]);
+    onFlee(damageTaken); // Pass damage taken (usually 0 if fleeing without attacking)
+  }, [phase, damageTaken, onFlee]);
 
   const hpPercentage = (wildHp / pokemon.hp) * 100;
   const isRingPhase = phase === 'ring1' || phase === 'ring2' || phase === 'ring3';

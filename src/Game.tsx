@@ -159,33 +159,36 @@ export default function Game() {
   const pendingCaptureUnitRef = useRef<string | null>(null);
 
   // Multiplayer-aware capture handlers
-  const handleCaptureSuccess = useCallback(() => {
+  // These now accept damageTaken to apply wild Pokemon counter-attack damage
+  const handleCaptureSuccess = useCallback((damageTaken: number) => {
     if (isInMultiplayerGame.current && selectedUnit) {
       // Store unit ID for when capture modal completes
       pendingCaptureUnitRef.current = selectedUnit.uid;
     }
     // Show the capture modal (works for both local and multiplayer)
-    onCaptureMinigameSuccess();
+    // Pass damageTaken to apply to player's Pokemon
+    onCaptureMinigameSuccess(damageTaken);
   }, [selectedUnit, onCaptureMinigameSuccess]);
 
-  const handleCaptureFail = useCallback(() => {
+  const handleCaptureFail = useCallback((damageTaken: number) => {
     if (isInMultiplayerGame.current && selectedUnit) {
       // Tell server capture failed - just marks unit as moved
       console.log('[Multiplayer] Capture failed, sending to server');
       sendCapture(selectedUnit.uid, false);
     }
     // Run local handler (shows message, marks unit as moved locally)
-    onCaptureMinigameFail();
+    // Pass damageTaken to apply to player's Pokemon
+    onCaptureMinigameFail(damageTaken);
   }, [selectedUnit, sendCapture, onCaptureMinigameFail]);
 
-  const handleCaptureFlee = useCallback(() => {
+  const handleCaptureFlee = useCallback((damageTaken: number) => {
     if (isInMultiplayerGame.current && selectedUnit) {
       // Player fled - send wait to server (unit used their turn)
       console.log('[Multiplayer] Player fled encounter, sending wait');
       sendWait(selectedUnit.uid);
     }
-    // Run local handler
-    onCaptureMinigameFlee();
+    // Run local handler (damageTaken is usually 0 when fleeing)
+    onCaptureMinigameFlee(damageTaken);
   }, [selectedUnit, sendWait, onCaptureMinigameFlee]);
 
   const handleConfirmCapture = useCallback(() => {

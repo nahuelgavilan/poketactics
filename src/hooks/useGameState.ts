@@ -51,9 +51,9 @@ interface UseGameStateReturn {
   initMultiplayerGame: (player: Player) => void;
   handleTileClick: (x: number, y: number) => void;
   endBattle: () => void;
-  onCaptureMinigameSuccess: () => void;
-  onCaptureMinigameFail: () => void;
-  onCaptureMinigameFlee: () => void;
+  onCaptureMinigameSuccess: (damageTaken: number) => void;
+  onCaptureMinigameFail: (damageTaken: number) => void;
+  onCaptureMinigameFlee: (damageTaken: number) => void;
   confirmCapture: () => void;
   confirmEvolution: () => void;
   confirmTurnChange: () => void;
@@ -526,13 +526,33 @@ export function useGameState(): UseGameStateReturn {
   }, [battleData, units, waitUnit, addLog, resetSelection]);
 
   // Called when minigame succeeds - show capture celebration
-  const onCaptureMinigameSuccess = useCallback(() => {
+  // Apply damage taken from wild Pokemon counter-attack
+  const onCaptureMinigameSuccess = useCallback((damageTaken: number) => {
+    if (selectedUnit && damageTaken > 0) {
+      setUnits(prev => prev.map(u =>
+        u.uid === selectedUnit.uid
+          ? { ...u, currentHp: Math.max(1, u.currentHp - damageTaken) }
+          : u
+      ));
+      addLog(`${selectedUnit.template.name} recibió ${damageTaken} de daño`);
+    }
     setGameState('capture');
-  }, []);
+  }, [selectedUnit, addLog]);
 
   // Called when minigame fails - Pokemon escapes
-  const onCaptureMinigameFail = useCallback(() => {
+  // Apply damage taken from wild Pokemon counter-attack
+  const onCaptureMinigameFail = useCallback((damageTaken: number) => {
     if (!captureData || !selectedUnit) return;
+
+    // Apply damage to player's Pokemon
+    if (damageTaken > 0) {
+      setUnits(prev => prev.map(u =>
+        u.uid === selectedUnit.uid
+          ? { ...u, currentHp: Math.max(1, u.currentHp - damageTaken) }
+          : u
+      ));
+      addLog(`${selectedUnit.template.name} recibió ${damageTaken} de daño`);
+    }
 
     addLog(`¡${captureData.pokemon.name} salvaje escapó!`);
     setCaptureData(null);
@@ -543,8 +563,18 @@ export function useGameState(): UseGameStateReturn {
   }, [captureData, selectedUnit, units, addLog, waitUnit]);
 
   // Called when player flees from capture minigame - escapes safely, keeps turn
-  const onCaptureMinigameFlee = useCallback(() => {
+  // Fleeing doesn't cause counter-attack damage, but signature is consistent
+  const onCaptureMinigameFlee = useCallback((damageTaken: number) => {
     if (!captureData || !selectedUnit) return;
+
+    // Apply damage if any (shouldn't happen when fleeing, but just in case)
+    if (damageTaken > 0) {
+      setUnits(prev => prev.map(u =>
+        u.uid === selectedUnit.uid
+          ? { ...u, currentHp: Math.max(1, u.currentHp - damageTaken) }
+          : u
+      ));
+    }
 
     addLog(`¡Huiste del ${captureData.pokemon.name} salvaje!`);
     setCaptureData(null);
@@ -554,10 +584,10 @@ export function useGameState(): UseGameStateReturn {
     // Move unit to pending position but don't mark as moved
     if (pendingPosition) {
       const movedUnit = { ...selectedUnit, x: pendingPosition.x, y: pendingPosition.y };
-      setUnits(units.map(u => u.uid === selectedUnit.uid ? movedUnit : u));
+      setUnits(prev => prev.map(u => u.uid === selectedUnit.uid ? movedUnit : u));
     }
     resetSelection();
-  }, [captureData, selectedUnit, units, pendingPosition, addLog, resetSelection]);
+  }, [captureData, selectedUnit, pendingPosition, addLog, resetSelection]);
 
   const confirmCapture = useCallback(() => {
     if (!captureData || !selectedUnit) return;
