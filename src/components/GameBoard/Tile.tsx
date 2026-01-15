@@ -243,12 +243,12 @@ export function Tile({
 
         {/* === MOVE INDICATOR === */}
         {canMove && !isSelected && !isOnPath && (
-          <div className="absolute inset-0 rounded-xl pointer-events-none animate-move-pulse">
-            {/* Yellow/gold tint - universal "action available" color, contrasts with all terrains */}
-            <div className="absolute inset-0 rounded-xl bg-yellow-300/40" />
-            {/* Strong border for clarity */}
-            <div className="absolute inset-0 rounded-xl border-2 border-yellow-200/80 shadow-[inset_0_0_10px_rgba(253,224,71,0.5)]" />
-          </div>
+          <>
+            {/* Brightness boost on the tile itself */}
+            <div className="absolute inset-0 rounded-xl bg-white/20 pointer-events-none" />
+            {/* Animated glowing border - no fill, clean look */}
+            <div className="absolute inset-0 rounded-xl border-[3px] border-white/70 pointer-events-none animate-move-pulse shadow-[0_0_8px_rgba(255,255,255,0.6)]" />
+          </>
         )}
 
         {/* === ATTACK INDICATOR === */}
