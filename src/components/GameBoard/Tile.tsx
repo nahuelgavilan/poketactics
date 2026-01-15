@@ -244,10 +244,10 @@ export function Tile({
         {/* === MOVE INDICATOR === */}
         {canMove && !isSelected && !isOnPath && (
           <div className="absolute inset-0 rounded-xl pointer-events-none animate-move-pulse">
-            {/* Cyan tint - distinct from grass green and water blue */}
-            <div className="absolute inset-0 rounded-xl bg-cyan-300/30" />
-            {/* Glowing border */}
-            <div className="absolute inset-0 rounded-xl border-2 border-cyan-200/70 shadow-[inset_0_0_8px_rgba(103,232,249,0.4)]" />
+            {/* Yellow/gold tint - universal "action available" color, contrasts with all terrains */}
+            <div className="absolute inset-0 rounded-xl bg-yellow-300/40" />
+            {/* Strong border for clarity */}
+            <div className="absolute inset-0 rounded-xl border-2 border-yellow-200/80 shadow-[inset_0_0_10px_rgba(253,224,71,0.5)]" />
           </div>
         )}
 
