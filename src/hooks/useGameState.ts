@@ -51,6 +51,7 @@ interface UseGameStateReturn {
   initMultiplayerGame: (player: Player) => void;
   handleTileClick: (x: number, y: number) => void;
   endBattle: () => void;
+  confirmBattleZoom: () => void;
   onCaptureMinigameSuccess: (damageTaken: number) => void;
   onCaptureMinigameFail: (damageTaken: number) => void;
   onCaptureMinigameFlee: (damageTaken: number) => void;
@@ -417,7 +418,7 @@ export function useGameState(): UseGameStateReturn {
         const target = units.find(u => u.x === x && u.y === y);
         if (target) {
           setAttackRange([]);
-          setGameState('battle');
+          setGameState('battle_zoom');
           setBattleData(createBattleData(selectedUnit, target, map));
         }
         return;
@@ -562,32 +563,36 @@ export function useGameState(): UseGameStateReturn {
     waitUnit(selectedUnit.uid, units);
   }, [captureData, selectedUnit, units, addLog, waitUnit]);
 
-  // Called when player flees from capture minigame - escapes safely, keeps turn
+  // Called when player flees from capture minigame - unit's turn ends
   // Fleeing doesn't cause counter-attack damage, but signature is consistent
   const onCaptureMinigameFlee = useCallback((damageTaken: number) => {
     if (!captureData || !selectedUnit) return;
 
     // Apply damage if any (shouldn't happen when fleeing, but just in case)
+    let nextUnits = units;
     if (damageTaken > 0) {
-      setUnits(prev => prev.map(u =>
+      nextUnits = units.map(u =>
         u.uid === selectedUnit.uid
           ? { ...u, currentHp: Math.max(1, u.currentHp - damageTaken) }
           : u
-      ));
+      );
+      setUnits(nextUnits);
     }
 
     addLog(`¡Huiste del ${captureData.pokemon.name} salvaje!`);
     setCaptureData(null);
     setGameState('playing');
 
-    // Player escapes safely - unit can still act this turn
-    // Move unit to pending position but don't mark as moved
+    // Fleeing ends the unit's turn - they already moved to this position
+    // Move unit to pending position and mark as moved
     if (pendingPosition) {
       const movedUnit = { ...selectedUnit, x: pendingPosition.x, y: pendingPosition.y };
-      setUnits(prev => prev.map(u => u.uid === selectedUnit.uid ? movedUnit : u));
+      const updatedUnits = nextUnits.map(u => u.uid === selectedUnit.uid ? movedUnit : u);
+      waitUnit(movedUnit.uid, updatedUnits);
+    } else {
+      waitUnit(selectedUnit.uid, nextUnits);
     }
-    resetSelection();
-  }, [captureData, selectedUnit, pendingPosition, addLog, resetSelection]);
+  }, [captureData, selectedUnit, pendingPosition, units, addLog, waitUnit]);
 
   const confirmCapture = useCallback(() => {
     if (!captureData || !selectedUnit) return;
@@ -775,7 +780,7 @@ export function useGameState(): UseGameStateReturn {
     setGamePhase('SELECT');
 
     setBattleData(battleData);
-    setGameState('battle');
+    setGameState('battle_zoom');
   }, [units, map]);
 
   // Trigger wild encounter for multiplayer (client-side check before server action)
@@ -794,6 +799,11 @@ export function useGameState(): UseGameStateReturn {
     }
     return false;
   }, [map, units]);
+
+  // Transition from battle zoom to actual battle cinematic
+  const confirmBattleZoom = useCallback(() => {
+    setGameState('battle');
+  }, []);
 
   // Trigger evolution cinematic from server data (for multiplayer)
   const triggerServerEvolution = useCallback((unitId: string, newTemplate: PokemonTemplate) => {
@@ -840,6 +850,7 @@ export function useGameState(): UseGameStateReturn {
     initMultiplayerGame,
     handleTileClick,
     endBattle,
+    confirmBattleZoom,
     onCaptureMinigameSuccess,
     onCaptureMinigameFail,
     onCaptureMinigameFlee,

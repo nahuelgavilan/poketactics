@@ -137,7 +137,21 @@ no reverb, suitable for tactical RPG..."
 
 ---
 
-### 7. Unit Select - `sfx/unit_select.mp3`
+### 7. Battle Zoom (Pre-battle transition) - `sfx/battle_zoom.mp3`
+**Duración:** 1.0-1.2 segundos
+
+```
+Prompt:
+Retro 16-bit dramatic zoom sound, pre-battle tension stinger.
+Pokemon encounter style whoosh with dramatic hit at the end.
+Building tension swoosh that ends in impactful thud. 1.1 seconds.
+Instruments: rising synth swoosh, dramatic percussion hit, slight reverb tail.
+Intense, cinematic, "battle is about to begin" feeling.
+```
+
+---
+
+### 8. Unit Select - `sfx/unit_select.mp3`
 **Duración:** 0.2-0.3 segundos
 
 ```
@@ -282,6 +296,7 @@ public/audio/
 │   ├── capture_success.mp3
 │   └── evolution.mp3
 └── sfx/
+    ├── battle_zoom.mp3      ← NEW: Pre-battle zoom transition
     ├── unit_select.mp3
     ├── unit_move.mp3
     ├── attack_hit.mp3

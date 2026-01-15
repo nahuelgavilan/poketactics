@@ -6,6 +6,7 @@ export { Header } from './Header';
 export { GameBoard } from './GameBoard';
 export { Sidebar } from './Sidebar';
 export { BattleCinematic } from './BattleCinematic';
+export { BattleZoomTransition } from './BattleZoomTransition';
 export { CaptureModal } from './CaptureModal';
 export { StartScreen } from './StartScreen';
 export { HowToPlay } from './HowToPlay';

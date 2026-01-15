@@ -15,9 +15,10 @@
  * don't trigger version bumps unless they include breaking changes.
  */
 
-export const VERSION = '0.22.6';
+export const VERSION = '0.23.0';
 
 // Version history (Alpha - v0.x.x):
+// 0.23.0 - Pre-battle zoom transition: zooms into game board on both Pokemon, Pokemon-style encounter effect. Fixed flee bug (unit turn ends after fleeing)
 // 0.22.6 - Wild Pokemon counter-attack damage now applies to player's Pokemon HP
 // 0.22.5 - Move indicator: white brightness + glowing border (clean, universal contrast)
 // 0.22.4 - Sprites centered with clamp(40px, 120%, 64px), natural overflow like Fire Emblem

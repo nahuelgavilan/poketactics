@@ -15,6 +15,7 @@ export type GameState =
   | 'setup'
   | 'transition'
   | 'playing'
+  | 'battle_zoom'
   | 'battle'
   | 'victory'
   | 'capture'

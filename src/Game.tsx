@@ -5,6 +5,7 @@ import {
   Header,
   GameBoard,
   BattleCinematic,
+  BattleZoomTransition,
   CaptureModal,
   TurnTransition,
   VictoryScreen,
@@ -43,6 +44,7 @@ export default function Game() {
     initGame,
     handleTileClick,
     endBattle,
+    confirmBattleZoom,
     onCaptureMinigameSuccess,
     onCaptureMinigameFail,
     onCaptureMinigameFlee,
@@ -616,6 +618,15 @@ export default function Game() {
         <TurnTransition
           currentPlayer={currentPlayer}
           onConfirm={confirmTurnChange}
+        />
+      )}
+
+      {gameState === 'battle_zoom' && battleData && (
+        <BattleZoomTransition
+          attacker={battleData.attacker}
+          defender={battleData.defender}
+          map={map}
+          onComplete={confirmBattleZoom}
         />
       )}
 
