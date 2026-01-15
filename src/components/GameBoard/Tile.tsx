@@ -263,48 +263,46 @@ export function Tile({
       {/* === POKEMON UNIT === */}
       {unit && (
         <div className={`
-          absolute inset-0 z-30 pointer-events-none
+          absolute inset-0 flex items-center justify-center z-30 pointer-events-none
           transition-transform duration-300
-          ${isSelected ? 'scale-110 -translate-y-2' : ''}
+          ${isSelected ? 'scale-110 -translate-y-2 z-40' : ''}
           ${unit.hasMoved ? 'opacity-40 saturate-0' : ''}
         `}>
           {/* Selection ping effect */}
           {isSelected && (
-            <div className="absolute w-full h-full border-4 border-white/40 rounded-2xl animate-ping opacity-30" />
+            <div className="absolute inset-0 border-4 border-white/40 rounded-2xl animate-ping opacity-30" />
           )}
 
-          {/* Pokemon sprite - contained and clipped */}
-          <div className="absolute inset-[10%] flex items-center justify-center overflow-hidden rounded-xl">
-            <img
-              src={getIconSprite(unit.template.id)}
-              className={`
-                max-w-none w-auto h-auto
-                ${unit.owner === 'P1' ? '-scale-x-100' : ''}
-                drop-shadow-lg
-              `}
-              style={{
-                imageRendering: 'pixelated',
-                transform: `scale(2) ${unit.owner === 'P1' ? 'scaleX(-1)' : ''}`,
-              }}
-              draggable="false"
-              alt={unit.template.name}
-            />
-          </div>
+          {/* Pokemon sprite - allowed to overflow tile naturally (like Fire Emblem) */}
+          <img
+            src={getIconSprite(unit.template.id)}
+            className={`
+              ${unit.owner === 'P1' ? '-scale-x-100' : ''}
+              drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]
+            `}
+            style={{
+              imageRendering: 'pixelated',
+              width: 'clamp(40px, 120%, 64px)',
+              height: 'auto',
+            }}
+            draggable="false"
+            alt={unit.template.name}
+          />
 
           {/* HP Bar - positioned at top of tile */}
           <div className={`
-            absolute top-[5%] left-1/2 -translate-x-1/2
-            w-[75%] h-1.5 md:h-2
-            bg-slate-900 rounded-full overflow-hidden
-            border border-white/20 shadow-sm
+            absolute top-[4%] left-1/2 -translate-x-1/2
+            w-[80%] h-1.5 md:h-2
+            bg-slate-900/90 rounded-full overflow-hidden
+            border border-white/30 shadow-md
           `}>
             <div
               className={`h-full transition-all duration-300 ${
                 unit.currentHp / unit.template.hp > 0.5
-                  ? 'bg-green-400'
+                  ? 'bg-gradient-to-r from-green-400 to-green-500'
                   : unit.currentHp / unit.template.hp > 0.25
-                  ? 'bg-yellow-400'
-                  : 'bg-red-500 animate-pulse'
+                  ? 'bg-gradient-to-r from-yellow-400 to-amber-500'
+                  : 'bg-gradient-to-r from-red-500 to-red-600 animate-pulse'
               }`}
               style={{ width: `${(unit.currentHp / unit.template.hp) * 100}%` }}
             />
@@ -312,8 +310,8 @@ export function Tile({
 
           {/* Player indicator badge */}
           <div className={`
-            absolute bottom-[8%] right-[8%] w-[18%] max-w-4 aspect-square rounded-full
-            border border-slate-900
+            absolute bottom-[6%] right-[6%] w-5 h-5 md:w-4 md:h-4 rounded-full
+            border-2 border-slate-900 shadow-md
             ${unit.owner === 'P1' ? 'bg-blue-500' : 'bg-red-500'}
           `} />
         </div>
