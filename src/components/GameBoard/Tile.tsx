@@ -243,14 +243,11 @@ export function Tile({
 
         {/* === MOVE INDICATOR === */}
         {canMove && !isSelected && !isOnPath && (
-          <div className="absolute inset-0 rounded-xl pointer-events-none">
-            {/* Subtle white tint */}
-            <div className="absolute inset-0 rounded-xl bg-white/25" />
-            {/* Corner markers - tactical style */}
-            <div className="absolute top-1 left-1 w-3 h-3 border-t-2 border-l-2 border-white/80 rounded-tl" />
-            <div className="absolute top-1 right-1 w-3 h-3 border-t-2 border-r-2 border-white/80 rounded-tr" />
-            <div className="absolute bottom-1 left-1 w-3 h-3 border-b-2 border-l-2 border-white/80 rounded-bl" />
-            <div className="absolute bottom-1 right-1 w-3 h-3 border-b-2 border-r-2 border-white/80 rounded-br" />
+          <div className="absolute inset-0 rounded-xl pointer-events-none animate-move-pulse">
+            {/* Cyan tint - distinct from grass green and water blue */}
+            <div className="absolute inset-0 rounded-xl bg-cyan-300/30" />
+            {/* Glowing border */}
+            <div className="absolute inset-0 rounded-xl border-2 border-cyan-200/70 shadow-[inset_0_0_8px_rgba(103,232,249,0.4)]" />
           </div>
         )}
 

@@ -161,6 +161,15 @@ body {
   }
 }
 
+@keyframes move-pulse {
+  0%, 100% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
 /* Animation utilities */
 .animate-float {
   animation: float 6s ease-in-out infinite;
@@ -192,6 +201,10 @@ body {
 
 .animate-bounce-subtle {
   animation: bounce-subtle 1s infinite;
+}
+
+.animate-move-pulse {
+  animation: move-pulse 1.5s ease-in-out infinite;
 }
 
 /* Stagger animation delays */
