@@ -262,56 +262,60 @@ export function Tile({
 
       {/* === POKEMON UNIT === */}
       {unit && (
-        <div className="absolute inset-0 flex items-center justify-center z-30 pointer-events-none">
+        <div className={`
+          absolute inset-0 z-30 pointer-events-none
+          transition-transform duration-300
+          ${isSelected ? 'scale-110 -translate-y-2' : ''}
+          ${unit.hasMoved ? 'opacity-40 saturate-0' : ''}
+        `}>
           {/* Selection ping effect */}
           {isSelected && (
             <div className="absolute w-full h-full border-4 border-white/40 rounded-2xl animate-ping opacity-30" />
           )}
 
-          <div className={`
-            relative w-[70%] h-[70%] transition-transform duration-300
-            ${isSelected ? 'scale-110 -translate-y-3' : ''}
-            ${unit.hasMoved ? 'opacity-40 saturate-0' : ''}
-          `}>
-            {/* Pokemon sprite - pixel art icons scaled up 2.5x */}
+          {/* Pokemon sprite - contained and clipped */}
+          <div className="absolute inset-[10%] flex items-center justify-center overflow-hidden rounded-xl">
             <img
               src={getIconSprite(unit.template.id)}
               className={`
-                w-full h-full object-contain scale-[2.5]
-                ${unit.owner === 'P1' ? 'scale-x-[-2.5]' : ''}
+                max-w-none w-auto h-auto
+                ${unit.owner === 'P1' ? '-scale-x-100' : ''}
                 drop-shadow-lg
               `}
-              style={{ imageRendering: 'pixelated' }}
+              style={{
+                imageRendering: 'pixelated',
+                transform: `scale(2) ${unit.owner === 'P1' ? 'scaleX(-1)' : ''}`,
+              }}
               draggable="false"
               alt={unit.template.name}
             />
-
-            {/* HP Bar - scales with tile size */}
-            <div className={`
-              absolute -top-1 left-1/2 -translate-x-1/2
-              w-[85%] h-1.5 md:h-2
-              bg-slate-900 rounded-full overflow-hidden
-              border border-white/20 shadow-sm
-            `}>
-              <div
-                className={`h-full transition-all duration-300 ${
-                  unit.currentHp / unit.template.hp > 0.5
-                    ? 'bg-green-400'
-                    : unit.currentHp / unit.template.hp > 0.25
-                    ? 'bg-yellow-400'
-                    : 'bg-red-500 animate-pulse'
-                }`}
-                style={{ width: `${(unit.currentHp / unit.template.hp) * 100}%` }}
-              />
-            </div>
-
-            {/* Player indicator badge - scales with tile */}
-            <div className={`
-              absolute bottom-0 right-[5%] w-[20%] max-w-4 aspect-square rounded-full
-              border border-slate-900
-              ${unit.owner === 'P1' ? 'bg-blue-500' : 'bg-red-500'}
-            `} />
           </div>
+
+          {/* HP Bar - positioned at top of tile */}
+          <div className={`
+            absolute top-[5%] left-1/2 -translate-x-1/2
+            w-[75%] h-1.5 md:h-2
+            bg-slate-900 rounded-full overflow-hidden
+            border border-white/20 shadow-sm
+          `}>
+            <div
+              className={`h-full transition-all duration-300 ${
+                unit.currentHp / unit.template.hp > 0.5
+                  ? 'bg-green-400'
+                  : unit.currentHp / unit.template.hp > 0.25
+                  ? 'bg-yellow-400'
+                  : 'bg-red-500 animate-pulse'
+              }`}
+              style={{ width: `${(unit.currentHp / unit.template.hp) * 100}%` }}
+            />
+          </div>
+
+          {/* Player indicator badge */}
+          <div className={`
+            absolute bottom-[8%] right-[8%] w-[18%] max-w-4 aspect-square rounded-full
+            border border-slate-900
+            ${unit.owner === 'P1' ? 'bg-blue-500' : 'bg-red-500'}
+          `} />
         </div>
       )}
     </div>

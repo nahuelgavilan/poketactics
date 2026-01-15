@@ -18,7 +18,7 @@
 export const VERSION = '0.22.4';
 
 // Version history (Alpha - v0.x.x):
-// 0.22.4 - Scale pixel art icons 2.5x on tiles (keeps icon aesthetic but much more visible)
+// 0.22.4 - Scale pixel art icons 2x with overflow-hidden container (clips large Pokemon, centers all)
 // 0.22.3 - Larger Pokemon sprites on tiles (115% of tile size for better visibility)
 // 0.22.2 - Desktop responsive design: board uses height-based sizing (max 600px), HP bars and badges scale with tiles
 // 0.22.1 - Multiplayer fix: evolution cinematic now shows after kills (was being ignored from server response)
