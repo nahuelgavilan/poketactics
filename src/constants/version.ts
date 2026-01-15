@@ -15,9 +15,10 @@
  * don't trigger version bumps unless they include breaking changes.
  */
 
-export const VERSION = '0.22.4';
+export const VERSION = '0.22.5';
 
 // Version history (Alpha - v0.x.x):
+// 0.22.5 - Move indicator: white tint + corner markers (tactical style, better contrast)
 // 0.22.4 - Sprites centered with clamp(40px, 120%, 64px), natural overflow like Fire Emblem
 // 0.22.3 - Larger Pokemon sprites on tiles (115% of tile size for better visibility)
 // 0.22.2 - Desktop responsive design: board uses height-based sizing (max 600px), HP bars and badges scale with tiles
