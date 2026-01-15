@@ -85,16 +85,18 @@ export default function Game() {
   // Audio
   const { playMusic, stopMusic } = useAudio();
 
-  // Battle music - play during battle_zoom and battle states
+  // Battle music - starts when clicking "Atacar", plays through battle
   useEffect(() => {
     const state = gameState as string;
-    if (state === 'battle_zoom') {
+    const phase = gamePhase as string;
+    if (phase === 'ATTACKING') {
+      // Start music when entering attack phase (clicked Atacar)
       playMusic('battle_theme', { loop: true, volume: 0.6 });
-    } else if (state !== 'battle' && state !== 'battle_zoom') {
-      // Stop music when exiting battle states
+    } else if (state !== 'battle' && state !== 'battle_zoom' && phase !== 'ATTACKING') {
+      // Stop music when exiting battle/attack states
       stopMusic(500); // 500ms fade out
     }
-  }, [gameState, playMusic, stopMusic]);
+  }, [gameState, gamePhase, playMusic, stopMusic]);
 
   // Multiplayer-aware action handlers
   // In multiplayer, send to server; locally, use local handlers
