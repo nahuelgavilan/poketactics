@@ -15,9 +15,10 @@
  * don't trigger version bumps unless they include breaking changes.
  */
 
-export const VERSION = '0.22.2';
+export const VERSION = '0.22.3';
 
 // Version history (Alpha - v0.x.x):
+// 0.22.3 - Larger Pokemon sprites on tiles (115% of tile size for better visibility)
 // 0.22.2 - Desktop responsive design: board uses height-based sizing (max 600px), HP bars and badges scale with tiles
 // 0.22.1 - Multiplayer fix: evolution cinematic now shows after kills (was being ignored from server response)
 // 0.22.0 - Multiplayer fixes: attacks now wait for server confirmation (no race condition), wild Pokemon encounters work

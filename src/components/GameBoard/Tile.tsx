@@ -269,7 +269,7 @@ export function Tile({
           )}
 
           <div className={`
-            relative w-[90%] h-[90%] transition-transform duration-300
+            relative w-[115%] h-[115%] transition-transform duration-300
             ${isSelected ? 'scale-110 -translate-y-3' : ''}
             ${unit.hasMoved ? 'opacity-40 saturate-0' : ''}
           `}>
