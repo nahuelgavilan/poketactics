@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useGameState, useVision } from './hooks';
+import { useAudio } from './hooks/useAudio';
 import { useMultiplayer, ClientGameState, ActionResult } from './hooks/useMultiplayer';
 import {
   Header,
@@ -80,6 +81,20 @@ export default function Game() {
 
   // Track if we're in a multiplayer game (started from lobby)
   const isInMultiplayerGame = useRef(false);
+
+  // Audio
+  const { playMusic, stopMusic } = useAudio();
+
+  // Battle music - play during battle_zoom and battle states
+  useEffect(() => {
+    const state = gameState as string;
+    if (state === 'battle_zoom') {
+      playMusic('battle_theme', { loop: true, volume: 0.6 });
+    } else if (state !== 'battle' && state !== 'battle_zoom') {
+      // Stop music when exiting battle states
+      stopMusic(500); // 500ms fade out
+    }
+  }, [gameState, playMusic, stopMusic]);
 
   // Multiplayer-aware action handlers
   // In multiplayer, send to server; locally, use local handlers

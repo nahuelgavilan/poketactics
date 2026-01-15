@@ -15,9 +15,10 @@
  * don't trigger version bumps unless they include breaking changes.
  */
 
-export const VERSION = '0.24.1';
+export const VERSION = '0.24.2';
 
 // Version history (Alpha - v0.x.x):
+// 0.24.2 - Battle theme music: plays during battle transition and cinematic with fade out
 // 0.24.1 - Pokemon-style spiral wipe transition: 6-arm spiral that closes to center with glowing tips and flash
 // 0.24.0 - Epic VS transition: board zoom, tiles with stats facing each other (position-aware), clockwise wipe. Removed redundant VS from BattleCinematic
 // 0.23.1 - Simplified battle transition: board zoom + classic Pokemon pixelated circular wipe (no VS screen)
