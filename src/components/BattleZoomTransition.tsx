@@ -181,8 +181,8 @@ function VSTile({ unit, terrain, isAttacker }: { unit: Unit; terrain: TerrainTyp
 }
 
 export function BattleZoomTransition({ attacker, defender, map, onComplete }: BattleZoomTransitionProps) {
-  const [phase, setPhase] = useState<'board' | 'zoom' | 'vs' | 'wipe' | 'black' | 'done'>('board');
-  const [wipeAngle, setWipeAngle] = useState(0);
+  const [phase, setPhase] = useState<'board' | 'zoom' | 'vs' | 'spiral' | 'black' | 'done'>('board');
+  const [spiralProgress, setSpiralProgress] = useState(0);
 
   // Calculate center point for zoom (clamped to avoid edge awkwardness)
   const centerX = Math.max(BOARD_WIDTH * 0.15, Math.min(BOARD_WIDTH * 0.85, (attacker.x + defender.x) / 2 + 0.5));
@@ -205,29 +205,27 @@ export function BattleZoomTransition({ attacker, defender, map, onComplete }: Ba
     const timers: ReturnType<typeof setTimeout>[] = [];
     timers.push(setTimeout(() => setPhase('zoom'), 80));
     timers.push(setTimeout(() => setPhase('vs'), 550));
-    timers.push(setTimeout(() => setPhase('wipe'), 2000));
-    timers.push(setTimeout(() => setPhase('black'), 2700));
-    timers.push(setTimeout(() => setPhase('done'), 2800));
-    timers.push(setTimeout(onComplete, 2850));
+    timers.push(setTimeout(() => setPhase('spiral'), 2000));
+    timers.push(setTimeout(() => setPhase('black'), 2600));
+    timers.push(setTimeout(() => setPhase('done'), 2700));
+    timers.push(setTimeout(onComplete, 2750));
     return () => timers.forEach(clearTimeout);
   }, [onComplete]);
 
-  // Clockwise wipe animation
+  // Pokemon-style spiral wipe animation
   useEffect(() => {
-    if (phase !== 'wipe') return;
+    if (phase !== 'spiral') return;
 
     let animationFrame: number;
     const startTime = Date.now();
-    const duration = 650;
+    const duration = 550;
 
     const animate = () => {
       const elapsed = Date.now() - startTime;
       const progress = Math.min(elapsed / duration, 1);
-      // Ease in-out for smooth sweep
-      const eased = progress < 0.5
-        ? 2 * progress * progress
-        : 1 - Math.pow(-2 * progress + 2, 2) / 2;
-      setWipeAngle(eased * 360);
+      // Accelerate toward the end for dramatic effect
+      const eased = progress * progress * progress;
+      setSpiralProgress(eased);
 
       if (progress < 1) {
         animationFrame = requestAnimationFrame(animate);
@@ -239,7 +237,7 @@ export function BattleZoomTransition({ attacker, defender, map, onComplete }: Ba
   }, [phase]);
 
   const showBoard = phase === 'board' || phase === 'zoom';
-  const showVS = phase === 'vs' || phase === 'wipe';
+  const showVS = phase === 'vs' || phase === 'spiral';
 
   // Generate particles for VS screen
   const particles = useMemo(() => Array.from({ length: 20 }, (_, i) => ({
@@ -410,50 +408,116 @@ export function BattleZoomTransition({ attacker, defender, map, onComplete }: Ba
         </div>
       )}
 
-      {/* === CLOCKWISE WIPE === */}
-      {phase === 'wipe' && (
+      {/* === POKEMON-STYLE SPIRAL WIPE === */}
+      {phase === 'spiral' && (
         <div className="absolute inset-0 z-40 pointer-events-none">
+          {/* Multi-arm spiral closing effect */}
           <svg
             viewBox="0 0 100 100"
             className="w-full h-full"
             preserveAspectRatio="xMidYMid slice"
           >
             <defs>
-              <mask id="clockwiseMask">
-                <rect x="0" y="0" width="100" height="100" fill="white" />
-                {/* Pie slice that grows clockwise - this is the "hole" that shows the VS screen */}
-                <path
-                  d={wipeAngle >= 360 ? '' : `
-                    M 50 50
-                    L 50 -50
-                    A 100 100 0 ${wipeAngle > 180 ? 1 : 0} 0
-                    ${50 + 100 * Math.sin((wipeAngle * Math.PI) / 180)}
-                    ${50 - 100 * Math.cos((wipeAngle * Math.PI) / 180)}
-                    Z
-                  `}
-                  fill="black"
-                />
+              <mask id="spiralMask">
+                <rect x="0" y="0" width="100" height="100" fill="black" />
+                {/* Create spiral arms that grow inward */}
+                {Array.from({ length: 6 }, (_, armIndex) => {
+                  const armAngleOffset = (armIndex / 6) * Math.PI * 2;
+                  const rotations = 3; // Number of spiral rotations
+                  const maxRadius = 85;
+                  const currentRotation = spiralProgress * rotations * Math.PI * 2;
+
+                  // Generate points along the spiral arm
+                  const points: string[] = [];
+                  const steps = 60;
+
+                  for (let i = 0; i <= steps; i++) {
+                    const t = i / steps;
+                    const coveredT = Math.min(t, spiralProgress);
+                    const angle = armAngleOffset + coveredT * rotations * Math.PI * 2;
+                    const radius = maxRadius * (1 - coveredT);
+
+                    if (coveredT <= spiralProgress) {
+                      const x = 50 + Math.cos(angle) * radius;
+                      const y = 50 + Math.sin(angle) * radius;
+                      points.push(`${x},${y}`);
+                    }
+                  }
+
+                  // Add center point and close the shape
+                  if (points.length > 1) {
+                    const armWidth = 12 + spiralProgress * 8; // Arms get wider as they progress
+                    return (
+                      <g key={armIndex}>
+                        <polyline
+                          points={points.join(' ')}
+                          fill="none"
+                          stroke="white"
+                          strokeWidth={armWidth}
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </g>
+                    );
+                  }
+                  return null;
+                })}
+
+                {/* Center fill as spiral completes */}
+                {spiralProgress > 0.7 && (
+                  <circle
+                    cx="50"
+                    cy="50"
+                    r={Math.min(50, (spiralProgress - 0.7) * 167)}
+                    fill="white"
+                  />
+                )}
               </mask>
             </defs>
 
-            {/* Black overlay with clockwise reveal */}
-            <g mask="url(#clockwiseMask)">
-              <rect x="0" y="0" width="100" height="100" fill="#0f172a" />
-            </g>
+            {/* Black background revealed by spiral */}
+            <rect
+              x="0"
+              y="0"
+              width="100"
+              height="100"
+              fill="#0f172a"
+              mask="url(#spiralMask)"
+            />
 
-            {/* Leading edge highlight */}
-            {wipeAngle < 360 && (
-              <line
-                x1="50"
-                y1="50"
-                x2={50 + 70 * Math.sin((wipeAngle * Math.PI) / 180)}
-                y2={50 - 70 * Math.cos((wipeAngle * Math.PI) / 180)}
-                stroke="rgba(251,191,36,0.8)"
-                strokeWidth="1"
-                className="drop-shadow-[0_0_4px_rgba(251,191,36,0.8)]"
-              />
-            )}
+            {/* Glowing edge effect on spiral tips */}
+            {Array.from({ length: 6 }, (_, armIndex) => {
+              const armAngleOffset = (armIndex / 6) * Math.PI * 2;
+              const rotations = 3;
+              const maxRadius = 85;
+              const angle = armAngleOffset + spiralProgress * rotations * Math.PI * 2;
+              const radius = maxRadius * (1 - spiralProgress);
+              const x = 50 + Math.cos(angle) * radius;
+              const y = 50 + Math.sin(angle) * radius;
+
+              if (spiralProgress < 0.95) {
+                return (
+                  <circle
+                    key={`glow-${armIndex}`}
+                    cx={x}
+                    cy={y}
+                    r={2}
+                    fill="rgba(251,191,36,0.9)"
+                    className="animate-pulse"
+                  />
+                );
+              }
+              return null;
+            })}
           </svg>
+
+          {/* Flash effect at completion */}
+          {spiralProgress > 0.9 && (
+            <div
+              className="absolute inset-0 bg-white pointer-events-none"
+              style={{ opacity: Math.max(0, (spiralProgress - 0.9) * 5) }}
+            />
+          )}
         </div>
       )}
 
