@@ -1,11 +1,13 @@
 import { useEffect, useState, useMemo } from 'react';
-import { Trophy, RotateCcw, Home, Crown, Star } from 'lucide-react';
+import { Trophy, RotateCcw, Home, Crown, Star, Swords, Shield, Target, Sparkles, Clock, ChevronDown, ChevronUp } from 'lucide-react';
 import type { Player } from '../../types/game';
+import type { BattleStats } from '../../types/stats';
 import { VERSION } from '../../constants/version';
 
 interface VictoryScreenProps {
   winner: Player;
   onPlayAgain: () => void;
+  stats?: BattleStats;
 }
 
 // Generate confetti particles
@@ -38,12 +40,37 @@ function generateStars(count: number) {
   }));
 }
 
-export function VictoryScreen({ winner, onPlayAgain }: VictoryScreenProps) {
+export function VictoryScreen({ winner, onPlayAgain, stats }: VictoryScreenProps) {
   const [phase, setPhase] = useState<'flash' | 'reveal' | 'celebrate' | 'ready'>('flash');
+  const [showStats, setShowStats] = useState(false);
   const isBlue = winner === 'P1';
 
   const confetti = useMemo(() => generateConfetti(50, isBlue), [isBlue]);
   const stars = useMemo(() => generateStars(15), []);
+
+  // Calculate battle duration
+  const battleDuration = useMemo(() => {
+    if (!stats?.battleStartTime) return null;
+    const endTime = stats.battleEndTime || Date.now();
+    const durationMs = endTime - stats.battleStartTime;
+    const minutes = Math.floor(durationMs / 60000);
+    const seconds = Math.floor((durationMs % 60000) / 1000);
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  }, [stats]);
+
+  // Get MVP info
+  const mvpInfo = useMemo(() => {
+    if (!stats) return null;
+    const winnerStats = winner === 'P1' ? stats.p1 : stats.p2;
+    if (!winnerStats.mvpUnitId) return null;
+    const mvpUnitStats = winnerStats.unitStats.get(winnerStats.mvpUnitId);
+    return mvpUnitStats ? {
+      name: mvpUnitStats.pokemonName,
+      id: mvpUnitStats.pokemonId,
+      damage: mvpUnitStats.damageDealt,
+      kills: mvpUnitStats.kills,
+    } : null;
+  }, [stats, winner]);
 
   // Animation sequence
   useEffect(() => {
@@ -214,7 +241,7 @@ export function VictoryScreen({ winner, onPlayAgain }: VictoryScreenProps) {
         </p>
 
         {/* Victory message */}
-        <div className={`inline-block px-6 py-3 rounded-xl mb-8 ${
+        <div className={`inline-block px-6 py-3 rounded-xl mb-4 ${
           isBlue
             ? 'bg-blue-500/15 border-2 border-blue-400/30'
             : 'bg-red-500/15 border-2 border-red-400/30'
@@ -223,6 +250,117 @@ export function VictoryScreen({ winner, onPlayAgain }: VictoryScreenProps) {
             Has eliminado a todo el equipo rival
           </p>
         </div>
+
+        {/* Battle Stats Panel */}
+        {stats && (
+          <div className={`mb-6 transition-all duration-500 ${
+            phase === 'ready' ? 'opacity-100' : 'opacity-0'
+          }`}>
+            {/* Toggle button */}
+            <button
+              onClick={() => setShowStats(!showStats)}
+              className={`
+                flex items-center gap-2 mx-auto px-4 py-2 rounded-lg
+                text-sm font-bold transition-all duration-300
+                ${isBlue
+                  ? 'bg-blue-900/50 hover:bg-blue-800/50 text-blue-300 border border-blue-500/30'
+                  : 'bg-red-900/50 hover:bg-red-800/50 text-red-300 border border-red-500/30'
+                }
+              `}
+            >
+              {showStats ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              {showStats ? 'Ocultar Estadísticas' : 'Ver Estadísticas'}
+            </button>
+
+            {/* Stats content */}
+            {showStats && (
+              <div className={`
+                mt-4 p-4 rounded-xl max-w-md mx-auto
+                bg-slate-900/80 backdrop-blur-md border
+                ${isBlue ? 'border-blue-500/30' : 'border-red-500/30'}
+                animate-stats-reveal
+              `}>
+                {/* Quick summary */}
+                <div className="grid grid-cols-3 gap-3 mb-4">
+                  {battleDuration && (
+                    <div className="text-center p-2 bg-slate-800/50 rounded-lg">
+                      <Clock className="w-4 h-4 mx-auto mb-1 text-slate-400" />
+                      <span className="text-lg font-mono font-bold text-white">{battleDuration}</span>
+                      <span className="block text-[10px] text-slate-500 uppercase">Duración</span>
+                    </div>
+                  )}
+                  <div className="text-center p-2 bg-slate-800/50 rounded-lg">
+                    <Target className="w-4 h-4 mx-auto mb-1 text-red-400" />
+                    <span className="text-lg font-mono font-bold text-white">
+                      {winner === 'P1' ? stats.p1.totalKills : stats.p2.totalKills}
+                    </span>
+                    <span className="block text-[10px] text-slate-500 uppercase">KOs</span>
+                  </div>
+                  <div className="text-center p-2 bg-slate-800/50 rounded-lg">
+                    <Swords className="w-4 h-4 mx-auto mb-1 text-orange-400" />
+                    <span className="text-lg font-mono font-bold text-white">
+                      {winner === 'P1' ? stats.p1.totalDamageDealt : stats.p2.totalDamageDealt}
+                    </span>
+                    <span className="block text-[10px] text-slate-500 uppercase">Daño</span>
+                  </div>
+                </div>
+
+                {/* MVP */}
+                {mvpInfo && (
+                  <div className={`
+                    flex items-center gap-3 p-3 rounded-lg
+                    ${isBlue ? 'bg-blue-950/50 border border-blue-500/30' : 'bg-red-950/50 border border-red-500/30'}
+                  `}>
+                    <div className="relative">
+                      <img
+                        src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${mvpInfo.id}.png`}
+                        className="w-12 h-12"
+                        alt=""
+                      />
+                      <Sparkles className="absolute -top-1 -right-1 w-4 h-4 text-yellow-400 fill-yellow-400" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-yellow-400 text-xs font-bold uppercase">MVP</span>
+                        <span className="text-white font-bold">{mvpInfo.name}</span>
+                      </div>
+                      <div className="flex gap-3 text-xs text-slate-400 mt-1">
+                        <span>{mvpInfo.damage} daño</span>
+                        <span>{mvpInfo.kills} KOs</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Additional stats */}
+                <div className="grid grid-cols-2 gap-2 mt-3 text-xs">
+                  <div className="flex items-center justify-between p-2 bg-slate-800/30 rounded">
+                    <span className="text-slate-400">Capturas</span>
+                    <span className="font-bold text-emerald-400">
+                      {winner === 'P1' ? stats.p1.totalCaptures : stats.p2.totalCaptures}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between p-2 bg-slate-800/30 rounded">
+                    <span className="text-slate-400">Evoluciones</span>
+                    <span className="font-bold text-purple-400">
+                      {winner === 'P1' ? stats.p1.totalEvolutions : stats.p2.totalEvolutions}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between p-2 bg-slate-800/30 rounded">
+                    <span className="text-slate-400">Turnos</span>
+                    <span className="font-bold text-slate-300">{stats.totalTurns}</span>
+                  </div>
+                  <div className="flex items-center justify-between p-2 bg-slate-800/30 rounded">
+                    <span className="text-slate-400">Bajas propias</span>
+                    <span className="font-bold text-red-400">
+                      {winner === 'P1' ? stats.p1.totalDeaths : stats.p2.totalDeaths}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Action buttons */}
         <div className={`flex flex-col sm:flex-row gap-3 justify-center transition-all duration-500 ${
@@ -308,6 +446,20 @@ export function VictoryScreen({ winner, onPlayAgain }: VictoryScreenProps) {
         }
         .animate-winner-glow {
           animation: winner-glow 2s ease-in-out infinite;
+        }
+
+        @keyframes stats-reveal {
+          0% {
+            opacity: 0;
+            transform: translateY(-10px) scale(0.95);
+          }
+          100% {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+          }
+        }
+        .animate-stats-reveal {
+          animation: stats-reveal 0.3s ease-out;
         }
       `}</style>
     </div>

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useGameState, useVision } from './hooks';
+import { useGameState, useVision, useBattleStats } from './hooks';
 import { useAudio } from './hooks/useAudio';
 import { useMultiplayer, ClientGameState, ActionResult } from './hooks/useMultiplayer';
 import {
@@ -12,7 +12,10 @@ import {
   VictoryScreen,
   EvolutionCinematic,
   MultiplayerLobby,
-  TerrainInfoPanel
+  TerrainInfoPanel,
+  DraftScreen,
+  TurnTimer,
+  TURN_TIMER_DURATION
 } from './components';
 import { CaptureMinigame } from './components/CaptureMinigame';
 import { StartScreen } from './components/StartScreen';
@@ -43,6 +46,7 @@ export default function Game() {
     pendingPosition,
     // Actions
     initGame,
+    initGameWithTeams,
     handleTileClick,
     endBattle,
     confirmBattleZoom,
@@ -62,8 +66,13 @@ export default function Game() {
     // Multiplayer
     startServerBattle,
     triggerMultiplayerEncounter,
-    triggerServerEvolution
+    triggerServerEvolution,
+    // Timer
+    autoWaitAllUnits
   } = useGameState();
+
+  // Battle stats tracking
+  const battleStats = useBattleStats();
 
   // Multiplayer hook at Game level (persists across lobby → game)
   const multiplayer = useMultiplayer();
@@ -246,8 +255,59 @@ export default function Game() {
 
   const [showHowToPlay, setShowHowToPlay] = useState(false);
   const [showMultiplayer, setShowMultiplayer] = useState(false);
+  const [showDraft, setShowDraft] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [selectedTerrain, setSelectedTerrain] = useState<{ x: number; y: number; terrain: TerrainType } | null>(null);
+  const [timerResetKey, setTimerResetKey] = useState(0);
+  const [timerEnabled, setTimerEnabled] = useState(true);
+
+  // Track if stats have been initialized
+  const statsInitializedRef = useRef(false);
+
+  // Initialize stats when units change (game start)
+  useEffect(() => {
+    if (units.length > 0 && gameState === 'playing' && !statsInitializedRef.current) {
+      battleStats.initUnitStats(units);
+      statsInitializedRef.current = true;
+    }
+    if (gameState === 'menu') {
+      statsInitializedRef.current = false;
+    }
+  }, [units, gameState, battleStats]);
+
+  // Record battle stats when battle ends
+  useEffect(() => {
+    if (battleData && gameState === 'battle') {
+      battleStats.recordBattle(battleData);
+    }
+  }, [battleData, gameState, battleStats]);
+
+  // Reset timer when turn changes
+  useEffect(() => {
+    setTimerResetKey(prev => prev + 1);
+  }, [currentPlayer]);
+
+  // Finalize stats when victory
+  useEffect(() => {
+    if (winner && gameState === 'victory') {
+      battleStats.finalizeStats(winner);
+    }
+  }, [winner, gameState, battleStats]);
+
+  // Handle timer timeout - auto-wait all unmoved units
+  const handleTimerTimeout = useCallback(() => {
+    if (gameState === 'playing' && gamePhase === 'SELECT' && !isMultiplayer) {
+      autoWaitAllUnits();
+    }
+  }, [gameState, gamePhase, isMultiplayer, autoWaitAllUnits]);
+
+  // Handle draft completion - start game with selected teams
+  const handleDraftComplete = useCallback((p1Team: PokemonTemplate[], p2Team: PokemonTemplate[]) => {
+    setShowDraft(false);
+    battleStats.resetStats();
+    statsInitializedRef.current = false;
+    initGameWithTeams(p1Team, p2Team);
+  }, [initGameWithTeams, battleStats]);
 
   // Wrapper for tile click that also handles terrain info
   const handleTileClickWithTerrain = useCallback((x: number, y: number) => {
@@ -376,6 +436,15 @@ export default function Game() {
 
   // Show start screen
   if (gameState === 'menu') {
+    if (showDraft) {
+      return (
+        <DraftScreen
+          onDraftComplete={handleDraftComplete}
+          onCancel={() => setShowDraft(false)}
+        />
+      );
+    }
+
     if (showMultiplayer) {
       return (
         <MultiplayerLobby
@@ -399,6 +468,7 @@ export default function Game() {
           onStartGame={initGame}
           onHowToPlay={() => setShowHowToPlay(true)}
           onMultiplayer={() => setShowMultiplayer(true)}
+          onDraft={() => setShowDraft(true)}
         />
         {showHowToPlay && <HowToPlay onClose={() => setShowHowToPlay(false)} />}
       </>
@@ -477,6 +547,19 @@ export default function Game() {
             ">
               <span className="animate-pulse">Esperando rival...</span>
             </div>
+          </div>
+        )}
+
+        {/* Turn Timer (local games only) */}
+        {gameState === 'playing' && timerEnabled && !isMultiplayer && gamePhase === 'SELECT' && (
+          <div className="absolute top-1 right-1 md:top-3 md:right-3 z-20">
+            <TurnTimer
+              duration={TURN_TIMER_DURATION}
+              onTimeout={handleTimerTimeout}
+              paused={gameState !== 'playing' || gamePhase !== 'SELECT'}
+              resetKey={timerResetKey}
+              playerColor={currentPlayer === 'P1' ? 'blue' : 'red'}
+            />
           </div>
         )}
 
@@ -671,7 +754,7 @@ export default function Game() {
       )}
 
       {gameState === 'victory' && winner && (
-        <VictoryScreen winner={winner} onPlayAgain={initGame} />
+        <VictoryScreen winner={winner} onPlayAgain={initGame} stats={battleStats.stats} />
       )}
 
       {showHowToPlay && <HowToPlay onClose={() => setShowHowToPlay(false)} />}

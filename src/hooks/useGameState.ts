@@ -48,6 +48,7 @@ interface UseGameStateReturn {
 
   // Actions
   initGame: () => void;
+  initGameWithTeams: (p1Team: PokemonTemplate[], p2Team: PokemonTemplate[]) => void;
   initMultiplayerGame: (player: Player) => void;
   handleTileClick: (x: number, y: number) => void;
   endBattle: () => void;
@@ -71,6 +72,8 @@ interface UseGameStateReturn {
   triggerMultiplayerEncounter: (unit: Unit) => boolean;
   // Multiplayer evolution (triggered by server result)
   triggerServerEvolution: (unitId: string, newTemplate: PokemonTemplate) => void;
+  // Timer auto-wait
+  autoWaitAllUnits: () => void;
 }
 
 // State received from server in multiplayer
@@ -233,6 +236,95 @@ export function useGameState(): UseGameStateReturn {
     setWinner(null);
 
     // Initialize fog of war - empty explored arrays (will be populated by useVision)
+    const emptyExplored = Array(BOARD_HEIGHT)
+      .fill(null)
+      .map(() => Array(BOARD_WIDTH).fill(false));
+    setExploredP1([...emptyExplored.map(row => [...row])]);
+    setExploredP2([...emptyExplored.map(row => [...row])]);
+
+    resetSelection();
+  }, [resetSelection]);
+
+  // Initialize game with pre-selected teams (from draft)
+  const initGameWithTeams = useCallback((p1Team: PokemonTemplate[], p2Team: PokemonTemplate[]) => {
+    // Generate map with tall grass
+    const newMap: GameMap = Array(BOARD_HEIGHT).fill(0).map(() =>
+      Array(BOARD_WIDTH).fill(TERRAIN.GRASS as TerrainType)
+    );
+
+    for (let y = 0; y < BOARD_HEIGHT; y++) {
+      for (let x = 0; x < BOARD_WIDTH; x++) {
+        const r = Math.random();
+        if (r > 0.88) newMap[y][x] = TERRAIN.MOUNTAIN as TerrainType;
+        else if (r > 0.80) newMap[y][x] = TERRAIN.WATER as TerrainType;
+        else if (r > 0.65) newMap[y][x] = TERRAIN.FOREST as TerrainType;
+        else if (r > 0.45) newMap[y][x] = TERRAIN.TALL_GRASS as TerrainType;
+      }
+    }
+
+    // Ensure bases are passable
+    newMap[0][0] = TERRAIN.BASE as TerrainType;
+    newMap[0][1] = TERRAIN.GRASS as TerrainType;
+    newMap[1][0] = TERRAIN.GRASS as TerrainType;
+    newMap[BOARD_HEIGHT - 1][BOARD_WIDTH - 1] = TERRAIN.BASE as TerrainType;
+    newMap[BOARD_HEIGHT - 1][BOARD_WIDTH - 2] = TERRAIN.GRASS as TerrainType;
+    newMap[BOARD_HEIGHT - 2][BOARD_WIDTH - 1] = TERRAIN.GRASS as TerrainType;
+
+    // Add Pokémon Centers in the middle area (1-2 centers)
+    const centerCount = Math.random() < 0.5 ? 1 : 2;
+    const placedCenters: { x: number; y: number }[] = [];
+
+    for (let i = 0; i < centerCount; i++) {
+      let attempts = 0;
+      while (attempts < 20) {
+        const cx = 1 + Math.floor(Math.random() * (BOARD_WIDTH - 2));
+        const cy = 2 + Math.floor(Math.random() * (BOARD_HEIGHT - 4));
+        const tooClose = placedCenters.some(
+          c => Math.abs(c.x - cx) < 2 && Math.abs(c.y - cy) < 2
+        );
+        if (!tooClose) {
+          newMap[cy][cx] = TERRAIN.POKEMON_CENTER as TerrainType;
+          placedCenters.push({ x: cx, y: cy });
+          break;
+        }
+        attempts++;
+      }
+    }
+
+    setMap(newMap);
+
+    // Create units from provided teams
+    const p1Units: Unit[] = p1Team.map((temp, i) => ({
+      uid: Math.random().toString(36).substring(7),
+      owner: 'P1' as Player,
+      template: temp,
+      x: i % BOARD_WIDTH,
+      y: BOARD_HEIGHT - 1 - Math.floor(i / BOARD_WIDTH),
+      currentHp: temp.hp,
+      hasMoved: false,
+      kills: 0
+    }));
+
+    const p2Units: Unit[] = p2Team.map((temp, i) => ({
+      uid: Math.random().toString(36).substring(7),
+      owner: 'P2' as Player,
+      template: temp,
+      x: BOARD_WIDTH - 1 - (i % BOARD_WIDTH),
+      y: 0 + Math.floor(i / BOARD_WIDTH),
+      currentHp: temp.hp,
+      hasMoved: false,
+      kills: 0
+    }));
+
+    setUnits([...p1Units, ...p2Units]);
+    setTurn(1);
+    setCurrentPlayer('P1');
+    setGameState('playing');
+    setGamePhase('SELECT');
+    setLogs(['¡Empieza el combate!', '¡Equipos seleccionados por draft!']);
+    setWinner(null);
+
+    // Initialize fog of war
     const emptyExplored = Array(BOARD_HEIGHT)
       .fill(null)
       .map(() => Array(BOARD_WIDTH).fill(false));
@@ -821,6 +913,26 @@ export function useGameState(): UseGameStateReturn {
     setGameState('evolution');
   }, [units]);
 
+  // Auto-wait all units that haven't moved (timer expired)
+  const autoWaitAllUnits = useCallback(() => {
+    const playerUnits = units.filter(u => u.owner === currentPlayer && !u.hasMoved);
+    if (playerUnits.length === 0) return;
+
+    // Mark all unmoved units as having moved
+    const nextUnits = units.map(u =>
+      u.owner === currentPlayer && !u.hasMoved ? { ...u, hasMoved: true } : u
+    );
+    setUnits(nextUnits);
+
+    addLog(`¡Tiempo agotado! Turno terminado automáticamente.`);
+    resetSelection();
+
+    // Trigger turn transition
+    setTimeout(() => {
+      setGameState('transition');
+    }, 300);
+  }, [units, currentPlayer, addLog, resetSelection]);
+
   return {
     map,
     units,
@@ -847,6 +959,7 @@ export function useGameState(): UseGameStateReturn {
 
     // Actions
     initGame,
+    initGameWithTeams,
     initMultiplayerGame,
     handleTileClick,
     endBattle,
@@ -867,6 +980,8 @@ export function useGameState(): UseGameStateReturn {
     // Multiplayer
     startServerBattle,
     triggerMultiplayerEncounter,
-    triggerServerEvolution
+    triggerServerEvolution,
+    // Timer auto-wait
+    autoWaitAllUnits
   };
 }

@@ -1,11 +1,12 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Swords, Users, BookOpen, ChevronRight, Gamepad2 } from 'lucide-react';
+import { Swords, Users, BookOpen, ChevronRight, Gamepad2, Shuffle } from 'lucide-react';
 import { VERSION } from '../constants/version';
 
 interface StartScreenProps {
   onStartGame: () => void;
   onHowToPlay: () => void;
   onMultiplayer?: () => void;
+  onDraft?: () => void;
 }
 
 // Featured Pokemon with team colors
@@ -35,7 +36,7 @@ function generateSparkles(count: number) {
   }));
 }
 
-export function StartScreen({ onStartGame, onHowToPlay, onMultiplayer }: StartScreenProps) {
+export function StartScreen({ onStartGame, onHowToPlay, onMultiplayer, onDraft }: StartScreenProps) {
   // Animation phases
   const [phase, setPhase] = useState<'boot' | 'logo' | 'title' | 'menu'>('boot');
   const [titleLetters, setTitleLetters] = useState(0);
@@ -400,12 +401,23 @@ export function StartScreen({ onStartGame, onHowToPlay, onMultiplayer }: StartSc
                 <div className="p-3 space-y-2">
                   <MenuButton
                     icon={<Swords className="w-5 h-5" />}
-                    label="Batalla Local"
-                    sublabel="2 jugadores • Hot Seat"
+                    label="Batalla Rápida"
+                    sublabel="2 jugadores • Equipos aleatorios"
                     onClick={(e) => { e.stopPropagation(); onStartGame(); }}
                     color="blue"
                     delay={0}
                   />
+
+                  {onDraft && (
+                    <MenuButton
+                      icon={<Shuffle className="w-5 h-5" />}
+                      label="Draft Mode"
+                      sublabel="Ban & Pick • Competitivo"
+                      onClick={(e) => { e.stopPropagation(); onDraft(); }}
+                      color="purple"
+                      delay={1}
+                    />
+                  )}
 
                   {onMultiplayer && (
                     <MenuButton
@@ -414,7 +426,7 @@ export function StartScreen({ onStartGame, onHowToPlay, onMultiplayer }: StartSc
                       sublabel="Online • Crear o unirse"
                       onClick={(e) => { e.stopPropagation(); onMultiplayer(); }}
                       color="green"
-                      delay={1}
+                      delay={2}
                     />
                   )}
 
@@ -424,7 +436,7 @@ export function StartScreen({ onStartGame, onHowToPlay, onMultiplayer }: StartSc
                     sublabel="Tutorial y mecánicas"
                     onClick={(e) => { e.stopPropagation(); onHowToPlay(); }}
                     color="amber"
-                    delay={2}
+                    delay={3}
                   />
                 </div>
               </div>
@@ -511,7 +523,7 @@ interface MenuButtonProps {
   label: string;
   sublabel: string;
   onClick: (e: React.MouseEvent) => void;
-  color: 'blue' | 'green' | 'amber';
+  color: 'blue' | 'green' | 'amber' | 'purple';
   delay: number;
 }
 
@@ -537,6 +549,13 @@ function MenuButton({ icon, label, sublabel, onClick, color, delay }: MenuButton
       border: 'border-amber-400/40',
       glow: 'hover:shadow-[0_0_25px_rgba(245,158,11,0.3)]',
       icon: 'bg-amber-500/30',
+    },
+    purple: {
+      bg: 'from-purple-600 to-purple-700',
+      hover: 'hover:from-purple-500 hover:to-purple-600',
+      border: 'border-purple-400/40',
+      glow: 'hover:shadow-[0_0_25px_rgba(168,85,247,0.3)]',
+      icon: 'bg-purple-500/30',
     },
   };
 

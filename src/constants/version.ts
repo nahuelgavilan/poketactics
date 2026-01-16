@@ -15,9 +15,10 @@
  * don't trigger version bumps unless they include breaking changes.
  */
 
-export const VERSION = '0.24.2';
+export const VERSION = '0.25.0';
 
 // Version history (Alpha - v0.x.x):
+// 0.25.0 - Competitive 1v1: Draft System (ban/pick), Turn Timer (45s auto-wait), Post-Battle Stats (MVP, damage, KOs)
 // 0.24.2 - Battle theme music: plays during battle transition and cinematic with fade out
 // 0.24.1 - Pokemon-style spiral wipe transition: 6-arm spiral that closes to center with glowing tips and flash
 // 0.24.0 - Epic VS transition: board zoom, tiles with stats facing each other (position-aware), clockwise wipe. Removed redundant VS from BattleCinematic
