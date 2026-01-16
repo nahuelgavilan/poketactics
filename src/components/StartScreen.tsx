@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Swords, Users, BookOpen, ChevronRight, Gamepad2, Shuffle } from 'lucide-react';
+import { Swords, Users, BookOpen, ChevronRight, Gamepad2, Shuffle, ArrowLeft, Zap } from 'lucide-react';
 import { VERSION } from '../constants/version';
 
 interface StartScreenProps {
@@ -42,6 +42,7 @@ export function StartScreen({ onStartGame, onHowToPlay, onMultiplayer, onDraft }
   const [titleLetters, setTitleLetters] = useState(0);
   const [activePokemon, setActivePokemon] = useState({ blue: 0, red: 0 });
   const [showPressStart, setShowPressStart] = useState(false);
+  const [submenu, setSubmenu] = useState<'main' | 'local'>('main');
 
   const sparkles = useMemo(() => generateSparkles(30), []);
 
@@ -391,7 +392,7 @@ export function StartScreen({ onStartGame, onHowToPlay, onMultiplayer, onDraft }
                       className="text-[10px] font-bold tracking-[0.2em] text-amber-400/90 uppercase"
                       style={{ fontFamily: '"Press Start 2P", monospace' }}
                     >
-                      Select Mode
+                      {submenu === 'main' ? 'Select Mode' : 'Batalla Local'}
                     </span>
                     <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
                   </div>
@@ -399,45 +400,70 @@ export function StartScreen({ onStartGame, onHowToPlay, onMultiplayer, onDraft }
 
                 {/* Menu buttons */}
                 <div className="p-3 space-y-2">
-                  <MenuButton
-                    icon={<Swords className="w-5 h-5" />}
-                    label="Batalla Rápida"
-                    sublabel="2 jugadores • Equipos aleatorios"
-                    onClick={(e) => { e.stopPropagation(); onStartGame(); }}
-                    color="blue"
-                    delay={0}
-                  />
+                  {submenu === 'main' ? (
+                    <>
+                      {/* Main menu */}
+                      <MenuButton
+                        icon={<Swords className="w-5 h-5" />}
+                        label="Batalla Local"
+                        sublabel="2 jugadores • Hot Seat"
+                        onClick={(e) => { e.stopPropagation(); setSubmenu('local'); }}
+                        color="blue"
+                        delay={0}
+                      />
 
-                  {onDraft && (
-                    <MenuButton
-                      icon={<Shuffle className="w-5 h-5" />}
-                      label="Draft Mode"
-                      sublabel="Ban & Pick • Competitivo"
-                      onClick={(e) => { e.stopPropagation(); onDraft(); }}
-                      color="purple"
-                      delay={1}
-                    />
+                      {onMultiplayer && (
+                        <MenuButton
+                          icon={<Users className="w-5 h-5" />}
+                          label="Multijugador"
+                          sublabel="Online • Crear o unirse"
+                          onClick={(e) => { e.stopPropagation(); onMultiplayer(); }}
+                          color="green"
+                          delay={1}
+                        />
+                      )}
+
+                      <MenuButton
+                        icon={<BookOpen className="w-5 h-5" />}
+                        label="Cómo Jugar"
+                        sublabel="Tutorial y mecánicas"
+                        onClick={(e) => { e.stopPropagation(); onHowToPlay(); }}
+                        color="amber"
+                        delay={2}
+                      />
+                    </>
+                  ) : (
+                    <>
+                      {/* Local battle submenu */}
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setSubmenu('main'); }}
+                        className="flex items-center gap-2 px-3 py-2 text-slate-400 hover:text-white transition-colors text-sm"
+                      >
+                        <ArrowLeft className="w-4 h-4" />
+                        <span>Volver</span>
+                      </button>
+
+                      <MenuButton
+                        icon={<Zap className="w-5 h-5" />}
+                        label="Batalla Rápida"
+                        sublabel="Equipos aleatorios"
+                        onClick={(e) => { e.stopPropagation(); onStartGame(); }}
+                        color="blue"
+                        delay={0}
+                      />
+
+                      {onDraft && (
+                        <MenuButton
+                          icon={<Shuffle className="w-5 h-5" />}
+                          label="Draft Mode"
+                          sublabel="Ban & Pick • Competitivo"
+                          onClick={(e) => { e.stopPropagation(); onDraft(); }}
+                          color="purple"
+                          delay={1}
+                        />
+                      )}
+                    </>
                   )}
-
-                  {onMultiplayer && (
-                    <MenuButton
-                      icon={<Users className="w-5 h-5" />}
-                      label="Multijugador"
-                      sublabel="Online • Crear o unirse"
-                      onClick={(e) => { e.stopPropagation(); onMultiplayer(); }}
-                      color="green"
-                      delay={2}
-                    />
-                  )}
-
-                  <MenuButton
-                    icon={<BookOpen className="w-5 h-5" />}
-                    label="Cómo Jugar"
-                    sublabel="Tutorial y mecánicas"
-                    onClick={(e) => { e.stopPropagation(); onHowToPlay(); }}
-                    color="amber"
-                    delay={3}
-                  />
                 </div>
               </div>
             </div>
