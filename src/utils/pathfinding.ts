@@ -150,12 +150,15 @@ export function findPath(
       // Skip impassable terrain
       if (cost > 10) continue;
 
-      // Check for enemy units blocking (but allow passing through the target)
+      // Check for units blocking
       const occupant = units.find(u => u.x === nx && u.y === ny);
-      if (occupant && occupant.owner !== movingUnit.owner && !(nx === end.x && ny === end.y)) continue;
 
-      // Skip occupied tiles (can't stop on them), unless it's the moving unit's position
-      if (occupant && occupant.uid !== movingUnit.uid && !(nx === end.x && ny === end.y)) continue;
+      // Enemy units always block (can't pass through)
+      if (occupant && occupant.owner !== movingUnit.owner) continue;
+
+      // Friendly units: can pass through, but can't stop on them (unless it's our own tile)
+      const isDestination = nx === end.x && ny === end.y;
+      if (isDestination && occupant && occupant.uid !== movingUnit.uid) continue;
 
       visited.add(key);
       queue.push([...path, { x: nx, y: ny }]);
