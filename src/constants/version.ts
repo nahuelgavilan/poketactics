@@ -15,9 +15,10 @@
  * don't trigger version bumps unless they include breaking changes.
  */
 
-export const VERSION = '0.26.0';
+export const VERSION = '0.26.1';
 
 // Version history (Alpha - v0.x.x):
+// 0.26.1 - Premium Draft Screen: Neon Arena aesthetic, mobile-first, P1 VS P2 intro, animated cards, sticky footer, dramatic popups
 // 0.26.0 - Draft redesign: two-panel layout, animated popups, confirm flow. Menu restructure: Local Battle submenu. Fixed turn-end bug when attacker dies
 // 0.25.0 - Competitive 1v1: Draft System (ban/pick), Turn Timer (45s auto-wait), Post-Battle Stats (MVP, damage, KOs)
 // 0.24.2 - Battle theme music: plays during battle transition and cinematic with fade out
