@@ -613,10 +613,21 @@ export function useGameState(): UseGameStateReturn {
     if (!attackerDied) {
       waitUnit(attacker.uid, nextUnits);
     } else {
-      // Attacker died, just reset selection
+      // Attacker died - check if all remaining player units have moved
       resetSelection();
+
+      // Check if turn should end (all remaining units have moved, or no units left that can act)
+      const playerUnits = nextUnits.filter(u => u.owner === currentPlayer);
+      const allMoved = playerUnits.length === 0 || playerUnits.every(u => u.hasMoved);
+
+      if (allMoved) {
+        // Auto-trigger turn transition
+        setTimeout(() => {
+          setGameState('transition');
+        }, 300);
+      }
     }
-  }, [battleData, units, waitUnit, addLog, resetSelection]);
+  }, [battleData, units, waitUnit, addLog, resetSelection, currentPlayer]);
 
   // Called when minigame succeeds - show capture celebration
   // Apply damage taken from wild Pokemon counter-attack
@@ -727,7 +738,17 @@ export function useGameState(): UseGameStateReturn {
     setEvolutionData(null);
     setGameState('playing');
     resetSelection();
-  }, [evolutionData, units, addLog, resetSelection]);
+
+    // Check if turn should end (all units have moved)
+    const playerUnits = nextUnits.filter(u => u.owner === currentPlayer);
+    const allMoved = playerUnits.length === 0 || playerUnits.every(u => u.hasMoved);
+
+    if (allMoved) {
+      setTimeout(() => {
+        setGameState('transition');
+      }, 300);
+    }
+  }, [evolutionData, units, addLog, resetSelection, currentPlayer]);
 
   const confirmTurnChange = useCallback(() => {
     const nextPlayer: Player = currentPlayer === 'P1' ? 'P2' : 'P1';
