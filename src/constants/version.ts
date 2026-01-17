@@ -15,9 +15,10 @@
  * don't trigger version bumps unless they include breaking changes.
  */
 
-export const VERSION = '0.28.1';
+export const VERSION = '0.28.2';
 
 // Version history (Alpha - v0.x.x):
+// 0.28.2 - UX: Cancel action on same position deselects unit (intuitive behavior)
 // 0.28.1 - UX: Click same position shows action menu, auto-attack single enemies, fix pokeball 3x spin during throw
 // 0.28.0 - Premium capture animations: AAA-quality pokeball throw arc, intense shake with energy effects, particle systems, motion blur
 // 0.27.4 - UX: Allow deselecting units by clicking them again in MOVING phase, fix unit_deselect sound only on manual cancel

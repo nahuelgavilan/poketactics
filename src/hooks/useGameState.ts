@@ -849,12 +849,21 @@ export function useGameState(): UseGameStateReturn {
     waitUnit(movedUnit.uid, nextUnits);
   }, [selectedUnit, pendingPosition, units, map, tryRandomEncounter, waitUnit]);
 
-  // Cancel action - go back to MOVING phase
+  // Cancel action - deselect if on same position, otherwise go back to MOVING phase
   const cancelAction = useCallback(() => {
+    // If pending position is same as current unit position, deselect
+    if (selectedUnit && pendingPosition &&
+        pendingPosition.x === selectedUnit.x &&
+        pendingPosition.y === selectedUnit.y) {
+      resetSelection();
+      return;
+    }
+
+    // Otherwise just go back to MOVING
     setPendingPosition(null);
     setAttackRange([]);
     setGamePhase('MOVING');
-  }, []);
+  }, [selectedUnit, pendingPosition, resetSelection]);
 
   // Start a battle using server-provided results (for multiplayer)
   const startServerBattle = useCallback((attackerId: string, defenderId: string, damage: number, counterDamage: number) => {
