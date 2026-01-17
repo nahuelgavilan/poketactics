@@ -104,11 +104,11 @@ export default function Game() {
       // Menu theme - plays on start screen
       playMusic('menu_theme', { loop: true, volume: 0.5 });
     } else if (state === 'playing' && (phase === 'SELECT' || phase === 'MOVING' || phase === 'ACTION_MENU')) {
-      // Board theme - plays during normal gameplay (not battle)
-      playMusic('board_theme', { loop: true, volume: 0.5 });
+      // Board theme - plays during normal gameplay (not battle) - lowered volume
+      playMusic('board_theme', { loop: true, volume: 0.3 });
     } else if (phase === 'ATTACKING' || state === 'battle' || state === 'battle_zoom') {
       // Battle theme - plays during attack phase and battle cinematics
-      playMusic('battle_theme', { loop: true, volume: 0.6 });
+      playMusic('battle_theme', { loop: true, volume: 0.5 });
     } else if (state !== 'playing' && state !== 'menu' && state !== 'battle' && state !== 'battle_zoom') {
       // Stop music during other states (victory, capture, etc.)
       stopMusic(500); // 500ms fade out

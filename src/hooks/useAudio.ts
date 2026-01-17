@@ -11,36 +11,64 @@ type AudioKey = keyof typeof AUDIO_PATHS;
 export function useAudio() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const currentTrackRef = useRef<AudioKey | null>(null);
+  const fadeIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Play a music track
   const playMusic = useCallback((key: AudioKey, options?: { loop?: boolean; volume?: number }) => {
     const { loop = false, volume = 0.7 } = options || {};
 
-    // Stop current track if different
-    if (audioRef.current && currentTrackRef.current !== key) {
-      audioRef.current.pause();
-      audioRef.current = null;
-    }
-
-    // Don't restart if same track is playing
-    if (currentTrackRef.current === key && audioRef.current && !audioRef.current.paused) {
+    // If same track is already playing, just ensure it's playing and update volume
+    if (currentTrackRef.current === key && audioRef.current) {
+      if (audioRef.current.paused) {
+        audioRef.current.play().catch((err) => {
+          console.warn('Audio resume failed:', err);
+        });
+      }
+      // Update volume if different
+      if (Math.abs(audioRef.current.volume - volume) > 0.01) {
+        audioRef.current.volume = volume;
+      }
       return;
     }
 
-    const audio = new Audio(AUDIO_PATHS[key]);
-    audio.loop = loop;
-    audio.volume = volume;
-    audio.play().catch((err) => {
-      console.warn('Audio playback failed:', err);
-    });
+    // Stop current track if different (clear any fade intervals)
+    if (audioRef.current && currentTrackRef.current !== key) {
+      if (fadeIntervalRef.current) {
+        clearInterval(fadeIntervalRef.current);
+        fadeIntervalRef.current = null;
+      }
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+      audioRef.current = null;
+    }
 
-    audioRef.current = audio;
-    currentTrackRef.current = key;
+    // Create new audio instance
+    try {
+      const audio = new Audio(AUDIO_PATHS[key]);
+      audio.loop = loop;
+      audio.volume = volume;
+      audio.preload = 'auto';
+
+      audio.play().catch((err) => {
+        console.warn('Audio playback failed:', err);
+      });
+
+      audioRef.current = audio;
+      currentTrackRef.current = key;
+    } catch (err) {
+      console.warn('Failed to create audio:', err);
+    }
   }, []);
 
   // Stop current music with optional fade
   const stopMusic = useCallback((fadeMs = 0) => {
     if (!audioRef.current) return;
+
+    // Clear any existing fade interval
+    if (fadeIntervalRef.current) {
+      clearInterval(fadeIntervalRef.current);
+      fadeIntervalRef.current = null;
+    }
 
     if (fadeMs > 0) {
       const audio = audioRef.current;
@@ -50,20 +78,28 @@ export function useAudio() {
       const volumeStep = startVolume / fadeSteps;
 
       let step = 0;
-      const fadeInterval = setInterval(() => {
+      fadeIntervalRef.current = setInterval(() => {
         step++;
-        audio.volume = Math.max(0, startVolume - volumeStep * step);
+        if (audio && !audio.paused) {
+          audio.volume = Math.max(0, startVolume - volumeStep * step);
+        }
 
         if (step >= fadeSteps) {
-          clearInterval(fadeInterval);
-          audio.pause();
-          audio.volume = startVolume;
+          if (fadeIntervalRef.current) {
+            clearInterval(fadeIntervalRef.current);
+            fadeIntervalRef.current = null;
+          }
+          if (audio) {
+            audio.pause();
+            audio.currentTime = 0;
+          }
           audioRef.current = null;
           currentTrackRef.current = null;
         }
       }, stepTime);
     } else {
       audioRef.current.pause();
+      audioRef.current.currentTime = 0;
       audioRef.current = null;
       currentTrackRef.current = null;
     }
@@ -72,10 +108,16 @@ export function useAudio() {
   // Cleanup on unmount
   useEffect(() => {
     return () => {
+      if (fadeIntervalRef.current) {
+        clearInterval(fadeIntervalRef.current);
+        fadeIntervalRef.current = null;
+      }
       if (audioRef.current) {
         audioRef.current.pause();
+        audioRef.current.currentTime = 0;
         audioRef.current = null;
       }
+      currentTrackRef.current = null;
     };
   }, []);
 

@@ -15,9 +15,10 @@
  * don't trigger version bumps unless they include breaking changes.
  */
 
-export const VERSION = '0.27.2';
+export const VERSION = '0.27.3';
 
 // Version history (Alpha - v0.x.x):
+// 0.27.3 - Audio fixes: prevent multiple audio instances, improve playback stability, lower board_theme volume (0.5→0.3), lower battle_theme (0.6→0.5)
 // 0.27.2 - Capture minigame SFX: wild encounter, ring hits (perfect/good/miss), pokeball throw/shake/open, capture fail, flee success
 // 0.27.1 - Sound effects system: unit select/deselect/move, menu open/close, button clicks with useSFX hook
 // 0.27.0 - Music system: menu theme (start screen), board theme (gameplay), battle theme (combat) with automatic transitions

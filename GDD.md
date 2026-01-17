@@ -700,8 +700,8 @@ If defender survives and can counter:
 
 **Implemented Tracks:**
 - **Menu Theme** - Orchestral adventure theme, plays on start screen (looped at 50% volume)
-- **Board Theme** - Strategic gameplay music, plays during normal turn-based play (looped at 50% volume)
-- **Battle Theme** - Intense tactical combat music, plays during attack phase and battles (looped at 60% volume)
+- **Board Theme** - Strategic gameplay music, plays during normal turn-based play (looped at 30% volume)
+- **Battle Theme** - Intense tactical combat music, plays during attack phase and battles (looped at 50% volume)
 
 **Technical Details:**
 - `useAudio.ts` hook manages audio playback
@@ -900,6 +900,7 @@ Currently in alpha - major version stays at 0 until core features complete.
 
 | Version | Changes |
 |---------|---------|
+| **0.27.3** | Audio fixes: prevent multiple audio instances, improve playback stability, lower board_theme volume (50%→30%), lower battle_theme (60%→50%) |
 | **0.27.2** | Capture minigame SFX: wild encounter, ring hits (perfect/good/miss), pokeball throw/shake/open, capture fail, flee success |
 | **0.27.1** | Sound effects system: unit select/deselect/move, menu open/close, button clicks with useSFX hook |
 | **0.27.0** | Music system: menu theme (start screen), board theme (gameplay), battle theme (combat) with automatic transitions |
