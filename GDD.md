@@ -301,11 +301,36 @@ Three consecutive ring challenges, each faster than the last:
 
 **Tap Feedback**: Burst particles on tap, ring result message with bounce animation
 
-#### Phase 5: Pokéball Throw & Shake
-1. **Throw** - Pokéball flies up from bottom with spin
-2. **Shake** - 3 shakes with wobble animation
-3. **Stars** - Each shake lights up a star indicator
-4. **Sparkle particles** on each shake
+#### Phase 5: Premium Pokéball Throw & Shake
+
+**Throw Animation:**
+1. **Parabolic arc** - Pokéball launches from bottom with cinematic curved trajectory
+2. **Rotation** - 1080° spin during flight
+3. **Motion blur** - Trailing blur effect following the ball
+4. **Energy particles** - 20 glowing particle trail effects
+5. **Impact flash** - White pulse effect when ball lands
+
+**GBA-Style Shake Sequence:**
+
+Each shake features premium layered animations:
+
+1. **Horizontal shake** - Authentic GBA left-right wobble (no rotation)
+   - Shake 1: 16-18px movement, moderate intensity
+   - Shake 2: 20-22px movement, increased intensity
+   - Shake 3: 22-24px movement, maximum intensity
+2. **Scale pulse** - Slight scale increase (1.02-1.04×) during intense shakes
+3. **Flying star** - Star emerges from pokeball center and flies to indicator
+   - Rotates 720° during flight
+   - Motion trail effect
+   - Glow pulse animation
+4. **Star indicators** - 3 empty stars at top that light up sequentially
+   - Epic flash burst when star arrives
+   - Secondary glow wave
+   - 8 sparkle particles radiating outward
+5. **Energy particles** - 12 particles radiate from pokeball during each shake
+6. **Button glow** - Center button pulses with white light
+7. **Shadow quake** - Ground shadow vibrates with shake intensity
+8. **Tension dots** - "..." indicator pulses with yellow glow
 
 #### Phase 6: Result
 - **Success**: Confetti rain, "¡CAPTURADO!" message, Pokémon joins team
@@ -900,6 +925,7 @@ Currently in alpha - major version stays at 0 until core features complete.
 
 | Version | Changes |
 |---------|---------|
+| **0.29.0** | Ultra-premium GBA shake: flying stars emerge from pokeball center (720° rotation, motion trails), 3 sequential star indicators with epic flash bursts + 8 sparkle particles, authentic horizontal shake with scale pulse (16-24px intensity), 12 radiating energy particles, button glow, shadow quake, tension pulse effects |
 | **0.28.0** | Premium capture animations: AAA-quality pokeball throw with parabolic arc, motion blur, energy trails; intense shake animation with energy pulses, particle bursts, atmospheric effects |
 | **0.27.4** | UX improvement: Allow deselecting units by clicking them again in MOVING phase, fix unit_deselect sound only on manual cancel (not after actions) |
 | **0.27.3** | Audio fixes: prevent multiple audio instances, improve playback stability, lower board_theme volume (50%→30%), lower battle_theme (60%→50%) |
