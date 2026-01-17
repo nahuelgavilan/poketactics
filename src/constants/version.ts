@@ -15,9 +15,10 @@
  * don't trigger version bumps unless they include breaking changes.
  */
 
-export const VERSION = '0.28.3';
+export const VERSION = '0.28.4';
 
 // Version history (Alpha - v0.x.x):
+// 0.28.4 - Authentic GBA capture: Clean horizontal shakes (no rotation), simple star flash, professional pokeball design, escalating speed (65ms→60ms→55ms)
 // 0.28.3 - Premium GBA capture: 3 unique shake animations (escalating intensity), synchronized star bursts, screen flash, triple energy waves, 360° particles, lightning effects
 // 0.28.2 - UX: Cancel action on same position deselects unit (intuitive behavior)
 // 0.28.1 - UX: Click same position shows action menu, auto-attack single enemies, fix pokeball 3x spin during throw
