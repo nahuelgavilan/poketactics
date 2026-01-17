@@ -15,9 +15,10 @@
  * don't trigger version bumps unless they include breaking changes.
  */
 
-export const VERSION = '0.27.4';
+export const VERSION = '0.28.0';
 
 // Version history (Alpha - v0.x.x):
+// 0.28.0 - Premium capture animations: AAA-quality pokeball throw arc, intense shake with energy effects, particle systems, motion blur
 // 0.27.4 - UX: Allow deselecting units by clicking them again in MOVING phase, fix unit_deselect sound only on manual cancel
 // 0.27.3 - Audio fixes: prevent multiple audio instances, improve playback stability, lower board_theme volume (0.5→0.3), lower battle_theme (0.6→0.5)
 // 0.27.2 - Capture minigame SFX: wild encounter, ring hits (perfect/good/miss), pokeball throw/shake/open, capture fail, flee success

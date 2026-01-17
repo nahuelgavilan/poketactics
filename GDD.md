@@ -900,6 +900,7 @@ Currently in alpha - major version stays at 0 until core features complete.
 
 | Version | Changes |
 |---------|---------|
+| **0.28.0** | Premium capture animations: AAA-quality pokeball throw with parabolic arc, motion blur, energy trails; intense shake animation with energy pulses, particle bursts, atmospheric effects |
 | **0.27.4** | UX improvement: Allow deselecting units by clicking them again in MOVING phase, fix unit_deselect sound only on manual cancel (not after actions) |
 | **0.27.3** | Audio fixes: prevent multiple audio instances, improve playback stability, lower board_theme volume (50%→30%), lower battle_theme (60%→50%) |
 | **0.27.2** | Capture minigame SFX: wild encounter, ring hits (perfect/good/miss), pokeball throw/shake/open, capture fail, flee success |

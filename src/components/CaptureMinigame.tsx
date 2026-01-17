@@ -883,73 +883,206 @@ export function CaptureMinigame({
             </div>
           )}
 
-          {/* === THROW ANIMATION === */}
+          {/* === PREMIUM THROW ANIMATION === */}
           {phase === 'throw' && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/70 z-30">
-              <div className="animate-[throw-ball_0.8s_cubic-bezier(0.25,0.46,0.45,0.94)_forwards]">
-                <div className="w-20 h-20 rounded-full bg-gradient-to-b from-red-500 to-red-600 border-4 border-slate-900 relative overflow-hidden shadow-2xl animate-spin">
-                  <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-2.5 bg-slate-900" />
-                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-white border-[3px] border-slate-900" />
-                  <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-b from-slate-100 to-white" />
+            <div className="absolute inset-0 bg-gradient-radial from-black/60 via-black/80 to-black z-30 overflow-hidden">
+              {/* Energy trail particles */}
+              <div className="absolute inset-0 pointer-events-none">
+                {[...Array(20)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="absolute animate-[trail-particle_0.8s_ease-out_forwards]"
+                    style={{
+                      left: '50%',
+                      bottom: '20%',
+                      width: '8px',
+                      height: '8px',
+                      background: 'radial-gradient(circle, rgba(239,68,68,0.8) 0%, rgba(239,68,68,0) 70%)',
+                      filter: 'blur(2px)',
+                      animationDelay: `${i * 0.04}s`,
+                    }}
+                  />
+                ))}
+              </div>
+
+              {/* Pokeball with premium throw arc */}
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="animate-[throw-arc_1s_cubic-bezier(0.34,0.06,0.25,1)_forwards]">
+                  {/* Motion blur effect */}
+                  <div className="absolute inset-0 animate-[motion-blur_1s_ease-out_forwards] opacity-40">
+                    <div className="w-24 h-24 rounded-full bg-red-500/40 blur-xl" />
+                  </div>
+
+                  {/* Pokeball */}
+                  <div className="relative w-24 h-24 animate-[throw-spin_0.8s_linear_infinite]">
+                    <div className="w-full h-full rounded-full bg-gradient-to-br from-red-400 via-red-500 to-red-700 border-4 border-slate-900 relative overflow-hidden shadow-[0_0_60px_rgba(239,68,68,0.8),0_0_120px_rgba(239,68,68,0.4)]">
+                      {/* Top white shine */}
+                      <div className="absolute top-2 left-4 w-8 h-6 bg-white/60 rounded-full blur-sm" />
+                      {/* Center black band */}
+                      <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-3 bg-slate-900" />
+                      {/* Center button */}
+                      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white border-4 border-slate-900 shadow-inner">
+                        <div className="absolute inset-2 rounded-full bg-gradient-to-br from-slate-100 via-white to-slate-200 animate-pulse" />
+                      </div>
+                      {/* Bottom white half */}
+                      <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-b from-slate-50 to-white" />
+                      {/* Bottom shine */}
+                      <div className="absolute bottom-3 right-5 w-6 h-4 bg-white/40 rounded-full blur-sm" />
+                    </div>
+                  </div>
+
+                  {/* Energy glow pulse */}
+                  <div className="absolute inset-0 animate-[energy-pulse_0.8s_ease-out_forwards]">
+                    <div className="w-full h-full rounded-full bg-red-400/20 blur-2xl" />
+                  </div>
                 </div>
+              </div>
+
+              {/* Impact flash effect (appears at end) */}
+              <div className="absolute inset-0 flex items-center justify-center animate-[impact-flash_1s_ease-out_forwards] opacity-0">
+                <div className="w-96 h-96 rounded-full bg-white/30 blur-3xl" />
               </div>
             </div>
           )}
 
-          {/* === SHAKING === */}
+          {/* === PREMIUM SHAKING ANIMATION === */}
           {phase === 'shaking' && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/70 z-30">
-              <div className="text-center">
-                {/* Stars */}
-                <div className="flex justify-center gap-6 mb-8">
+            <div className="absolute inset-0 bg-gradient-to-b from-black via-slate-900 to-black z-30 overflow-hidden">
+              {/* Atmospheric particles */}
+              <div className="absolute inset-0 pointer-events-none">
+                {[...Array(30)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="absolute w-1 h-1 bg-white/20 rounded-full animate-[float_${3 + Math.random() * 2}s_ease-in-out_infinite]"
+                    style={{
+                      left: `${Math.random() * 100}%`,
+                      top: `${Math.random() * 100}%`,
+                      animationDelay: `${Math.random() * 2}s`,
+                    }}
+                  />
+                ))}
+              </div>
+
+              <div className="relative h-full flex flex-col items-center justify-center">
+                {/* Premium Stars with energy pulse */}
+                <div className="flex justify-center gap-8 mb-12">
                   {[1, 2, 3].map(i => (
-                    <div
-                      key={i}
-                      className={`text-4xl transition-all duration-500 ${
-                        shakeIndex >= i ? 'text-yellow-400 scale-125 animate-[star-pop_0.3s_ease-out]' : 'text-slate-700'
-                      }`}
-                      style={{
-                        filter: shakeIndex >= i ? 'drop-shadow(0 0 15px rgba(250,204,21,0.8))' : 'none',
-                      }}
-                    >
-                      ★
+                    <div key={i} className="relative">
+                      {shakeIndex >= i && (
+                        <div className="absolute inset-0 animate-[star-ring-pulse_0.6s_ease-out_forwards]">
+                          <div className="w-20 h-20 rounded-full border-2 border-yellow-400/40" />
+                        </div>
+                      )}
+                      <div
+                        className={`text-6xl transition-all duration-300 ${
+                          shakeIndex >= i
+                            ? 'text-yellow-400 scale-110 animate-[star-shine_0.4s_ease-out]'
+                            : 'text-slate-700/50 scale-90'
+                        }`}
+                        style={{
+                          filter: shakeIndex >= i ? 'drop-shadow(0 0 20px rgba(250,204,21,1)) drop-shadow(0 0 40px rgba(250,204,21,0.6))' : 'none',
+                        }}
+                      >
+                        ★
+                      </div>
                     </div>
                   ))}
                 </div>
 
-                {/* Pokeball */}
-                <div className={`relative inline-block ${shakeIndex > 0 && shakeIndex <= 3 ? 'animate-[pokeball-wobble_0.6s_ease-in-out]' : ''}`}>
-                  <div className="w-28 h-28 md:w-32 md:h-32 rounded-full bg-gradient-to-b from-red-500 to-red-600 border-4 border-slate-900 relative overflow-hidden shadow-[0_0_40px_rgba(239,68,68,0.3)]">
-                    <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-3 bg-slate-900" />
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white border-4 border-slate-900">
-                      <div className={`absolute inset-1 rounded-full transition-colors duration-300 ${shakeIndex > 0 ? 'bg-red-400 animate-pulse' : 'bg-slate-200'}`} />
-                    </div>
-                    <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-b from-slate-100 to-white" />
-                  </div>
-
-                  {/* Sparkles on shake */}
-                  {shakeIndex > 0 && (
-                    <div className="absolute inset-0 pointer-events-none">
-                      {[...Array(8)].map((_, i) => (
-                        <div
-                          key={i}
-                          className="absolute w-2 h-2 bg-yellow-400 rounded-full animate-[sparkle-fly_0.6s_ease-out_forwards]"
-                          style={{
-                            top: '50%',
-                            left: '50%',
-                            transform: `rotate(${i * 45}deg)`,
-                            animationDelay: `${i * 0.05}s`,
-                          }}
-                        />
-                      ))}
-                    </div>
+                {/* Premium Pokeball with intense shake */}
+                <div className="relative">
+                  {/* Energy field pulses on each shake */}
+                  {shakeIndex > 0 && shakeIndex <= 3 && (
+                    <>
+                      <div className="absolute inset-0 animate-[shake-pulse_0.6s_ease-out_forwards]">
+                        <div className="w-56 h-56 rounded-full border-4 border-red-400/30 blur-sm" style={{ transform: 'translate(-50%, -50%)', left: '50%', top: '50%' }} />
+                      </div>
+                      <div className="absolute inset-0 animate-[shake-wave_0.6s_ease-out_forwards]" style={{ animationDelay: '0.1s' }}>
+                        <div className="w-64 h-64 rounded-full border-2 border-red-400/20 blur-md" style={{ transform: 'translate(-50%, -50%)', left: '50%', top: '50%' }} />
+                      </div>
+                    </>
                   )}
+
+                  {/* Pokeball - dynamic shake based on index */}
+                  <div className={`relative ${shakeIndex > 0 && shakeIndex <= 3 ? 'animate-[intense-wobble_0.5s_cubic-bezier(0.68,-0.55,0.27,1.55)]' : ''}`}>
+                    <div className="w-40 h-40 rounded-full bg-gradient-to-br from-red-400 via-red-500 to-red-700 border-[6px] border-slate-900 relative overflow-hidden shadow-[0_0_60px_rgba(239,68,68,0.6),inset_0_-20px_40px_rgba(0,0,0,0.3)]">
+                      {/* Animated shine on top */}
+                      <div className="absolute top-4 left-6 w-12 h-10 bg-white/70 rounded-full blur-md animate-[shine-move_2s_ease-in-out_infinite]" />
+
+                      {/* Center band */}
+                      <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-4 bg-slate-900 shadow-inner" />
+
+                      {/* Center button with energy */}
+                      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-14 h-14 rounded-full bg-white border-[5px] border-slate-900 shadow-2xl">
+                        <div className={`absolute inset-2 rounded-full transition-all duration-300 ${
+                          shakeIndex > 0
+                            ? 'bg-gradient-to-br from-red-300 via-red-400 to-red-500 animate-[button-pulse_0.5s_ease-in-out_infinite]'
+                            : 'bg-gradient-to-br from-slate-100 to-slate-300'
+                        }`}>
+                          {/* Energy crackles inside button when shaking */}
+                          {shakeIndex > 0 && (
+                            <div className="absolute inset-0 rounded-full">
+                              {[...Array(6)].map((_, i) => (
+                                <div
+                                  key={i}
+                                  className="absolute w-0.5 h-3 bg-yellow-300 opacity-70 animate-[button-spark_0.3s_ease-out_infinite]"
+                                  style={{
+                                    left: '50%',
+                                    top: '50%',
+                                    transform: `rotate(${i * 60}deg) translateY(-8px)`,
+                                    animationDelay: `${i * 0.05}s`,
+                                  }}
+                                />
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Bottom white half with subtle gradient */}
+                      <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-b from-slate-50 via-white to-slate-100" />
+
+                      {/* Bottom shine */}
+                      <div className="absolute bottom-4 right-6 w-8 h-6 bg-white/50 rounded-full blur-md" />
+                    </div>
+
+                    {/* Energy burst particles on shake */}
+                    {shakeIndex > 0 && shakeIndex <= 3 && (
+                      <div className="absolute inset-0 pointer-events-none">
+                        {[...Array(16)].map((_, i) => (
+                          <div
+                            key={i}
+                            className="absolute animate-[shake-burst_0.5s_ease-out_forwards]"
+                            style={{
+                              left: '50%',
+                              top: '50%',
+                              width: '6px',
+                              height: '6px',
+                              background: 'radial-gradient(circle, rgba(250,204,21,1) 0%, rgba(250,204,21,0) 70%)',
+                              transform: `rotate(${i * (360 / 16)}deg) translateY(-70px)`,
+                              animationDelay: `${i * 0.02}s`,
+                            }}
+                          />
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Ground shadow that vibrates */}
+                    <div className={`absolute -bottom-2 left-1/2 -translate-x-1/2 w-32 h-6 bg-black/40 rounded-full blur-xl ${
+                      shakeIndex > 0 ? 'animate-[shadow-quake_0.5s_ease-in-out]' : ''
+                    }`} />
+                  </div>
                 </div>
 
-                <div className="mt-8">
-                  <span className="text-2xl text-slate-500 animate-[dots_1.5s_ease-in-out_infinite]" style={{ fontFamily: '"Press Start 2P", monospace' }}>
-                    ...
-                  </span>
+                {/* Tension indicator */}
+                <div className="mt-12 text-center">
+                  <div className="text-3xl text-slate-400 tracking-widest animate-[tension-pulse_1.2s_ease-in-out_infinite]" style={{ fontFamily: '"Press Start 2P", monospace' }}>
+                    . . .
+                  </div>
+                  <div className="mt-4 text-xs text-slate-500 animate-pulse" style={{ fontFamily: '"Press Start 2P", monospace' }}>
+                    {shakeIndex === 0 && 'CAPTURANDO...'}
+                    {shakeIndex > 0 && shakeIndex < 4 && `¡SHAKE ${shakeIndex}!`}
+                  </div>
                 </div>
               </div>
             </div>
@@ -1112,20 +1245,179 @@ export function CaptureMinigame({
           100% { transform: translateX(-50%) scale(1) translateY(0); }
         }
 
-        @keyframes throw-ball {
-          0% { transform: translateY(300px) scale(0.5); opacity: 0; }
-          30% { transform: translateY(0) scale(1); opacity: 1; }
-          50% { transform: translateY(-50px) scale(1.1); }
-          70% { transform: translateY(0) scale(1); }
-          100% { transform: translateY(0) scale(0.9); opacity: 1; }
+        /* === PREMIUM THROW ANIMATIONS === */
+        @keyframes throw-arc {
+          0% {
+            transform: translate(-50vw, 100vh) scale(0.3) rotate(0deg);
+            opacity: 0;
+          }
+          15% {
+            transform: translate(-30vw, 40vh) scale(0.6) rotate(180deg);
+            opacity: 1;
+          }
+          40% {
+            transform: translate(0, -10vh) scale(1) rotate(360deg);
+          }
+          60% {
+            transform: translate(0, 0) scale(1.1) rotate(450deg);
+          }
+          80% {
+            transform: translate(0, 3vh) scale(0.95) rotate(520deg);
+          }
+          90% {
+            transform: translate(0, 0) scale(1.05) rotate(540deg);
+          }
+          100% {
+            transform: translate(0, 0) scale(1) rotate(540deg);
+            opacity: 1;
+          }
         }
 
-        @keyframes pokeball-wobble {
-          0%, 100% { transform: rotate(0deg); }
-          20% { transform: rotate(-30deg); }
-          40% { transform: rotate(30deg); }
-          60% { transform: rotate(-20deg); }
-          80% { transform: rotate(15deg); }
+        @keyframes throw-spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(720deg); }
+        }
+
+        @keyframes motion-blur {
+          0%, 60% { opacity: 0.6; transform: scale(1.5) translateX(-20px); }
+          100% { opacity: 0; transform: scale(1) translateX(0); }
+        }
+
+        @keyframes trail-particle {
+          0% {
+            transform: translate(0, 0) scale(1);
+            opacity: 0;
+          }
+          20% {
+            opacity: 0.8;
+          }
+          100% {
+            transform: translate(
+              calc(var(--random-x, 0) * 30px),
+              calc(-80vh + var(--random-y, 0) * 20px)
+            ) scale(0);
+            opacity: 0;
+          }
+        }
+
+        @keyframes energy-pulse {
+          0% { transform: scale(0); opacity: 0; }
+          50% { transform: scale(1.5); opacity: 0.6; }
+          100% { transform: scale(2.5); opacity: 0; }
+        }
+
+        @keyframes impact-flash {
+          0%, 90% { opacity: 0; }
+          95% { opacity: 1; }
+          100% { opacity: 0; }
+        }
+
+        /* === PREMIUM SHAKE ANIMATIONS === */
+        @keyframes intense-wobble {
+          0%, 100% { transform: rotate(0deg) translateY(0); }
+          10% { transform: rotate(-15deg) translateY(-8px); }
+          20% { transform: rotate(15deg) translateY(-6px); }
+          30% { transform: rotate(-25deg) translateY(-10px); }
+          40% { transform: rotate(25deg) translateY(-8px); }
+          50% { transform: rotate(-30deg) translateY(-12px); }
+          60% { transform: rotate(30deg) translateY(-10px); }
+          70% { transform: rotate(-20deg) translateY(-6px); }
+          80% { transform: rotate(20deg) translateY(-4px); }
+          90% { transform: rotate(-10deg) translateY(-2px); }
+        }
+
+        @keyframes shake-pulse {
+          0% {
+            transform: translate(-50%, -50%) scale(0.8);
+            opacity: 0;
+          }
+          50% {
+            transform: translate(-50%, -50%) scale(1);
+            opacity: 0.6;
+          }
+          100% {
+            transform: translate(-50%, -50%) scale(1.4);
+            opacity: 0;
+          }
+        }
+
+        @keyframes shake-wave {
+          0% {
+            transform: translate(-50%, -50%) scale(0.7);
+            opacity: 0;
+          }
+          50% {
+            transform: translate(-50%, -50%) scale(1);
+            opacity: 0.4;
+          }
+          100% {
+            transform: translate(-50%, -50%) scale(1.6);
+            opacity: 0;
+          }
+        }
+
+        @keyframes shake-burst {
+          0% {
+            transform: rotate(var(--rotation, 0deg)) translateY(0) scale(1);
+            opacity: 1;
+          }
+          100% {
+            transform: rotate(var(--rotation, 0deg)) translateY(-70px) scale(0);
+            opacity: 0;
+          }
+        }
+
+        @keyframes button-pulse {
+          0%, 100% { transform: scale(1); opacity: 1; }
+          50% { transform: scale(1.1); opacity: 0.8; }
+        }
+
+        @keyframes button-spark {
+          0%, 100% { opacity: 0; transform: scale(0); }
+          50% { opacity: 1; transform: scale(1); }
+        }
+
+        @keyframes star-shine {
+          0% { transform: scale(0.8) rotate(0deg); opacity: 0; }
+          50% { transform: scale(1.2) rotate(180deg); opacity: 1; }
+          100% { transform: scale(1) rotate(360deg); opacity: 1; }
+        }
+
+        @keyframes star-ring-pulse {
+          0% {
+            transform: scale(0.5);
+            opacity: 0;
+          }
+          50% {
+            transform: scale(1.2);
+            opacity: 0.6;
+          }
+          100% {
+            transform: scale(2);
+            opacity: 0;
+          }
+        }
+
+        @keyframes shadow-quake {
+          0%, 100% { transform: translateX(-50%) scale(1, 1); }
+          25% { transform: translateX(-50%) scale(1.1, 0.9); }
+          50% { transform: translateX(-50%) scale(0.9, 1.1); }
+          75% { transform: translateX(-50%) scale(1.05, 0.95); }
+        }
+
+        @keyframes shine-move {
+          0%, 100% { transform: translateX(0); opacity: 0.7; }
+          50% { transform: translateX(10px); opacity: 0.9; }
+        }
+
+        @keyframes tension-pulse {
+          0%, 100% { opacity: 0.5; letter-spacing: 0.3em; }
+          50% { opacity: 1; letter-spacing: 0.6em; }
+        }
+
+        @keyframes float {
+          0%, 100% { transform: translateY(0); opacity: 0.3; }
+          50% { transform: translateY(-20px); opacity: 0.1; }
         }
 
         @keyframes star-pop {
