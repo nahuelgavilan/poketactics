@@ -118,6 +118,7 @@ export default function Game() {
   // Track previous phase for menu SFX
   const prevPhaseRef = useRef(gamePhase);
   const prevSelectedUnitRef = useRef(selectedUnit);
+  const isCompletingActionRef = useRef(false); // Track if deselection is from completing an action
 
   // SFX for action menu opening/closing
   useEffect(() => {
@@ -148,9 +149,15 @@ export default function Game() {
     }
 
     // Unit deselected (was unit, now null) - only when manually cancelled in MOVING phase
-    // Don't play when unit completes action (gamePhase would be SELECT after action)
-    if (prevUnit && !currentUnit && gamePhase === 'MOVING') {
+    // Don't play when completing an action (Wait/Attack)
+    // Don't play when gamePhase is SELECT (that means action completed)
+    if (prevUnit && !currentUnit && gamePhase === 'MOVING' && !isCompletingActionRef.current) {
       playSFX('unit_deselect', 0.4);
+    }
+
+    // Reset the flag after checking
+    if (isCompletingActionRef.current && !currentUnit) {
+      isCompletingActionRef.current = false;
     }
 
     prevSelectedUnitRef.current = currentUnit;
@@ -180,10 +187,12 @@ export default function Game() {
       }
 
       // No encounter - send wait to server
+      isCompletingActionRef.current = true; // Mark as completing action to suppress unit_deselect sound
       sendWait(selectedUnit.uid);
       cancelAction();
     } else {
       // Local game: use local handler
+      isCompletingActionRef.current = true; // Mark as completing action to suppress unit_deselect sound
       selectWait();
     }
   }, [selectedUnit, pendingPosition, sendMove, sendWait, selectWait, cancelAction, triggerMultiplayerEncounter, playSFX]);
