@@ -10,6 +10,7 @@ import {
   Users,
   ChevronRight
 } from 'lucide-react';
+import { useSFX } from '../hooks/useSFX';
 import type { Player } from '../types/game';
 
 interface HeaderProps {
@@ -43,6 +44,7 @@ export function Header({
 }: HeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const { playSFX } = useSFX();
 
   const isMyTurn = !isMultiplayer || myPlayer === currentPlayer;
   const isBlue = currentPlayer === 'P1';
@@ -53,15 +55,29 @@ export function Header({
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        if (menuOpen) {
+          playSFX('menu_close', 0.4);
+        }
         setMenuOpen(false);
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  }, [menuOpen, playSFX]);
+
+  // Toggle menu with sound
+  const toggleMenu = () => {
+    if (!menuOpen) {
+      playSFX('menu_open', 0.4);
+    } else {
+      playSFX('menu_close', 0.4);
+    }
+    setMenuOpen(!menuOpen);
+  };
 
   // Close menu on action
   const handleAction = (action: () => void) => {
+    playSFX('button_click', 0.5);
     setMenuOpen(false);
     action();
   };
@@ -156,7 +172,7 @@ export function Header({
         {/* Right: Menu button */}
         <div className="relative" ref={menuRef}>
           <button
-            onClick={() => setMenuOpen(!menuOpen)}
+            onClick={toggleMenu}
             className={`
               p-2 rounded-lg transition-all duration-200
               ${menuOpen

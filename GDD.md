@@ -709,17 +709,28 @@ If defender survives and can counter:
 - Audio files stored in `public/audio/music/`
 - Automatic track switching based on game state
 
-### Sound Effects (Planned)
+### Sound Effects (useSFX hook)
 
-| Event | Sound |
-|-------|-------|
-| Unit Select | Click/tap feedback |
-| Unit Move | Movement sound |
-| Attack Hit | Impact based on type |
-| Critical Hit | Enhanced impact |
-| Capture | Pokéball shake + success |
-| Victory | Fanfare |
-| Turn Change | Transition chime |
+**Implemented SFX:**
+- **Unit Select** - Tactical unit selection with subtle chime (50% volume)
+- **Unit Deselect** - Soft deselection sound (40% volume)
+- **Unit Move** - Unit movement confirmation sound (50% volume)
+- **Menu Open** - Action menu/dropdown appearing (40% volume)
+- **Menu Close** - Action menu/dropdown closing (40% volume)
+- **Button Click** - UI button press feedback (50% volume)
+
+**Technical Details:**
+- `useSFX.ts` hook manages one-shot sound effects
+- Simple audio playback with volume control
+- SFX files stored in `public/audio/sfx/`
+- Integrated in Game.tsx, Header.tsx, and StartScreen.tsx
+
+**Planned SFX:**
+- Attack hits (normal, critical, super effective, not effective)
+- Capture minigame sounds (ring hits, pokeball shake/open)
+- Evolution sounds
+- Turn transition effects
+- Healing and level-up sounds
 
 ---
 
@@ -877,6 +888,7 @@ Currently in alpha - major version stays at 0 until core features complete.
 
 | Version | Changes |
 |---------|---------|
+| **0.27.1** | Sound effects system: unit select/deselect/move, menu open/close, button clicks with useSFX hook |
 | **0.27.0** | Music system: menu theme (start screen), board theme (gameplay), battle theme (combat) with automatic transitions |
 | **0.20.0** | Ultra-premium capture: cinematic attack (slide-in/out), juicy ring with orbiting particles, GBA-style 3D buttons |
 | **0.19.0** | GBA-style capture: mini battle with attack/capture/flee, HP weakening, probability-based formula, ring timing |

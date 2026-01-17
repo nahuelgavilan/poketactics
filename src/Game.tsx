@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useGameState, useVision, useBattleStats } from './hooks';
+import { useGameState, useVision, useBattleStats, useSFX } from './hooks';
 import { useAudio } from './hooks/useAudio';
 import { useMultiplayer, ClientGameState, ActionResult } from './hooks/useMultiplayer';
 import {
@@ -93,6 +93,7 @@ export default function Game() {
 
   // Audio
   const { playMusic, stopMusic } = useAudio();
+  const { playSFX } = useSFX();
 
   // Music system - handles menu, board, and battle themes
   useEffect(() => {
@@ -114,9 +115,51 @@ export default function Game() {
     }
   }, [gameState, gamePhase, playMusic, stopMusic]);
 
+  // Track previous phase for menu SFX
+  const prevPhaseRef = useRef(gamePhase);
+  const prevSelectedUnitRef = useRef(selectedUnit);
+
+  // SFX for action menu opening/closing
+  useEffect(() => {
+    const prevPhase = prevPhaseRef.current;
+    const currentPhase = gamePhase;
+
+    // Menu opens when entering ACTION_MENU
+    if (currentPhase === 'ACTION_MENU' && prevPhase !== 'ACTION_MENU') {
+      playSFX('menu_open', 0.4);
+    }
+
+    // Menu closes when leaving ACTION_MENU (but not to MOVING or ATTACKING - those are selections)
+    if (prevPhase === 'ACTION_MENU' && currentPhase === 'SELECT') {
+      playSFX('menu_close', 0.4);
+    }
+
+    prevPhaseRef.current = currentPhase;
+  }, [gamePhase, playSFX]);
+
+  // SFX for unit selection/deselection
+  useEffect(() => {
+    const prevUnit = prevSelectedUnitRef.current;
+    const currentUnit = selectedUnit;
+
+    // Unit selected (was null, now has unit)
+    if (!prevUnit && currentUnit) {
+      playSFX('unit_select', 0.5);
+    }
+
+    // Unit deselected (was unit, now null) - only in SELECT phase
+    if (prevUnit && !currentUnit && gamePhase === 'SELECT') {
+      playSFX('unit_deselect', 0.4);
+    }
+
+    prevSelectedUnitRef.current = currentUnit;
+  }, [selectedUnit, gamePhase, playSFX]);
+
   // Multiplayer-aware action handlers
   // In multiplayer, send to server; locally, use local handlers
   const handleSelectWait = useCallback(() => {
+    playSFX('unit_move', 0.5);
+
     if (isInMultiplayerGame.current && selectedUnit && pendingPosition) {
       // In multiplayer: send move, then check for encounter, then wait
       console.log('[Multiplayer] Sending move:', selectedUnit.uid, pendingPosition);
@@ -142,7 +185,7 @@ export default function Game() {
       // Local game: use local handler
       selectWait();
     }
-  }, [selectedUnit, pendingPosition, sendMove, sendWait, selectWait, cancelAction, triggerMultiplayerEncounter]);
+  }, [selectedUnit, pendingPosition, sendMove, sendWait, selectWait, cancelAction, triggerMultiplayerEncounter, playSFX]);
 
   const handleSelectAttack = useCallback(() => {
     if (isInMultiplayerGame.current && selectedUnit && pendingPosition) {

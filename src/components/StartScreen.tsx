@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Swords, Users, BookOpen, ChevronRight, Gamepad2, Shuffle, ArrowLeft, Zap } from 'lucide-react';
+import { useSFX } from '../hooks/useSFX';
 import { VERSION } from '../constants/version';
 
 interface StartScreenProps {
@@ -44,7 +45,34 @@ export function StartScreen({ onStartGame, onHowToPlay, onMultiplayer, onDraft }
   const [showPressStart, setShowPressStart] = useState(false);
   const [submenu, setSubmenu] = useState<'main' | 'local'>('main');
 
+  const { playSFX } = useSFX();
   const sparkles = useMemo(() => generateSparkles(30), []);
+
+  // Wrapped handlers with SFX
+  const handleStartWithSFX = () => {
+    playSFX('button_click', 0.5);
+    onStartGame();
+  };
+
+  const handleHowToPlayWithSFX = () => {
+    playSFX('button_click', 0.5);
+    onHowToPlay();
+  };
+
+  const handleMultiplayerWithSFX = () => {
+    playSFX('button_click', 0.5);
+    onMultiplayer?.();
+  };
+
+  const handleDraftWithSFX = () => {
+    playSFX('button_click', 0.5);
+    onDraft?.();
+  };
+
+  const handleSubmenuToggle = () => {
+    playSFX('button_click', 0.4);
+    setSubmenu(submenu === 'main' ? 'local' : 'main');
+  };
 
   // Boot sequence
   useEffect(() => {
@@ -407,7 +435,7 @@ export function StartScreen({ onStartGame, onHowToPlay, onMultiplayer, onDraft }
                         icon={<Swords className="w-5 h-5" />}
                         label="Batalla Local"
                         sublabel="2 jugadores • Hot Seat"
-                        onClick={(e) => { e.stopPropagation(); setSubmenu('local'); }}
+                        onClick={(e) => { e.stopPropagation(); playSFX('button_click', 0.5); setSubmenu('local'); }}
                         color="blue"
                         delay={0}
                       />
@@ -417,7 +445,7 @@ export function StartScreen({ onStartGame, onHowToPlay, onMultiplayer, onDraft }
                           icon={<Users className="w-5 h-5" />}
                           label="Multijugador"
                           sublabel="Online • Crear o unirse"
-                          onClick={(e) => { e.stopPropagation(); onMultiplayer(); }}
+                          onClick={(e) => { e.stopPropagation(); handleMultiplayerWithSFX(); }}
                           color="green"
                           delay={1}
                         />
@@ -427,7 +455,7 @@ export function StartScreen({ onStartGame, onHowToPlay, onMultiplayer, onDraft }
                         icon={<BookOpen className="w-5 h-5" />}
                         label="Cómo Jugar"
                         sublabel="Tutorial y mecánicas"
-                        onClick={(e) => { e.stopPropagation(); onHowToPlay(); }}
+                        onClick={(e) => { e.stopPropagation(); handleHowToPlayWithSFX(); }}
                         color="amber"
                         delay={2}
                       />
@@ -436,7 +464,7 @@ export function StartScreen({ onStartGame, onHowToPlay, onMultiplayer, onDraft }
                     <>
                       {/* Local battle submenu */}
                       <button
-                        onClick={(e) => { e.stopPropagation(); setSubmenu('main'); }}
+                        onClick={(e) => { e.stopPropagation(); handleSubmenuToggle(); }}
                         className="flex items-center gap-2 px-3 py-2 text-slate-400 hover:text-white transition-colors text-sm"
                       >
                         <ArrowLeft className="w-4 h-4" />
@@ -447,7 +475,7 @@ export function StartScreen({ onStartGame, onHowToPlay, onMultiplayer, onDraft }
                         icon={<Zap className="w-5 h-5" />}
                         label="Batalla Rápida"
                         sublabel="Equipos aleatorios"
-                        onClick={(e) => { e.stopPropagation(); onStartGame(); }}
+                        onClick={(e) => { e.stopPropagation(); handleStartWithSFX(); }}
                         color="blue"
                         delay={0}
                       />
@@ -457,7 +485,7 @@ export function StartScreen({ onStartGame, onHowToPlay, onMultiplayer, onDraft }
                           icon={<Shuffle className="w-5 h-5" />}
                           label="Draft Mode"
                           sublabel="Ban & Pick • Competitivo"
-                          onClick={(e) => { e.stopPropagation(); onDraft(); }}
+                          onClick={(e) => { e.stopPropagation(); handleDraftWithSFX(); }}
                           color="purple"
                           delay={1}
                         />
