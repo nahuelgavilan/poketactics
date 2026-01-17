@@ -94,15 +94,22 @@ export default function Game() {
   // Audio
   const { playMusic, stopMusic } = useAudio();
 
-  // Battle music - starts when clicking "Atacar", plays through battle
+  // Music system - handles menu, board, and battle themes
   useEffect(() => {
     const state = gameState as string;
     const phase = gamePhase as string;
-    if (phase === 'ATTACKING') {
-      // Start music when entering attack phase (clicked Atacar)
+
+    if (state === 'menu') {
+      // Menu theme - plays on start screen
+      playMusic('menu_theme', { loop: true, volume: 0.5 });
+    } else if (state === 'playing' && (phase === 'SELECT' || phase === 'MOVING' || phase === 'ACTION_MENU')) {
+      // Board theme - plays during normal gameplay (not battle)
+      playMusic('board_theme', { loop: true, volume: 0.5 });
+    } else if (phase === 'ATTACKING' || state === 'battle' || state === 'battle_zoom') {
+      // Battle theme - plays during attack phase and battle cinematics
       playMusic('battle_theme', { loop: true, volume: 0.6 });
-    } else if (state !== 'battle' && state !== 'battle_zoom' && phase !== 'ATTACKING') {
-      // Stop music when exiting battle/attack states
+    } else if (state !== 'playing' && state !== 'menu' && state !== 'battle' && state !== 'battle_zoom') {
+      // Stop music during other states (victory, capture, etc.)
       stopMusic(500); // 500ms fade out
     }
   }, [gameState, gamePhase, playMusic, stopMusic]);

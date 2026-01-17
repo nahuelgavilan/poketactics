@@ -1,6 +1,8 @@
 import { useRef, useCallback, useEffect } from 'react';
 
 const AUDIO_PATHS = {
+  menu_theme: '/audio/music/menu_theme.mp3',
+  board_theme: '/audio/music/board_theme.mp3',
   battle_theme: '/audio/music/battle_theme.mp3',
 } as const;
 

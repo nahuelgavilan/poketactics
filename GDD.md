@@ -694,7 +694,22 @@ If defender survives and can counter:
 
 ---
 
-## Audio (Planned)
+## Audio
+
+### Music System (useAudio hook)
+
+**Implemented Tracks:**
+- **Menu Theme** - Orchestral adventure theme, plays on start screen (looped at 50% volume)
+- **Board Theme** - Strategic gameplay music, plays during normal turn-based play (looped at 50% volume)
+- **Battle Theme** - Intense tactical combat music, plays during attack phase and battles (looped at 60% volume)
+
+**Technical Details:**
+- `useAudio.ts` hook manages audio playback
+- Supports loop, volume control, and fade-out transitions
+- Audio files stored in `public/audio/music/`
+- Automatic track switching based on game state
+
+### Sound Effects (Planned)
 
 | Event | Sound |
 |-------|-------|
@@ -862,6 +877,7 @@ Currently in alpha - major version stays at 0 until core features complete.
 
 | Version | Changes |
 |---------|---------|
+| **0.27.0** | Music system: menu theme (start screen), board theme (gameplay), battle theme (combat) with automatic transitions |
 | **0.20.0** | Ultra-premium capture: cinematic attack (slide-in/out), juicy ring with orbiting particles, GBA-style 3D buttons |
 | **0.19.0** | GBA-style capture: mini battle with attack/capture/flee, HP weakening, probability-based formula, ring timing |
 | **0.18.0** | Premium screens: GBA boot sequence, letter-by-letter title, team showcase, confetti victory, version badges |

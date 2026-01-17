@@ -9,97 +9,145 @@
 
 ## MÚSICA (Suno.ai)
 
-### 1. Menu Theme - `menu_theme.mp3`
-**Duración:** 1:30 loop
-
-```
-Orchestral adventure theme, heroic and hopeful.
-Strings, brass, soft piano melody. 120 BPM.
-Video game main menu style. Loopable.
-```
-
-**Tags:** `orchestral, adventure, heroic, video game, rpg, instrumental`
+**Estilo:** Orquestal moderno inspirado en Pokemon Sword/Shield y Fire Emblem Three Houses. Cada tema debe tener presencia cinematográfica, emotividad táctica, y profesionalismo de juego AAA. Transiciones suaves entre temas requeridas.
 
 ---
 
-### 2. Battle Theme - `battle_theme.mp3`
+### 1. Menu Theme - `menu_theme.mp3` ✅ IMPLEMENTED
 **Duración:** 1:30 loop
 
 ```
-Intense orchestral battle music, strategic combat feel.
-Driving strings, percussion, brass hits. 140 BPM.
-Tactical RPG style. Loopable.
+Heroic orchestral adventure anthem for main menu - soaring strings with hopeful brass fanfares,
+gentle piano melody weaving through. Like standing before a grand strategic campaign.
+Pokemon Sword/Shield title screen meets Fire Emblem main theme.
+Inspiring, epic scope, ready for adventure. Loopable at 50% volume. 120 BPM.
 ```
 
-**Tags:** `battle, orchestral, intense, tactical, video game, action`
+**Tags:** `orchestral, adventure, heroic, main menu, epic, tactical rpg, instrumental, pokemon style`
+
+**Mood:** Majestic, hopeful, grand adventure awaiting
 
 ---
 
-### 3. Victory - `victory.mp3`
+### 2. Board Theme - `board_theme.mp3` ✅ IMPLEMENTED
+**Duración:** 1:30 loop
+
+```
+Strategic gameplay orchestration - thoughtful strings with tactical percussion rhythm,
+like commanding units on a battlefield. Fire Emblem map theme meets Advance Wars calm intensity.
+Focuses the mind for strategic decisions, suspenseful but not stressful.
+Loopable at 50% volume. 110 BPM, measured and deliberate.
+```
+
+**Tags:** `orchestral, strategic, tactical, gameplay, fire emblem, advance wars, thinking music, instrumental`
+
+**Mood:** Focused, strategic, thoughtful command
+
+---
+
+### 3. Battle Theme - `battle_theme.mp3` ✅ IMPLEMENTED
+**Duración:** 1:30 loop
+
+```
+Intense tactical combat orchestration - driving strings with aggressive percussion,
+powerful brass hits marking attacks. Like Fire Emblem battle animations.
+Adrenaline and strategy combined, heroic clash of forces.
+Loopable at 60% volume. 140 BPM, energetic and fierce.
+```
+
+**Tags:** `battle, orchestral, intense, tactical combat, fire emblem, pokemon battle, action, heroic, instrumental`
+
+**Mood:** Intense, heroic, strategic warfare
+
+---
+
+### 4. Victory - `victory.mp3`
 **Duración:** 12 segundos
 
 ```
-Short victory fanfare, triumphant brass and strings.
-Celebratory, heroic resolution. 12 seconds only.
+Short triumphant fanfare - glorious brass and soaring strings crescendo,
+Fire Emblem victory theme style. Strategic campaign won, commander's triumph.
+Celebratory but tactical, heroic resolution. Pokemon battle victory feel.
+12 seconds exactly - intro, peak, resolution.
 ```
 
-**Tags:** `victory, fanfare, short, triumphant, orchestral`
+**Tags:** `victory, fanfare, short, triumphant, orchestral, fire emblem, tactical rpg`
+
+**Mood:** Triumphant, celebratory, strategic success
 
 ---
 
-### 4. Defeat - `defeat.mp3`
+### 5. Defeat - `defeat.mp3`
 **Duración:** 10 segundos
 
 ```
-Short melancholic theme, sad strings descending.
-Game over feeling, reflective. 10 seconds only.
+Melancholic strategic loss - somber strings descending with quiet brass farewell,
+Fire Emblem "unit fallen" gravitas. Tactical campaign lost, respectful defeat.
+Not crushing, but reflective. Honor in the attempt.
+10 seconds exactly - descending resolution.
 ```
 
-**Tags:** `defeat, sad, short, melancholic, strings`
+**Tags:** `defeat, melancholic, short, somber, orchestral, tactical loss, respectful`
+
+**Mood:** Somber, reflective, tactical loss
 
 ---
 
-### 5. VS Theme - `vs_theme.mp3`
+### 6. VS Theme - `vs_theme.mp3`
 **Duración:** 4 segundos
 
 ```
-Epic confrontation sting, dramatic orchestral hit.
-Two rivals facing off moment. 4 seconds only.
+Epic confrontation sting - dramatic orchestral slam with rising tension,
+two tactical commanders facing off. Fire Emblem pre-battle clash energy.
+Sharp, decisive, moment before combat begins. Rival armies meet.
+4 seconds exactly - build and hit.
 ```
 
-**Tags:** `vs, epic, dramatic, short, confrontation, orchestral`
+**Tags:** `vs, epic, dramatic, short, confrontation, orchestral, pre-battle, tension`
+
+**Mood:** Tense, epic confrontation moment
 
 ---
 
-### 6. Evolution - `evolution.mp3`
+### 7. Evolution - `evolution.mp3`
 **Duración:** 5 segundos
 
 ```
-Magical transformation jingle, shimmering and powerful.
-Rising intensity, triumphant reveal. 5 seconds only.
+Magical transformation crescendo - shimmering strings ascending with triumphant brass reveal,
+Pokemon evolution complete! Strategic power-up achieved, new form unveiled.
+Rising intensity to heroic peak. Mystical and powerful.
+5 seconds exactly - build to triumphant reveal.
 ```
 
-**Tags:** `evolution, magic, transformation, short, epic`
+**Tags:** `evolution, magic, transformation, short, epic, pokemon, power-up, orchestral`
+
+**Mood:** Mystical, triumphant transformation
 
 ---
 
-### 7. Capture Success - `capture_success.mp3`
+### 8. Capture Success - `capture_success.mp3`
 **Duración:** 3 segundos
 
 ```
-Quick celebration jingle, bright and rewarding.
-"Got it!" feeling. 3 seconds only.
+Quick triumphant capture jingle - bright chime cascade with sparkle finish,
+classic Pokemon "Gotcha!" feeling. Strategic acquisition successful, new ally obtained.
+Rewarding, satisfying, tactical roster expanded.
+3 seconds exactly - quick celebration.
 ```
 
-**Tags:** `capture, success, jingle, short, happy`
+**Tags:** `capture, success, jingle, short, pokemon, rewarding, bright, celebration`
+
+**Mood:** Rewarding, joyful acquisition
 
 ---
 
 ## EFECTOS DE SONIDO (ElevenLabs)
 
+**Estilo de SFX:** GBA-era tactical RPG inspirado en Fire Emblem, Advance Wars, y Pokemon Gen 3-5.
+
 Usa este prefijo para todos:
 ```
-Video game sound effect, clean, professional quality.
+Professional video game sound effect, GBA tactical RPG style
 ```
 
 ---
@@ -108,27 +156,27 @@ Video game sound effect, clean, professional quality.
 
 **8. board_zoom.mp3** (0.5s)
 ```
-Dramatic zoom whoosh, camera rushing forward
+Dramatic whoosh with rising pitch, camera rushing forward into battle
 ```
 
 **9. vs_slam.mp3** (0.4s)
 ```
-Heavy impact slam, metal hitting surface
+Heavy metallic impact, sharp clash
 ```
 
 **10. tile_slide.mp3** (0.3s)
 ```
-UI element sliding into place, smooth whoosh
+Smooth glass whoosh, UI element sliding quickly
 ```
 
 **11. spiral_wipe.mp3** (0.7s)
 ```
-Swirling transition sound, accelerating whoosh to center
+Swirling acceleration toward center, magical energy building
 ```
 
 **12. battle_flash.mp3** (0.2s)
 ```
-Bright flash sound, quick magical burst
+Sharp bright flash, quick energy burst
 ```
 
 ---
@@ -137,32 +185,32 @@ Bright flash sound, quick magical burst
 
 **13. attack_hit.mp3** (0.3s)
 ```
-Punch impact, satisfying hit sound
+Satisfying punch impact, clean hit sound
 ```
 
 **14. critical_hit.mp3** (0.4s)
 ```
-Powerful impact with extra punch, dramatic hit
+Explosive impact with sparkle burst, powerful hit
 ```
 
 **15. super_effective.mp3** (0.4s)
 ```
-Enhanced hit with sparkle, extra damage feeling
+Triumphant sparkle cascade, rising bright chime
 ```
 
 **16. not_effective.mp3** (0.3s)
 ```
-Soft muffled hit, blocked or resisted
+Soft muffled thud, weak impact with descending tone
 ```
 
 **17. unit_faint.mp3** (0.6s)
 ```
-Defeated sound, descending tone with thud
+Descending tone, soft defeat sound fading out
 ```
 
 **18. counter_alert.mp3** (0.3s)
 ```
-Warning alert, quick attention sound
+Sharp alert chime, quick danger warning
 ```
 
 ---
@@ -171,47 +219,47 @@ Warning alert, quick attention sound
 
 **19. wild_encounter.mp3** (0.5s)
 ```
-Surprise encounter alert, attention grabbing
+Surprise alert sting, magical shimmer with tension
 ```
 
 **20. ring_hit_perfect.mp3** (0.2s)
 ```
-Perfect timing chime, rewarding bright sound
+Bright rewarding chime, crystalline success ping
 ```
 
 **21. ring_hit_good.mp3** (0.2s)
 ```
-Good timing click, confirmation sound
+Pleasant confirmation click, soft sparkle
 ```
 
 **22. ring_miss.mp3** (0.2s)
 ```
-Miss sound, soft error buzz
+Soft disappointed buzz, descending error tone
 ```
 
 **23. pokeball_throw.mp3** (0.3s)
 ```
-Throwing whoosh, object flying through air
+Throwing whoosh with spin, object flying through air
 ```
 
 **24. pokeball_shake.mp3** (0.3s)
 ```
-Wobble rattle, tense anticipation shake
+Metallic rattle wobble, tense shake
 ```
 
 **25. pokeball_open.mp3** (0.3s)
 ```
-Energy release pop, magical burst open
+Energy burst pop, magical release
 ```
 
 **26. capture_fail.mp3** (0.4s)
 ```
-Escape sound, break free pop with disappointment
+Disappointing pop with descending tone, escape sound
 ```
 
 **27. flee_success.mp3** (0.4s)
 ```
-Running away whoosh, quick retreat
+Quick whoosh with ascending notes, running away fast
 ```
 
 ---
@@ -220,17 +268,17 @@ Running away whoosh, quick retreat
 
 **28. evolution_start.mp3** (0.4s)
 ```
-Magical energy building, transformation beginning
+Magical energy gathering, rising shimmer
 ```
 
 **29. evolution_glow.mp3** (1.5s loop)
 ```
-Sustained magical shimmer, glowing energy hum
+Sustained shimmering hum, pulsing magical energy
 ```
 
 **30. evolution_complete.mp3** (0.5s)
 ```
-Reveal burst, triumphant transformation finish
+Triumphant burst, fanfare accent revealing transformation
 ```
 
 ---
@@ -239,32 +287,32 @@ Reveal burst, triumphant transformation finish
 
 **31. unit_select.mp3** (0.2s)
 ```
-Soft click with chime, selection confirm
+Crisp click with subtle chime, selection confirm
 ```
 
 **32. unit_move.mp3** (0.4s)
 ```
-Quick footstep whoosh, movement sound
+Quick footstep glide with soft whoosh, movement sound
 ```
 
 **33. button_click.mp3** (0.15s)
 ```
-Soft button press click
+Soft menu click, tactile button press
 ```
 
 **34. menu_open.mp3** (0.2s)
 ```
-Panel appearing sound, ascending blip
+Ascending blip, panel appearing
 ```
 
 **35. menu_close.mp3** (0.2s)
 ```
-Panel closing sound, descending blip
+Descending blip, panel closing
 ```
 
 **36. error.mp3** (0.2s)
 ```
-Invalid action buzz, soft error
+Soft buzz, gentle invalid action tone
 ```
 
 ---
@@ -273,22 +321,22 @@ Invalid action buzz, soft error
 
 **37. turn_end.mp3** (0.4s)
 ```
-Phase transition whoosh
+Transition whoosh, phase ending smoothly
 ```
 
 **38. turn_start.mp3** (0.3s)
 ```
-Your turn notification chime
+Bright notification chime, your turn alert
 ```
 
 **39. heal.mp3** (0.6s)
 ```
-Healing sparkle sound, warm restoration
+Warm sparkle cascade, soothing restoration chime
 ```
 
 **40. level_up.mp3** (0.5s)
 ```
-Stat increase jingle, rising bright sound
+Bright ascending jingle, stat increase celebration
 ```
 
 ---
@@ -298,8 +346,9 @@ Stat increase jingle, rising bright sound
 ```
 public/audio/
 ├── music/
-│   ├── menu_theme.mp3
-│   ├── battle_theme.mp3
+│   ├── menu_theme.mp3          ✅ IMPLEMENTED
+│   ├── board_theme.mp3         ✅ IMPLEMENTED
+│   ├── battle_theme.mp3        ✅ IMPLEMENTED
 │   ├── victory.mp3
 │   ├── defeat.mp3
 │   ├── vs_theme.mp3
