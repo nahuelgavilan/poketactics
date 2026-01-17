@@ -15,9 +15,10 @@
  * don't trigger version bumps unless they include breaking changes.
  */
 
-export const VERSION = '0.27.1';
+export const VERSION = '0.27.2';
 
 // Version history (Alpha - v0.x.x):
+// 0.27.2 - Capture minigame SFX: wild encounter, ring hits (perfect/good/miss), pokeball throw/shake/open, capture fail, flee success
 // 0.27.1 - Sound effects system: unit select/deselect/move, menu open/close, button clicks with useSFX hook
 // 0.27.0 - Music system: menu theme (start screen), board theme (gameplay), battle theme (combat) with automatic transitions
 // 0.26.2 - Movement fix: Can now walk through friendly units (but not stop on them)

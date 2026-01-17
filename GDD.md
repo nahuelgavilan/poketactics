@@ -712,6 +712,8 @@ If defender survives and can counter:
 ### Sound Effects (useSFX hook)
 
 **Implemented SFX:**
+
+*UI Sounds:*
 - **Unit Select** - Tactical unit selection with subtle chime (50% volume)
 - **Unit Deselect** - Soft deselection sound (40% volume)
 - **Unit Move** - Unit movement confirmation sound (50% volume)
@@ -719,15 +721,25 @@ If defender survives and can counter:
 - **Menu Close** - Action menu/dropdown closing (40% volume)
 - **Button Click** - UI button press feedback (50% volume)
 
+*Capture Minigame Sounds:*
+- **Wild Encounter** - Surprise encounter alert (60% volume)
+- **Ring Hit Perfect** - Perfect timing reward chime (60% volume)
+- **Ring Hit Good** - Good timing confirmation (50% volume)
+- **Ring Miss** - Timing miss feedback (40% volume)
+- **Pokeball Throw** - Pokeball launch sound (60% volume)
+- **Pokeball Shake** - Tense wobble sound, plays 3 times (50% volume)
+- **Pokeball Open** - Pokemon breaks free (60% volume)
+- **Capture Fail** - Escape sound after pokeball opens (50% volume)
+- **Flee Success** - Successful retreat from encounter (60% volume)
+
 **Technical Details:**
 - `useSFX.ts` hook manages one-shot sound effects
 - Simple audio playback with volume control
 - SFX files stored in `public/audio/sfx/`
-- Integrated in Game.tsx, Header.tsx, and StartScreen.tsx
+- Integrated in Game.tsx, Header.tsx, StartScreen.tsx, and CaptureMinigame.tsx
 
 **Planned SFX:**
 - Attack hits (normal, critical, super effective, not effective)
-- Capture minigame sounds (ring hits, pokeball shake/open)
 - Evolution sounds
 - Turn transition effects
 - Healing and level-up sounds
@@ -888,6 +900,7 @@ Currently in alpha - major version stays at 0 until core features complete.
 
 | Version | Changes |
 |---------|---------|
+| **0.27.2** | Capture minigame SFX: wild encounter, ring hits (perfect/good/miss), pokeball throw/shake/open, capture fail, flee success |
 | **0.27.1** | Sound effects system: unit select/deselect/move, menu open/close, button clicks with useSFX hook |
 | **0.27.0** | Music system: menu theme (start screen), board theme (gameplay), battle theme (combat) with automatic transitions |
 | **0.20.0** | Ultra-premium capture: cinematic attack (slide-in/out), juicy ring with orbiting particles, GBA-style 3D buttons |

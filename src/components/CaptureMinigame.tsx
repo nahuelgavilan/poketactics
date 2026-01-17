@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { getAnimatedFrontSprite } from '../utils/sprites';
+import { useSFX } from '../hooks/useSFX';
 import type { PokemonTemplate, Player, PokemonType } from '../types/game';
 
 interface CaptureMinigameProps {
@@ -86,6 +87,7 @@ export function CaptureMinigame({
   onFail,
   onFlee
 }: CaptureMinigameProps) {
+  const { playSFX } = useSFX();
   const [phase, setPhase] = useState<Phase>('flash');
   const [wildHp, setWildHp] = useState(pokemon.hp);
   const [hasAttacked, setHasAttacked] = useState(false);
@@ -126,12 +128,15 @@ export function CaptureMinigame({
   // Intro sequence
   useEffect(() => {
     const timers: ReturnType<typeof setTimeout>[] = [];
-    timers.push(setTimeout(() => setPhase('alert'), 150));
+    timers.push(setTimeout(() => {
+      playSFX('wild_encounter', 0.6);
+      setPhase('alert');
+    }, 150));
     timers.push(setTimeout(() => setPhase('silhouette'), 700));
     timers.push(setTimeout(() => setPhase('reveal'), 1400));
     timers.push(setTimeout(() => setPhase('battle'), 2200));
     return () => timers.forEach(t => clearTimeout(t));
-  }, []);
+  }, [playSFX]);
 
   // Attack sequence
   const handleAttack = useCallback(() => {
@@ -196,6 +201,15 @@ export function CaptureMinigame({
   }, [phase]);
 
   const completeRing = useCallback((ringIndex: number, quality: RingResult) => {
+    // Play ring sound based on quality
+    if (quality === 'perfect') {
+      playSFX('ring_hit_perfect', 0.6);
+    } else if (quality === 'great' || quality === 'good') {
+      playSFX('ring_hit_good', 0.5);
+    } else {
+      playSFX('ring_miss', 0.4);
+    }
+
     setRingResults(prev => {
       const newResults = [...prev] as [RingResult, RingResult, RingResult];
       newResults[ringIndex] = quality;
@@ -228,6 +242,7 @@ export function CaptureMinigame({
           }, 16);
         }, 300);
       } else {
+        playSFX('pokeball_throw', 0.6);
         setPhase('throw');
         setTimeout(() => {
           setPhase('shaking');
@@ -235,7 +250,7 @@ export function CaptureMinigame({
         }, 1000);
       }
     }, 500);
-  }, []);
+  }, [playSFX]);
 
   const handleRingTap = useCallback(() => {
     const ringIndex = phase === 'ring1' ? 0 : phase === 'ring2' ? 1 : phase === 'ring3' ? 2 : -1;
@@ -263,23 +278,41 @@ export function CaptureMinigame({
     setCaptureSuccess(success);
 
     const shakeTimers: ReturnType<typeof setTimeout>[] = [];
-    shakeTimers.push(setTimeout(() => setShakeIndex(1), 700));
-    shakeTimers.push(setTimeout(() => setShakeIndex(2), 1400));
-    shakeTimers.push(setTimeout(() => setShakeIndex(3), 2100));
+    shakeTimers.push(setTimeout(() => {
+      playSFX('pokeball_shake', 0.5);
+      setShakeIndex(1);
+    }, 700));
+    shakeTimers.push(setTimeout(() => {
+      playSFX('pokeball_shake', 0.5);
+      setShakeIndex(2);
+    }, 1400));
+    shakeTimers.push(setTimeout(() => {
+      playSFX('pokeball_shake', 0.5);
+      setShakeIndex(3);
+    }, 2100));
     shakeTimers.push(setTimeout(() => setPhase('result'), 2800));
 
     return () => shakeTimers.forEach(t => clearTimeout(t));
-  }, [phase, baseRate, hpBonus, ringBonus]);
+  }, [phase, baseRate, hpBonus, ringBonus, playSFX]);
 
   // Result handler - pass damageTaken to callbacks
   useEffect(() => {
     if (phase !== 'result') return;
+
+    // Play appropriate sound based on capture result
+    if (captureSuccess) {
+      // Success - no sound here (visual effect plays)
+    } else {
+      playSFX('pokeball_open', 0.6);
+      setTimeout(() => playSFX('capture_fail', 0.5), 400);
+    }
+
     const timer = setTimeout(() => {
       if (captureSuccess) onSuccess(damageTaken);
       else onFail(damageTaken);
     }, 2500);
     return () => clearTimeout(timer);
-  }, [phase, captureSuccess, damageTaken, onSuccess, onFail]);
+  }, [phase, captureSuccess, damageTaken, onSuccess, onFail, playSFX]);
 
   // Cleanup
   useEffect(() => {
@@ -290,8 +323,9 @@ export function CaptureMinigame({
 
   const handleFlee = useCallback(() => {
     if (phase !== 'battle') return;
+    playSFX('flee_success', 0.6);
     onFlee(damageTaken); // Pass damage taken (usually 0 if fleeing without attacking)
-  }, [phase, damageTaken, onFlee]);
+  }, [phase, damageTaken, onFlee, playSFX]);
 
   const hpPercentage = (wildHp / pokemon.hp) * 100;
   const isRingPhase = phase === 'ring1' || phase === 'ring2' || phase === 'ring3';
