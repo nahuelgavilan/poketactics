@@ -443,6 +443,12 @@ export function useGameState(): UseGameStateReturn {
 
     // Phase: MOVING - selecting move destination
     if (gamePhase === 'MOVING' && selectedUnit) {
+      // Click on same selected unit: deselect it
+      if (clickedUnit && clickedUnit.uid === selectedUnit.uid) {
+        resetSelection();
+        return;
+      }
+
       // Click on different own unit: switch to it
       if (isOwnActiveUnit(clickedUnit) && clickedUnit!.uid !== selectedUnit.uid) {
         setSelectedUnit(clickedUnit!);

@@ -147,8 +147,9 @@ export default function Game() {
       playSFX('unit_select', 0.5);
     }
 
-    // Unit deselected (was unit, now null) - only in SELECT phase
-    if (prevUnit && !currentUnit && gamePhase === 'SELECT') {
+    // Unit deselected (was unit, now null) - only when manually cancelled in MOVING phase
+    // Don't play when unit completes action (gamePhase would be SELECT after action)
+    if (prevUnit && !currentUnit && gamePhase === 'MOVING') {
       playSFX('unit_deselect', 0.4);
     }
 
