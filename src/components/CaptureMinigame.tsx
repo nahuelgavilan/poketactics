@@ -1275,7 +1275,7 @@ export function CaptureMinigame({
 
         @keyframes throw-spin {
           0% { transform: rotate(0deg); }
-          100% { transform: rotate(720deg); }
+          100% { transform: rotate(1080deg); }
         }
 
         @keyframes motion-blur {

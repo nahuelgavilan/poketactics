@@ -443,12 +443,6 @@ export function useGameState(): UseGameStateReturn {
 
     // Phase: MOVING - selecting move destination
     if (gamePhase === 'MOVING' && selectedUnit) {
-      // Click on same selected unit: deselect it
-      if (clickedUnit && clickedUnit.uid === selectedUnit.uid) {
-        resetSelection();
-        return;
-      }
-
       // Click on different own unit: switch to it
       if (isOwnActiveUnit(clickedUnit) && clickedUnit!.uid !== selectedUnit.uid) {
         setSelectedUnit(clickedUnit!);
@@ -820,8 +814,20 @@ export function useGameState(): UseGameStateReturn {
     const attacks = calculateAttackRange(movedUnit, nextUnits);
     setAttackRange(attacks);
 
+    // AUTO-ATTACK if only 1 enemy in range
+    if (attacks.length === 1) {
+      const target = nextUnits.find(u => u.x === attacks[0].x && u.y === attacks[0].y);
+      if (target) {
+        setAttackRange([]);
+        setGameState('battle_zoom');
+        setBattleData(createBattleData(movedUnit, target, map));
+        return;
+      }
+    }
+
+    // Show selector for 2+ enemies
     setGamePhase('ATTACKING');
-  }, [selectedUnit, pendingPosition, attackRange, units]);
+  }, [selectedUnit, pendingPosition, attackRange, units, map]);
 
   // Action menu: select wait - move unit to pending position and end turn
   const selectWait = useCallback(() => {
