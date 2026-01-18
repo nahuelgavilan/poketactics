@@ -50,7 +50,7 @@ interface UseMultiplayerReturn {
   // Actions
   connect: () => void;
   disconnect: () => void;
-  createRoom: () => void;
+  createRoom: (gameMode: 'quick' | 'draft') => void;
   joinRoom: (code: string) => void;
   startGame: () => void;
 
@@ -181,13 +181,13 @@ export function useMultiplayer(): UseMultiplayerReturn {
     setError(null);
   }, []);
 
-  const createRoom = useCallback(() => {
+  const createRoom = useCallback((gameMode: 'quick' | 'draft') => {
     if (!socketRef.current?.connected) {
       setError('No conectado al servidor');
       return;
     }
     setRoomStatus('creating');
-    socketRef.current.emit('create-room');
+    socketRef.current.emit('create-room', { gameMode });
   }, []);
 
   const joinRoom = useCallback((code: string) => {

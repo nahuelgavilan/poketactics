@@ -26,7 +26,7 @@ export class RoomManager {
   /**
    * Create a new room
    */
-  createRoom(hostId: string): string {
+  createRoom(hostId: string, gameMode: 'quick' | 'draft' = 'quick'): string {
     // Clean up any existing room for this player
     this.leaveRoom(hostId);
 
@@ -35,6 +35,7 @@ export class RoomManager {
       id: roomId,
       hostId,
       guestId: null,
+      gameMode,
       game: null,
       createdAt: new Date()
     };

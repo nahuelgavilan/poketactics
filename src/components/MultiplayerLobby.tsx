@@ -13,7 +13,7 @@ interface MultiplayerLobbyProps {
   myPlayer: Player | null;
   error: string | null;
   connect: () => void;
-  createRoom: () => void;
+  createRoom: (gameMode: 'quick' | 'draft') => void;
   joinRoom: (code: string) => void;
   startGame: () => void;
 }
@@ -131,7 +131,7 @@ export function MultiplayerLobby({
             <div className="space-y-4">
               {/* Create room */}
               <button
-                onClick={createRoom}
+                onClick={() => createRoom(gameMode)}
                 disabled={!isConnected}
                 className="w-full py-4 px-6 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 disabled:from-slate-600 disabled:to-slate-700 disabled:cursor-not-allowed rounded-xl text-white font-bold text-lg transition-all shadow-lg"
               >

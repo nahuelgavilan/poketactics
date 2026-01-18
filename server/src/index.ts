@@ -88,11 +88,11 @@ io.on('connection', (socket) => {
   console.log(`Player connected: ${socket.id}`);
 
   // Create a new room
-  socket.on('create-room', () => {
-    const roomId = roomManager.createRoom(socket.id);
+  socket.on('create-room', ({ gameMode }) => {
+    const roomId = roomManager.createRoom(socket.id, gameMode);
     socket.join(roomId);
     socket.emit('room-created', roomId);
-    console.log(`Room created: ${roomId} by ${socket.id}`);
+    console.log(`Room created: ${roomId} by ${socket.id} (mode: ${gameMode})`);
   });
 
   // Join an existing room

@@ -9,6 +9,7 @@ export interface Room {
   id: string;
   hostId: string;
   guestId: string | null;
+  gameMode: 'quick' | 'draft';
   game: ServerGameState | null;
   createdAt: Date;
 }
@@ -98,7 +99,7 @@ export interface ServerToClientEvents {
 
 // Socket events - Client to Server
 export interface ClientToServerEvents {
-  'create-room': () => void;
+  'create-room': (data: { gameMode: 'quick' | 'draft' }) => void;
   'join-room': (roomId: string) => void;
   'start-game': () => void;
   'action-move': (data: { unitId: string; x: number; y: number }) => void;
