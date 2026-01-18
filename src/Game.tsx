@@ -20,7 +20,7 @@ import {
 import { CaptureMinigame } from './components/CaptureMinigame';
 import { StartScreen } from './components/StartScreen';
 import { HowToPlay } from './components/HowToPlay';
-import type { Position, TerrainType, Unit, GameMap, PokemonTemplate, EvolutionData } from './types/game';
+import type { Position, TerrainType, Unit, GameMap, PokemonTemplate, EvolutionData, CaptureData, BattleData } from './types/game';
 
 export default function Game() {
   const {
@@ -169,33 +169,31 @@ export default function Game() {
     playSFX('unit_move', 0.5);
 
     if (isInMultiplayerGame.current && selectedUnit && pendingPosition) {
-      // In multiplayer: send move, then check for encounter, then wait
+      // In multiplayer: send move to server
+      // Server will check for encounters and respond with action-result
       console.log('[Multiplayer] Sending move:', selectedUnit.uid, pendingPosition);
+
+      // Optimistic update: show movement immediately
+      const movedUnit = { ...selectedUnit, x: pendingPosition.x, y: pendingPosition.y };
+      setUnits(prev => prev.map(u => u.uid === selectedUnit.uid ? movedUnit : u));
+
+      // Send move to server
       sendMove(selectedUnit.uid, pendingPosition.x, pendingPosition.y);
 
-      // Create a "moved" unit to check for encounters at the new position
-      const movedUnit = { ...selectedUnit, x: pendingPosition.x, y: pendingPosition.y };
+      // Server will respond with:
+      // - action-result type='move' with optional encounter
+      // - If no encounter: will also send action-wait
+      // The onActionResult handler will deal with encounters
 
-      // Check for wild encounter at the new position (client-side 30% chance)
-      if (triggerMultiplayerEncounter(movedUnit)) {
-        // Encounter triggered - minigame will show
-        // After minigame, capture result will be handled
-        // Don't send wait yet - it will happen after minigame resolves
-        console.log('[Multiplayer] Wild encounter triggered!');
-        cancelAction();
-        return;
-      }
-
-      // No encounter - send wait to server
-      isCompletingActionRef.current = true; // Mark as completing action to suppress unit_deselect sound
-      sendWait(selectedUnit.uid);
+      // Mark as completing action to suppress unit_deselect sound
+      isCompletingActionRef.current = true;
       cancelAction();
     } else {
       // Local game: use local handler
       isCompletingActionRef.current = true; // Mark as completing action to suppress unit_deselect sound
       selectWait();
     }
-  }, [selectedUnit, pendingPosition, sendMove, sendWait, selectWait, cancelAction, triggerMultiplayerEncounter, playSFX]);
+  }, [selectedUnit, pendingPosition, sendMove, selectWait, cancelAction, setUnits, playSFX]);
 
   const handleSelectAttack = useCallback(() => {
     if (isInMultiplayerGame.current && selectedUnit && pendingPosition) {
@@ -478,21 +476,76 @@ export default function Game() {
     onActionResult.current = (result: ActionResult) => {
       console.log('[Multiplayer] Action result from server:', result);
 
-      // Handle attack results - trigger battle animation
+      // Handle move with encounter - server detected wild pokemon
+      if (result.type === 'move' && result.encounter) {
+        console.log('[Multiplayer] Server detected encounter!', result.encounter.pokemon.name);
+
+        // Create capture data from server's encounter
+        const captureData: CaptureData = {
+          pokemon: result.encounter.pokemon,
+          player: myPlayer!,
+          spawnPos: result.encounter.spawnPos
+        };
+
+        // Store unit ID for when capture completes
+        pendingCaptureUnitRef.current = result.unitId;
+
+        // Show capture minigame
+        setCaptureData(captureData);
+        setGameState('capture_minigame');
+        return;
+      }
+
+      // Handle attack results - trigger battle animation WITH battle_zoom
       if (result.type === 'attack' && pendingBattleRef.current) {
         const { attackerId, defenderId } = pendingBattleRef.current;
-        pendingBattleRef.current = null;
+
+        // Find units for battle data
+        const attacker = units.find(u => u.uid === attackerId);
+        const defender = units.find(u => u.uid === defenderId);
+
+        if (!attacker || !defender) {
+          console.error('[Multiplayer] Could not find units for battle:', attackerId, defenderId);
+          pendingBattleRef.current = null;
+          return;
+        }
+
+        // Create battle data with server damage values
+        const battleData: BattleData = {
+          attacker,
+          defender,
+          attackerResult: {
+            damage: result.damage,
+            effectiveness: 1, // Server doesn't send this yet
+            isCritical: false,
+            terrainBonus: 0,
+            typeTerrainBonus: 0
+          },
+          defenderResult: result.counterDamage > 0 ? {
+            damage: result.counterDamage,
+            effectiveness: 1,
+            isCritical: false,
+            terrainBonus: 0,
+            typeTerrainBonus: 0
+          } : null,
+          terrainType: map[defender.y][defender.x],
+          damage: result.damage,
+          effectiveness: 1
+        };
 
         // Store evolution data to trigger after battle animation
         if (result.evolution) {
           pendingEvolutionRef.current = result.evolution;
         }
 
-        // Trigger battle animation with server-provided damage values
-        startServerBattle(attackerId, defenderId, result.damage, result.counterDamage);
+        // Set battle data and go to battle_zoom state (just like local mode)
+        setBattleData(battleData);
+        setGameState('battle_zoom');  // ← Shows BattleZoomTransition first!
+
+        pendingBattleRef.current = null;
       }
     };
-  }, [onGameStarted, onStateUpdate, onActionResult, setMultiplayerState, startServerBattle]);
+  }, [onGameStarted, onStateUpdate, onActionResult, setMultiplayerState, startServerBattle, myPlayer, units, map, setCaptureData, setGameState, setBattleData]);
 
   // Show start screen
   if (gameState === 'menu') {

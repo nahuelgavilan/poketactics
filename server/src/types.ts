@@ -109,9 +109,15 @@ export interface ClientToServerEvents {
   'request-state': () => void;
 }
 
+// Position interface for encounter spawn
+export interface Position {
+  x: number;
+  y: number;
+}
+
 // Action results sent to clients
 export type ActionResult =
-  | { type: 'move'; unitId: string; x: number; y: number; success: boolean }
+  | { type: 'move'; unitId: string; x: number; y: number; success: boolean; encounter?: { pokemon: PokemonTemplate; spawnPos: Position } }
   | { type: 'attack'; attackerId: string; defenderId: string; damage: number; counterDamage: number; attackerDied: boolean; defenderDied: boolean; evolution?: { unitId: string; newTemplate: PokemonTemplate } }
   | { type: 'capture'; unitId: string; success: boolean; newUnit?: ClientUnit; pokemon?: PokemonTemplate }
   | { type: 'wait'; unitId: string }

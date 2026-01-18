@@ -350,9 +350,56 @@ export function getClientState(game: ServerGameState, player: Player): ClientGam
 }
 
 /**
+ * Check for wild encounter on tall grass (30% chance)
+ */
+function checkWildEncounter(unit: ServerUnit, game: ServerGameState): { pokemon: PokemonTemplate; spawnPos: { x: number; y: number } } | null {
+  // Check if on tall grass
+  if (game.map[unit.y][unit.x] !== TERRAIN.TALL_GRASS) {
+    return null;
+  }
+
+  // 30% chance of encounter
+  if (Math.random() > 0.3) {
+    return null;
+  }
+
+  // Find spawn position (8 directions)
+  const directions = [
+    { dx: 0, dy: -1 }, { dx: 1, dy: 0 }, { dx: 0, dy: 1 }, { dx: -1, dy: 0 },
+    { dx: 1, dy: -1 }, { dx: 1, dy: 1 }, { dx: -1, dy: 1 }, { dx: -1, dy: -1 }
+  ];
+
+  for (const dir of directions) {
+    const nx = unit.x + dir.dx;
+    const ny = unit.y + dir.dy;
+
+    // Check bounds
+    if (nx < 0 || nx >= BOARD_WIDTH || ny < 0 || ny >= BOARD_HEIGHT) continue;
+
+    // Check terrain passability
+    const terrain = game.map[ny][nx];
+    if (terrain === TERRAIN.WATER) continue;
+
+    // Check for existing units
+    if (game.units.some(u => u.x === nx && u.y === ny)) continue;
+
+    // Valid spawn position found
+    const wildPokemon = WILD_POKEMON[Math.floor(Math.random() * WILD_POKEMON.length)];
+
+    return {
+      pokemon: wildPokemon,
+      spawnPos: { x: nx, y: ny }
+    };
+  }
+
+  // No valid spawn position
+  return null;
+}
+
+/**
  * Validate and execute a move action
  */
-export function executeMove(game: ServerGameState, playerId: Player, unitId: string, x: number, y: number): { success: boolean; error?: string } {
+export function executeMove(game: ServerGameState, playerId: Player, unitId: string, x: number, y: number): { success: boolean; encounter?: { pokemon: PokemonTemplate; spawnPos: { x: number; y: number } }; error?: string } {
   // Check turn
   if (game.currentPlayer !== playerId) {
     return { success: false, error: 'No es tu turno' };
@@ -391,6 +438,15 @@ export function executeMove(game: ServerGameState, playerId: Player, unitId: str
   unit.x = x;
   unit.y = y;
 
+  // Check for wild encounter (server-authoritative 30% chance)
+  const encounter = checkWildEncounter(unit, game);
+
+  if (encounter) {
+    // Don't mark as moved yet - wait for capture result
+    return { success: true, encounter };
+  }
+
+  // No encounter - return success
   return { success: true };
 }
 

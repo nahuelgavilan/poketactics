@@ -172,19 +172,22 @@ io.on('connection', (socket) => {
       return;
     }
 
-    // Send move result to both players
+    // Send move result to both players (with optional encounter data)
     io.to(room.id).emit('action-result', {
       type: 'move',
       unitId,
       x,
       y,
-      success: true
+      success: true,
+      encounter: result.encounter // Include encounter if server detected one
     });
 
-    // Broadcast updated state
-    broadcastStateUpdate(room.id);
+    // Only broadcast state if NO encounter (encounter will trigger after capture)
+    if (!result.encounter) {
+      broadcastStateUpdate(room.id);
+    }
 
-    console.log(`Move: ${unitId} to (${x}, ${y}) in room ${room.id}`);
+    console.log(`Move: ${unitId} to (${x}, ${y}) in room ${room.id}${result.encounter ? ' [ENCOUNTER!]' : ''}`);
   });
 
   // Handle attack action

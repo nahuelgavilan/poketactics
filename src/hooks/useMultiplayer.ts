@@ -33,7 +33,7 @@ export interface ClientGameState {
 }
 
 export type ActionResult =
-  | { type: 'move'; unitId: string; x: number; y: number; success: boolean }
+  | { type: 'move'; unitId: string; x: number; y: number; success: boolean; encounter?: { pokemon: PokemonTemplate; spawnPos: { x: number; y: number } } }
   | { type: 'attack'; attackerId: string; defenderId: string; damage: number; counterDamage: number; attackerDied: boolean; defenderDied: boolean; evolution?: { unitId: string; newTemplate: PokemonTemplate } }
   | { type: 'capture'; unitId: string; success: boolean; newUnit?: ClientUnit; pokemon?: PokemonTemplate }
   | { type: 'wait'; unitId: string }
