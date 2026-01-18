@@ -315,6 +315,7 @@ export default function Game() {
 
   const [showHowToPlay, setShowHowToPlay] = useState(false);
   const [showMultiplayer, setShowMultiplayer] = useState(false);
+  const [multiplayerMode, setMultiplayerMode] = useState<'quick' | 'draft'>('quick');
   const [showDraft, setShowDraft] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [selectedTerrain, setSelectedTerrain] = useState<{ x: number; y: number; terrain: TerrainType } | null>(null);
@@ -536,6 +537,7 @@ export default function Game() {
       return (
         <MultiplayerLobby
           onBack={() => setShowMultiplayer(false)}
+          gameMode={multiplayerMode}
           connectionStatus={multiplayer.connectionStatus}
           roomStatus={multiplayer.roomStatus}
           roomId={multiplayer.roomId}
@@ -554,7 +556,10 @@ export default function Game() {
         <StartScreen
           onStartGame={initGame}
           onHowToPlay={() => setShowHowToPlay(true)}
-          onMultiplayer={() => setShowMultiplayer(true)}
+          onMultiplayer={(mode) => {
+            setMultiplayerMode(mode);
+            setShowMultiplayer(true);
+          }}
           onDraft={() => setShowDraft(true)}
         />
         {showHowToPlay && <HowToPlay onClose={() => setShowHowToPlay(false)} />}

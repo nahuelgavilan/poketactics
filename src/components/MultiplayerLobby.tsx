@@ -5,6 +5,7 @@ import type { Player } from '../types/game';
 
 interface MultiplayerLobbyProps {
   onBack: () => void;
+  gameMode: 'quick' | 'draft';
   // Multiplayer connection props (passed from Game.tsx)
   connectionStatus: ConnectionStatus;
   roomStatus: RoomStatus;
@@ -19,6 +20,7 @@ interface MultiplayerLobbyProps {
 
 export function MultiplayerLobby({
   onBack,
+  gameMode,
   connectionStatus,
   roomStatus,
   roomId,
@@ -81,6 +83,17 @@ export function MultiplayerLobby({
             <div className="flex items-center justify-center gap-3 mb-2">
               <Users className="w-8 h-8 text-blue-400" />
               <h2 className="text-2xl font-bold text-white">Multijugador</h2>
+            </div>
+
+            {/* Game mode badge */}
+            <div className="flex items-center justify-center gap-2 mb-3">
+              <div className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
+                gameMode === 'quick'
+                  ? 'bg-blue-500/20 text-blue-300 border border-blue-500/50'
+                  : 'bg-purple-500/20 text-purple-300 border border-purple-500/50'
+              }`}>
+                {gameMode === 'quick' ? '⚡ Batalla Rápida' : '🎯 Draft Mode'}
+              </div>
             </div>
 
             {/* Connection status */}

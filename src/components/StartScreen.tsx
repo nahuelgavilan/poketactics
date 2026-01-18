@@ -6,7 +6,7 @@ import { VERSION } from '../constants/version';
 interface StartScreenProps {
   onStartGame: () => void;
   onHowToPlay: () => void;
-  onMultiplayer?: () => void;
+  onMultiplayer?: (mode: 'quick' | 'draft') => void;
   onDraft?: () => void;
 }
 
@@ -43,7 +43,7 @@ export function StartScreen({ onStartGame, onHowToPlay, onMultiplayer, onDraft }
   const [titleLetters, setTitleLetters] = useState(0);
   const [activePokemon, setActivePokemon] = useState({ blue: 0, red: 0 });
   const [showPressStart, setShowPressStart] = useState(false);
-  const [submenu, setSubmenu] = useState<'main' | 'local'>('main');
+  const [submenu, setSubmenu] = useState<'main' | 'local' | 'online'>('main');
 
   const { playSFX } = useSFX();
   const sparkles = useMemo(() => generateSparkles(30), []);
@@ -59,9 +59,14 @@ export function StartScreen({ onStartGame, onHowToPlay, onMultiplayer, onDraft }
     onHowToPlay();
   };
 
-  const handleMultiplayerWithSFX = () => {
+  const handleMultiplayerQuickWithSFX = () => {
     playSFX('button_click', 0.5);
-    onMultiplayer?.();
+    onMultiplayer?.('quick');
+  };
+
+  const handleMultiplayerDraftWithSFX = () => {
+    playSFX('button_click', 0.5);
+    onMultiplayer?.('draft');
   };
 
   const handleDraftWithSFX = () => {
@@ -69,9 +74,9 @@ export function StartScreen({ onStartGame, onHowToPlay, onMultiplayer, onDraft }
     onDraft?.();
   };
 
-  const handleSubmenuToggle = () => {
+  const handleSubmenuToggle = (target: 'main' | 'local' | 'online') => {
     playSFX('button_click', 0.4);
-    setSubmenu(submenu === 'main' ? 'local' : 'main');
+    setSubmenu(target);
   };
 
   // Boot sequence
@@ -420,7 +425,7 @@ export function StartScreen({ onStartGame, onHowToPlay, onMultiplayer, onDraft }
                       className="text-[10px] font-bold tracking-[0.2em] text-amber-400/90 uppercase"
                       style={{ fontFamily: '"Press Start 2P", monospace' }}
                     >
-                      {submenu === 'main' ? 'Select Mode' : 'Batalla Local'}
+                      {submenu === 'main' ? 'Select Mode' : submenu === 'local' ? 'Batalla Local' : 'Multijugador'}
                     </span>
                     <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
                   </div>
@@ -435,7 +440,7 @@ export function StartScreen({ onStartGame, onHowToPlay, onMultiplayer, onDraft }
                         icon={<Swords className="w-5 h-5" />}
                         label="Batalla Local"
                         sublabel="2 jugadores • Hot Seat"
-                        onClick={(e) => { e.stopPropagation(); playSFX('button_click', 0.5); setSubmenu('local'); }}
+                        onClick={(e) => { e.stopPropagation(); handleSubmenuToggle('local'); }}
                         color="blue"
                         delay={0}
                       />
@@ -445,7 +450,7 @@ export function StartScreen({ onStartGame, onHowToPlay, onMultiplayer, onDraft }
                           icon={<Users className="w-5 h-5" />}
                           label="Multijugador"
                           sublabel="Online • Crear o unirse"
-                          onClick={(e) => { e.stopPropagation(); handleMultiplayerWithSFX(); }}
+                          onClick={(e) => { e.stopPropagation(); handleSubmenuToggle('online'); }}
                           color="green"
                           delay={1}
                         />
@@ -460,11 +465,11 @@ export function StartScreen({ onStartGame, onHowToPlay, onMultiplayer, onDraft }
                         delay={2}
                       />
                     </>
-                  ) : (
+                  ) : submenu === 'local' ? (
                     <>
                       {/* Local battle submenu */}
                       <button
-                        onClick={(e) => { e.stopPropagation(); handleSubmenuToggle(); }}
+                        onClick={(e) => { e.stopPropagation(); handleSubmenuToggle('main'); }}
                         className="flex items-center gap-2 px-3 py-2 text-slate-400 hover:text-white transition-colors text-sm"
                       >
                         <ArrowLeft className="w-4 h-4" />
@@ -490,6 +495,35 @@ export function StartScreen({ onStartGame, onHowToPlay, onMultiplayer, onDraft }
                           delay={1}
                         />
                       )}
+                    </>
+                  ) : (
+                    <>
+                      {/* Online multiplayer submenu */}
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleSubmenuToggle('main'); }}
+                        className="flex items-center gap-2 px-3 py-2 text-slate-400 hover:text-white transition-colors text-sm"
+                      >
+                        <ArrowLeft className="w-4 h-4" />
+                        <span>Volver</span>
+                      </button>
+
+                      <MenuButton
+                        icon={<Zap className="w-5 h-5" />}
+                        label="Batalla Rápida"
+                        sublabel="Equipos aleatorios • Online"
+                        onClick={(e) => { e.stopPropagation(); handleMultiplayerQuickWithSFX(); }}
+                        color="green"
+                        delay={0}
+                      />
+
+                      <MenuButton
+                        icon={<Shuffle className="w-5 h-5" />}
+                        label="Draft Mode"
+                        sublabel="Ban & Pick • Online"
+                        onClick={(e) => { e.stopPropagation(); handleMultiplayerDraftWithSFX(); }}
+                        color="purple"
+                        delay={1}
+                      />
                     </>
                   )}
                 </div>
