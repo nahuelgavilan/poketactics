@@ -72,6 +72,12 @@ interface UseGameStateReturn {
   triggerMultiplayerEncounter: (unit: Unit) => boolean;
   // Multiplayer evolution (triggered by server result)
   triggerServerEvolution: (unitId: string, newTemplate: PokemonTemplate) => void;
+  // Multiplayer encounter (from server)
+  triggerServerEncounter: (pokemon: PokemonTemplate, spawnPos: Position, player: Player) => void;
+  // Multiplayer battle with zoom (from server)
+  triggerServerBattleWithZoom: (attacker: Unit, defender: Unit, damage: number, counterDamage: number) => void;
+  // Optimistic update for multiplayer
+  updateUnitsOptimistic: (unitId: string, x: number, y: number) => void;
   // Timer auto-wait
   autoWaitAllUnits: () => void;
 }
@@ -955,6 +961,57 @@ export function useGameState(): UseGameStateReturn {
     setGameState('evolution');
   }, [units]);
 
+  // Trigger encounter from server data (for multiplayer)
+  const triggerServerEncounter = useCallback((pokemon: PokemonTemplate, spawnPos: Position, player: Player) => {
+    const encounter: CaptureData = {
+      pokemon,
+      player,
+      spawnPos
+    };
+    setCaptureData(encounter);
+    setGameState('capture_minigame');
+  }, []);
+
+  // Trigger battle from server data (for multiplayer)
+  const triggerServerBattleWithZoom = useCallback((
+    attacker: Unit,
+    defender: Unit,
+    damage: number,
+    counterDamage: number
+  ) => {
+    const battleData: BattleData = {
+      attacker,
+      defender,
+      attackerResult: {
+        damage,
+        effectiveness: 1,
+        isCritical: false,
+        terrainBonus: 0,
+        typeTerrainBonus: false
+      },
+      defenderResult: counterDamage > 0 ? {
+        damage: counterDamage,
+        effectiveness: 1,
+        isCritical: false,
+        terrainBonus: 0,
+        typeTerrainBonus: false
+      } : null,
+      terrainType: map[defender.y]?.[defender.x] ?? TERRAIN.GRASS,
+      damage,
+      effectiveness: 1
+    };
+
+    setBattleData(battleData);
+    setGameState('battle_zoom');
+  }, [map]);
+
+  // Optimistic update units (for multiplayer movement)
+  const updateUnitsOptimistic = useCallback((unitId: string, x: number, y: number) => {
+    setUnits(prev => prev.map(u =>
+      u.uid === unitId ? { ...u, x, y } : u
+    ));
+  }, []);
+
   // Auto-wait all units that haven't moved (timer expired)
   const autoWaitAllUnits = useCallback(() => {
     const playerUnits = units.filter(u => u.owner === currentPlayer && !u.hasMoved);
@@ -1023,6 +1080,9 @@ export function useGameState(): UseGameStateReturn {
     startServerBattle,
     triggerMultiplayerEncounter,
     triggerServerEvolution,
+    triggerServerEncounter,
+    triggerServerBattleWithZoom,
+    updateUnitsOptimistic,
     // Timer auto-wait
     autoWaitAllUnits
   };

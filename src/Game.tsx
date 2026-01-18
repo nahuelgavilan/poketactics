@@ -20,7 +20,7 @@ import {
 import { CaptureMinigame } from './components/CaptureMinigame';
 import { StartScreen } from './components/StartScreen';
 import { HowToPlay } from './components/HowToPlay';
-import type { Position, TerrainType, Unit, GameMap, PokemonTemplate, EvolutionData, CaptureData, BattleData } from './types/game';
+import type { Position, TerrainType, Unit, GameMap, PokemonTemplate, EvolutionData } from './types/game';
 
 export default function Game() {
   const {
@@ -67,6 +67,9 @@ export default function Game() {
     startServerBattle,
     triggerMultiplayerEncounter,
     triggerServerEvolution,
+    triggerServerEncounter,
+    triggerServerBattleWithZoom,
+    updateUnitsOptimistic,
     // Timer
     autoWaitAllUnits
   } = useGameState();
@@ -174,8 +177,7 @@ export default function Game() {
       console.log('[Multiplayer] Sending move:', selectedUnit.uid, pendingPosition);
 
       // Optimistic update: show movement immediately
-      const movedUnit = { ...selectedUnit, x: pendingPosition.x, y: pendingPosition.y };
-      setUnits(prev => prev.map(u => u.uid === selectedUnit.uid ? movedUnit : u));
+      updateUnitsOptimistic(selectedUnit.uid, pendingPosition.x, pendingPosition.y);
 
       // Send move to server
       sendMove(selectedUnit.uid, pendingPosition.x, pendingPosition.y);
@@ -193,7 +195,7 @@ export default function Game() {
       isCompletingActionRef.current = true; // Mark as completing action to suppress unit_deselect sound
       selectWait();
     }
-  }, [selectedUnit, pendingPosition, sendMove, selectWait, cancelAction, setUnits, playSFX]);
+  }, [selectedUnit, pendingPosition, sendMove, selectWait, cancelAction, updateUnitsOptimistic, playSFX]);
 
   const handleSelectAttack = useCallback(() => {
     if (isInMultiplayerGame.current && selectedUnit && pendingPosition) {
@@ -480,19 +482,15 @@ export default function Game() {
       if (result.type === 'move' && result.encounter) {
         console.log('[Multiplayer] Server detected encounter!', result.encounter.pokemon.name);
 
-        // Create capture data from server's encounter
-        const captureData: CaptureData = {
-          pokemon: result.encounter.pokemon,
-          player: myPlayer!,
-          spawnPos: result.encounter.spawnPos
-        };
-
         // Store unit ID for when capture completes
         pendingCaptureUnitRef.current = result.unitId;
 
-        // Show capture minigame
-        setCaptureData(captureData);
-        setGameState('capture_minigame');
+        // Show capture minigame using helper function
+        triggerServerEncounter(
+          result.encounter.pokemon,
+          result.encounter.spawnPos,
+          myPlayer!
+        );
         return;
       }
 
@@ -510,42 +508,18 @@ export default function Game() {
           return;
         }
 
-        // Create battle data with server damage values
-        const battleData: BattleData = {
-          attacker,
-          defender,
-          attackerResult: {
-            damage: result.damage,
-            effectiveness: 1, // Server doesn't send this yet
-            isCritical: false,
-            terrainBonus: 0,
-            typeTerrainBonus: 0
-          },
-          defenderResult: result.counterDamage > 0 ? {
-            damage: result.counterDamage,
-            effectiveness: 1,
-            isCritical: false,
-            terrainBonus: 0,
-            typeTerrainBonus: 0
-          } : null,
-          terrainType: map[defender.y][defender.x],
-          damage: result.damage,
-          effectiveness: 1
-        };
-
         // Store evolution data to trigger after battle animation
         if (result.evolution) {
           pendingEvolutionRef.current = result.evolution;
         }
 
-        // Set battle data and go to battle_zoom state (just like local mode)
-        setBattleData(battleData);
-        setGameState('battle_zoom');  // ← Shows BattleZoomTransition first!
+        // Trigger battle with zoom (just like local mode)
+        triggerServerBattleWithZoom(attacker, defender, result.damage, result.counterDamage);
 
         pendingBattleRef.current = null;
       }
     };
-  }, [onGameStarted, onStateUpdate, onActionResult, setMultiplayerState, startServerBattle, myPlayer, units, map, setCaptureData, setGameState, setBattleData]);
+  }, [onGameStarted, onStateUpdate, onActionResult, setMultiplayerState, triggerServerEncounter, triggerServerBattleWithZoom, myPlayer, units]);
 
   // Show start screen
   if (gameState === 'menu') {
