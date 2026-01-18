@@ -8,7 +8,7 @@
 - **Platform**: Web (Mobile-first responsive)
 - **Players**: 2 (Hot-seat or Online multiplayer)
 - **Tech Stack**: React, TypeScript, Tailwind CSS, Vite, Socket.IO
-- **Current Version**: 0.20.0 (Alpha)
+- **Current Version**: 0.30.0 (Alpha)
 
 ---
 
@@ -837,6 +837,8 @@ Capture probability formula encourages:
 
 Online multiplayer uses a **server-authoritative** model where all game logic runs on the server. Each player only sees their own fog of war, and the server validates all actions to prevent cheating.
 
+**Design Goal**: Multiplayer should function **identically to local mode** - same cinematics, same wild encounters, same battle flow, same responsiveness.
+
 ### Connection Flow
 
 1. **Connect** to WebSocket server
@@ -865,6 +867,70 @@ The server handles all game logic:
 | **Turn Validation** | Server validates it's the player's turn before accepting actions |
 | **Action Execution** | Move, attack, wait, capture all run on server |
 | **State Updates** | After each action, server broadcasts filtered state to both players |
+
+### Wild Encounter Flow (Server-Authoritative)
+
+**v0.30.0**: Wild encounters now use **server-side RNG** to ensure both players experience the same encounters:
+
+1. Client sends `action-move` with unit ID and destination
+2. **Server validates move** AND checks for wild encounter (30% if on tall grass)
+3. Server responds with `action-result` type `move`:
+   - If encounter: includes `encounter: { pokemon, spawnPos }`
+   - If no encounter: unit marked as moved, state updated
+4. **If encounter detected**:
+   - Client receives encounter data from server
+   - Client shows capture minigame with server's Pokémon
+   - Client sends `action-capture` with minigame result
+   - Server creates captured unit (or marks as failed)
+   - Server marks unit as moved and broadcasts state update
+5. **Both players see the same encounter** (server is source of truth)
+
+**Technical Details:**
+- `server/src/gameLogic.ts`: `checkWildEncounter()` function performs server-side 30% RNG
+- `server/src/index.ts`: `action-move` handler sends encounter in action-result
+- Client removed local 30% check to prevent desync
+
+### Battle Cinematic Flow
+
+**v0.30.0**: Battle cinematics now play **identically in multiplayer and local mode**:
+
+1. Client sends `action-attack` with attacker/defender IDs
+2. Server calculates damage, counter-damage, effectiveness, evolution
+3. Server responds with `action-result` type `attack` containing:
+   - `damage`: Attacker's damage dealt
+   - `counterDamage`: Defender's counter damage
+   - `attackerDied`, `defenderDied`: Death flags
+   - `evolution`: Evolution data if unit evolved
+4. **Client receives result and triggers cinematics**:
+   - **Battle Zoom Phase** (2.75s): VS screen with diagonal split
+   - **Battle Phase**: Full combat cinematic with server's damage values
+   - **Evolution Phase** (if applicable): Evolution cinematic
+5. **Both players see identical battle sequences** with server-calculated outcomes
+
+**Technical Details:**
+- Client stores pending battle data when attack initiated
+- `onActionResult` handler triggers `battle_zoom` state (not direct to `battle`)
+- `BattleZoomTransition` component plays for 2.75s before battle
+- Server damage values replace client prediction
+
+### Optimistic Updates & Client Prediction
+
+**v0.30.0**: To maintain **responsive UI** without lag:
+
+**Movement**:
+- Client immediately shows unit moving to destination (optimistic)
+- Sends `action-move` to server in parallel
+- If server rejects, `state-update` will revert position (rollback)
+
+**Audio**:
+- Sound effects and music play immediately (not blocked by network)
+- Pre-loaded audio prevents stuttering
+- Automatic track switching based on game state
+
+**Benefits**:
+- Game feels instant and responsive
+- No waiting for server confirmation on UI updates
+- Server remains authoritative (can correct client if needed)
 
 ### True Multiplayer (v0.14.0)
 
@@ -925,6 +991,7 @@ Currently in alpha - major version stays at 0 until core features complete.
 
 | Version | Changes |
 |---------|---------|
+| **0.30.0** | Multiplayer parity with local mode: server-authoritative wild encounters (30% RNG on server), full battle cinematics with battle_zoom → VS screen → battle flow, optimistic updates for responsive UI, fixed music synchronization |
 | **0.29.0** | Ultra-premium GBA shake: flying stars emerge from pokeball center (720° rotation, motion trails), 3 sequential star indicators with epic flash bursts + 8 sparkle particles, authentic horizontal shake with scale pulse (16-24px intensity), 12 radiating energy particles, button glow, shadow quake, tension pulse effects |
 | **0.28.0** | Premium capture animations: AAA-quality pokeball throw with parabolic arc, motion blur, energy trails; intense shake animation with energy pulses, particle bursts, atmospheric effects |
 | **0.27.4** | UX improvement: Allow deselecting units by clicking them again in MOVING phase, fix unit_deselect sound only on manual cancel (not after actions) |
@@ -974,4 +1041,4 @@ Currently in alpha - major version stays at 0 until core features complete.
 
 ---
 
-*This document describes PokéTactics as of v0.20.0 (Alpha). Features marked as "planned" or in the roadmap are not yet implemented.*
+*This document describes PokéTactics as of v0.30.0 (Alpha). Features marked as "planned" or in the roadmap are not yet implemented.*
