@@ -10,8 +10,23 @@ export interface Room {
   hostId: string;
   guestId: string | null;
   gameMode: 'quick' | 'draft';
+  draftState: DraftState | null;
   game: ServerGameState | null;
   createdAt: Date;
+}
+
+// Draft phase state
+export type DraftPhase = 'banning' | 'picking' | 'complete';
+
+export interface DraftState {
+  phase: DraftPhase;
+  currentTurn: Player; // Who needs to act now
+  bannedPokemon: number[]; // Pokemon IDs that have been banned
+  p1Picks: number[]; // P1's picked Pokemon IDs
+  p2Picks: number[]; // P2's picked Pokemon IDs
+  turnHistory: { player: Player; action: 'ban' | 'pick'; pokemonId: number }[];
+  timerStartedAt: Date; // When current turn started
+  timerDuration: number; // Seconds per turn (default 30)
 }
 
 // Full server-side game state
@@ -90,6 +105,8 @@ export interface ServerToClientEvents {
   'room-joined': (data: { roomId: string; player: Player }) => void;
   'player-joined': (playerId: string) => void;
   'player-left': () => void;
+  'draft-started': (state: ClientDraftState) => void;
+  'draft-update': (state: ClientDraftState) => void;
   'game-started': (state: ClientGameState) => void;
   'state-update': (state: ClientGameState) => void;
   'action-result': (result: ActionResult) => void;
@@ -97,11 +114,25 @@ export interface ServerToClientEvents {
   'error': (message: string) => void;
 }
 
+// Client-side draft state (what each player sees)
+export interface ClientDraftState {
+  phase: DraftPhase;
+  myPlayer: Player;
+  currentTurn: Player;
+  bannedPokemon: number[];
+  p1Picks: number[];
+  p2Picks: number[];
+  turnHistory: { player: Player; action: 'ban' | 'pick'; pokemonId: number }[];
+  timeRemaining: number; // Seconds remaining for current turn
+}
+
 // Socket events - Client to Server
 export interface ClientToServerEvents {
   'create-room': (data: { gameMode: 'quick' | 'draft' }) => void;
   'join-room': (roomId: string) => void;
   'start-game': () => void;
+  'draft-ban': (data: { pokemonId: number }) => void;
+  'draft-pick': (data: { pokemonId: number }) => void;
   'action-move': (data: { unitId: string; x: number; y: number }) => void;
   'action-attack': (data: { attackerId: string; defenderId: string }) => void;
   'action-wait': (data: { unitId: string }) => void;

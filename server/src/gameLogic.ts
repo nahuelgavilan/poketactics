@@ -54,7 +54,7 @@ const TYPE_CHART: Record<PokemonType, Partial<Record<PokemonType, number>>> = {
 };
 
 // Evolution chains (simplified for server)
-const EVOLUTION_CHAINS: { stages: PokemonTemplate[] }[] = [
+export const EVOLUTION_CHAINS: { stages: PokemonTemplate[] }[] = [
   // Charmander line
   {
     stages: [
@@ -268,6 +268,59 @@ function generateUnits(): ServerUnit[] {
   }
 
   return units;
+}
+
+/**
+ * Create game state with specific teams (for draft mode)
+ */
+export function createGameStateWithTeams(p1Team: PokemonTemplate[], p2Team: PokemonTemplate[]): ServerGameState {
+  const map = generateMap();
+  const units: ServerUnit[] = [];
+
+  // P1 team (bottom)
+  for (let i = 0; i < p1Team.length; i++) {
+    const template = p1Team[i];
+    units.push({
+      uid: `p1-${i}-${Date.now()}`,
+      owner: 'P1',
+      templateId: template.id,
+      template: { ...template },
+      x: i % BOARD_WIDTH,
+      y: BOARD_HEIGHT - 1 - Math.floor(i / BOARD_WIDTH),
+      currentHp: template.hp,
+      hasMoved: false,
+      kills: 0
+    });
+  }
+
+  // P2 team (top)
+  for (let i = 0; i < p2Team.length; i++) {
+    const template = p2Team[i];
+    units.push({
+      uid: `p2-${i}-${Date.now()}`,
+      owner: 'P2',
+      templateId: template.id,
+      template: { ...template },
+      x: BOARD_WIDTH - 1 - (i % BOARD_WIDTH),
+      y: 0 + Math.floor(i / BOARD_WIDTH),
+      currentHp: template.hp,
+      hasMoved: false,
+      kills: 0
+    });
+  }
+
+  const emptyExplored = Array(BOARD_HEIGHT).fill(null).map(() => Array(BOARD_WIDTH).fill(false));
+
+  return {
+    map,
+    units,
+    turn: 1,
+    currentPlayer: 'P1',
+    status: 'playing',
+    winner: null,
+    exploredP1: emptyExplored.map(row => [...row]),
+    exploredP2: emptyExplored.map(row => [...row])
+  };
 }
 
 /**

@@ -11,8 +11,17 @@ import {
   executeWait,
   executeCapture,
   checkTurnEnd,
-  executeEndTurn
+  executeEndTurn,
+  createGameStateWithTeams
 } from './gameLogic';
+import {
+  initializeDraft,
+  getClientDraftState,
+  executeBan,
+  executePick,
+  handleTimeout,
+  getPlayerTeam
+} from './draftLogic';
 import type { ClientToServerEvents, ServerToClientEvents, Player } from './types';
 
 const app = express();
@@ -135,33 +144,133 @@ io.on('connection', (socket) => {
       return;
     }
 
-    // Create game state based on game mode
-    let gameState;
-
+    // Create game state or start draft based on game mode
     if (room.gameMode === 'draft') {
-      // TODO: Implement draft mode
-      // For now, use random teams (same as quick mode)
-      // Future: Start draft phase, let players ban/pick Pokemon
-      console.log(`Starting DRAFT mode game in room ${room.id} (using random teams for now)`);
-      gameState = createGameState();
+      // Start draft phase
+      console.log(`Starting DRAFT mode in room ${room.id}`);
+      const draftState = initializeDraft();
+      room.draftState = draftState;
+
+      // Send draft state to both players
+      const p1DraftState = getClientDraftState(draftState, 'P1');
+      const p2DraftState = getClientDraftState(draftState, 'P2');
+
+      io.to(room.hostId).emit('draft-started', p1DraftState);
+      if (room.guestId) {
+        io.to(room.guestId).emit('draft-started', p2DraftState);
+      }
+
+      console.log(`Draft started in room ${room.id}`);
     } else {
       // Quick mode: random teams
       console.log(`Starting QUICK mode game in room ${room.id}`);
-      gameState = createGameState();
+      const gameState = createGameState();
+      roomManager.setGameState(room.id, gameState);
+
+      // Send initial state to each player (filtered by fog of war)
+      const p1State = getClientState(gameState, 'P1');
+      const p2State = getClientState(gameState, 'P2');
+
+      io.to(room.hostId).emit('game-started', p1State);
+      if (room.guestId) {
+        io.to(room.guestId).emit('game-started', p2State);
+      }
+
+      console.log(`Game started in room ${room.id} (mode: ${room.gameMode})`);
+    }
+  });
+
+  // Handle draft ban
+  socket.on('draft-ban', ({ pokemonId }) => {
+    const room = roomManager.getPlayerRoom(socket.id);
+    if (!room?.draftState) {
+      socket.emit('error', 'No hay draft activo');
+      return;
     }
 
-    roomManager.setGameState(room.id, gameState);
+    const player = roomManager.getPlayerRole(socket.id);
+    if (!player) {
+      socket.emit('error', 'No eres un jugador válido');
+      return;
+    }
 
-    // Send initial state to each player (filtered by fog of war)
-    const p1State = getClientState(gameState, 'P1');
-    const p2State = getClientState(gameState, 'P2');
+    const result = executeBan(room.draftState, player, pokemonId);
 
-    io.to(room.hostId).emit('game-started', p1State);
+    if (!result.success) {
+      socket.emit('error', result.error || 'Ban inválido');
+      return;
+    }
+
+    console.log(`${player} banned Pokemon ${pokemonId} in room ${room.id}`);
+
+    // Send updated draft state to both players
+    const p1State = getClientDraftState(room.draftState, 'P1');
+    const p2State = getClientDraftState(room.draftState, 'P2');
+
+    io.to(room.hostId).emit('draft-update', p1State);
     if (room.guestId) {
-      io.to(room.guestId).emit('game-started', p2State);
+      io.to(room.guestId).emit('draft-update', p2State);
+    }
+  });
+
+  // Handle draft pick
+  socket.on('draft-pick', ({ pokemonId }) => {
+    const room = roomManager.getPlayerRoom(socket.id);
+    if (!room?.draftState) {
+      socket.emit('error', 'No hay draft activo');
+      return;
     }
 
-    console.log(`Game started in room ${room.id} (mode: ${room.gameMode})`);
+    const player = roomManager.getPlayerRole(socket.id);
+    if (!player) {
+      socket.emit('error', 'No eres un jugador válido');
+      return;
+    }
+
+    const result = executePick(room.draftState, player, pokemonId);
+
+    if (!result.success) {
+      socket.emit('error', result.error || 'Pick inválido');
+      return;
+    }
+
+    console.log(`${player} picked Pokemon ${pokemonId} in room ${room.id}`);
+
+    // Check if draft is complete
+    if (room.draftState.phase === 'complete') {
+      console.log(`Draft complete in room ${room.id}, starting game with drafted teams`);
+
+      // Get teams from draft
+      const p1Team = getPlayerTeam(room.draftState, 'P1');
+      const p2Team = getPlayerTeam(room.draftState, 'P2');
+
+      // Create game state with drafted teams
+      const gameState = createGameStateWithTeams(p1Team, p2Team);
+      roomManager.setGameState(room.id, gameState);
+
+      // Clear draft state
+      room.draftState = null;
+
+      // Send game state to both players
+      const p1State = getClientState(gameState, 'P1');
+      const p2State = getClientState(gameState, 'P2');
+
+      io.to(room.hostId).emit('game-started', p1State);
+      if (room.guestId) {
+        io.to(room.guestId).emit('game-started', p2State);
+      }
+
+      console.log(`Game started in room ${room.id} with drafted teams`);
+    } else {
+      // Send updated draft state to both players
+      const p1State = getClientDraftState(room.draftState, 'P1');
+      const p2State = getClientDraftState(room.draftState, 'P2');
+
+      io.to(room.hostId).emit('draft-update', p1State);
+      if (room.guestId) {
+        io.to(room.guestId).emit('draft-update', p2State);
+      }
+    }
   });
 
   // Handle move action

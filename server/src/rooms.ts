@@ -36,6 +36,7 @@ export class RoomManager {
       hostId,
       guestId: null,
       gameMode,
+      draftState: null,
       game: null,
       createdAt: new Date()
     };
