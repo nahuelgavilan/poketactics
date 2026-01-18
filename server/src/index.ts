@@ -135,8 +135,21 @@ io.on('connection', (socket) => {
       return;
     }
 
-    // Create game state on server
-    const gameState = createGameState();
+    // Create game state based on game mode
+    let gameState;
+
+    if (room.gameMode === 'draft') {
+      // TODO: Implement draft mode
+      // For now, use random teams (same as quick mode)
+      // Future: Start draft phase, let players ban/pick Pokemon
+      console.log(`Starting DRAFT mode game in room ${room.id} (using random teams for now)`);
+      gameState = createGameState();
+    } else {
+      // Quick mode: random teams
+      console.log(`Starting QUICK mode game in room ${room.id}`);
+      gameState = createGameState();
+    }
+
     roomManager.setGameState(room.id, gameState);
 
     // Send initial state to each player (filtered by fog of war)
@@ -148,7 +161,7 @@ io.on('connection', (socket) => {
       io.to(room.guestId).emit('game-started', p2State);
     }
 
-    console.log(`Game started in room ${room.id}`);
+    console.log(`Game started in room ${room.id} (mode: ${room.gameMode})`);
   });
 
   // Handle move action

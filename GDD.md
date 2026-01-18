@@ -8,7 +8,7 @@
 - **Platform**: Web (Mobile-first responsive)
 - **Players**: 2 (Hot-seat or Online multiplayer)
 - **Tech Stack**: React, TypeScript, Tailwind CSS, Vite, Socket.IO
-- **Current Version**: 0.30.0 (Alpha)
+- **Current Version**: 0.31.0 (Alpha)
 
 ---
 
@@ -856,6 +856,33 @@ Online multiplayer uses a **server-authoritative** model where all game logic ru
 - Only host can start the game
 - Room auto-deletes after 1 hour of inactivity
 
+### Game Modes
+
+**v0.31.0**: Multiplayer now supports the same game modes as local play:
+
+| Mode | Description | Team Selection |
+|------|-------------|----------------|
+| **Batalla Rápida** (Quick Battle) | Fast-paced match with random teams | 3 random Pokémon per player, no duplicates |
+| **Draft Mode** | Competitive ban & pick phase | *In development* - Players will ban and pick Pokémon |
+
+**How to select mode:**
+1. From main menu, click "Multijugador"
+2. Choose game mode: "⚡ Batalla Rápida" or "🎯 Draft Mode"
+3. Create or join room - mode is set by room creator
+4. All players in room play the selected mode
+
+**Technical Details:**
+- Game mode stored in `Room.gameMode` ('quick' | 'draft')
+- Host selects mode when creating room
+- Server initializes game based on room's mode
+- Currently both modes use random teams (draft phase coming soon)
+
+**Draft Mode (Planned):**
+- Ban phase: Each player bans 2 Pokémon
+- Pick phase: Alternating picks (P1, P2, P2, P1, P1, P2)
+- 30-second timer per action
+- Final teams: 3 Pokémon each, all unique
+
 ### Server-Authoritative Model
 
 The server handles all game logic:
@@ -991,6 +1018,7 @@ Currently in alpha - major version stays at 0 until core features complete.
 
 | Version | Changes |
 |---------|---------|
+| **0.31.0** | Multiplayer game modes: Quick Battle (random teams) and Draft Mode selection, submenu in multiplayer lobby, server stores and uses game mode, prepared infrastructure for full draft implementation |
 | **0.30.0** | Multiplayer parity with local mode: server-authoritative wild encounters (30% RNG on server), full battle cinematics with battle_zoom → VS screen → battle flow, optimistic updates for responsive UI, fixed music synchronization |
 | **0.29.0** | Ultra-premium GBA shake: flying stars emerge from pokeball center (720° rotation, motion trails), 3 sequential star indicators with epic flash bursts + 8 sparkle particles, authentic horizontal shake with scale pulse (16-24px intensity), 12 radiating energy particles, button glow, shadow quake, tension pulse effects |
 | **0.28.0** | Premium capture animations: AAA-quality pokeball throw with parabolic arc, motion blur, energy trails; intense shake animation with energy pulses, particle bursts, atmospheric effects |
@@ -1041,4 +1069,4 @@ Currently in alpha - major version stays at 0 until core features complete.
 
 ---
 
-*This document describes PokéTactics as of v0.30.0 (Alpha). Features marked as "planned" or in the roadmap are not yet implemented.*
+*This document describes PokéTactics as of v0.31.0 (Alpha). Features marked as "planned" or in the roadmap are not yet implemented.*
