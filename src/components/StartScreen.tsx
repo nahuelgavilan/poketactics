@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo } from 'react';
-import { Swords, Users, BookOpen, ChevronRight, Gamepad2, Shuffle, ArrowLeft, Zap } from 'lucide-react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { Swords, BookOpen, Wifi } from 'lucide-react';
 import { useSFX } from '../hooks/useSFX';
 import { VERSION } from '../constants/version';
 
@@ -10,21 +10,17 @@ interface StartScreenProps {
   onDraft?: () => void;
 }
 
-// Featured Pokemon with team colors
-const TEAM_POKEMON = {
-  blue: [
-    { id: 25, name: 'Pikachu', glow: '#FACC15' },
-    { id: 149, name: 'Dragonite', glow: '#FB923C' },
-    { id: 448, name: 'Lucario', glow: '#60A5FA' },
-  ],
-  red: [
-    { id: 6, name: 'Charizard', glow: '#F97316' },
-    { id: 94, name: 'Gengar', glow: '#A855F7' },
-    { id: 130, name: 'Gyarados', glow: '#3B82F6' },
-  ],
-};
+// Pokemon VS pairs that rotate
+const VS_PAIRS = [
+  { left: { id: 6, name: 'Charizard' }, right: { id: 9, name: 'Blastoise' } },
+  { left: { id: 3, name: 'Venusaur' }, right: { id: 25, name: 'Pikachu' } },
+  { left: { id: 448, name: 'Lucario' }, right: { id: 94, name: 'Gengar' } },
+];
 
-// Generate sparkle particles
+const SPRITE_URL = (id: number) =>
+  `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/${id}.gif`;
+
+// Generate sparkle/particle data
 function generateSparkles(count: number) {
   return Array.from({ length: count }, (_, i) => ({
     id: i,
@@ -37,527 +33,415 @@ function generateSparkles(count: number) {
   }));
 }
 
+// Generate orbiting particles for the energy beam
+function generateOrbitParticles(count: number) {
+  return Array.from({ length: count }, (_, i) => ({
+    id: i,
+    offset: (i / count) * 360,
+    speed: 2 + Math.random() * 2,
+    radius: 8 + Math.random() * 16,
+    size: 2 + Math.random() * 3,
+    color: i % 2 === 0 ? '#60A5FA' : '#F87171',
+  }));
+}
+
 export function StartScreen({ onStartGame, onHowToPlay, onMultiplayer, onDraft }: StartScreenProps) {
-  // Animation phases
-  const [phase, setPhase] = useState<'boot' | 'logo' | 'title' | 'menu'>('boot');
-  const [titleLetters, setTitleLetters] = useState(0);
-  const [activePokemon, setActivePokemon] = useState({ blue: 0, red: 0 });
-  const [showPressStart, setShowPressStart] = useState(false);
-  const [submenu, setSubmenu] = useState<'main' | 'local' | 'online'>('main');
+  const [phase, setPhase] = useState<'boot' | 'ready'>('boot');
+  const [activePair, setActivePair] = useState(0);
+  const [onlineMode, setOnlineMode] = useState<'quick' | 'draft'>('quick');
 
   const { playSFX } = useSFX();
-  const sparkles = useMemo(() => generateSparkles(30), []);
+  const sparkles = useMemo(() => generateSparkles(25), []);
+  const orbitParticles = useMemo(() => generateOrbitParticles(12), []);
 
-  // Wrapped handlers with SFX
-  const handleStartWithSFX = () => {
+  // SFX-wrapped handlers
+  const handleStartWithSFX = useCallback(() => {
     playSFX('button_click', 0.5);
     onStartGame();
-  };
+  }, [playSFX, onStartGame]);
 
-  const handleHowToPlayWithSFX = () => {
+  const handleHowToPlayWithSFX = useCallback(() => {
     playSFX('button_click', 0.5);
     onHowToPlay();
-  };
+  }, [playSFX, onHowToPlay]);
 
-  const handleMultiplayerQuickWithSFX = () => {
-    playSFX('button_click', 0.5);
-    onMultiplayer?.('quick');
-  };
-
-  const handleMultiplayerDraftWithSFX = () => {
-    playSFX('button_click', 0.5);
-    onMultiplayer?.('draft');
-  };
-
-  const handleDraftWithSFX = () => {
+  const handleDraftWithSFX = useCallback(() => {
     playSFX('button_click', 0.5);
     onDraft?.();
-  };
+  }, [playSFX, onDraft]);
 
-  const handleSubmenuToggle = (target: 'main' | 'local' | 'online') => {
+  const handleOnlineWithSFX = useCallback(() => {
+    playSFX('button_click', 0.5);
+    onMultiplayer?.(onlineMode);
+  }, [playSFX, onMultiplayer, onlineMode]);
+
+  const toggleOnlineMode = useCallback(() => {
     playSFX('button_click', 0.4);
-    setSubmenu(target);
-  };
+    setOnlineMode(prev => (prev === 'quick' ? 'draft' : 'quick'));
+  }, [playSFX]);
 
-  // Boot sequence
+  // Boot sequence: boot (800ms) → ready
   useEffect(() => {
-    const timers: ReturnType<typeof setTimeout>[] = [];
-
-    // Phase 1: Boot screen (brief)
-    timers.push(setTimeout(() => setPhase('logo'), 400));
-
-    // Phase 2: Logo reveal
-    timers.push(setTimeout(() => setPhase('title'), 1200));
-
-    // Phase 3: Title letter animation
-    timers.push(setTimeout(() => {
-      const titleText = 'POKÉTACTICS';
-      let letter = 0;
-      const letterInterval = setInterval(() => {
-        letter++;
-        setTitleLetters(letter);
-        if (letter >= titleText.length) {
-          clearInterval(letterInterval);
-          // Show "Press Start" after title completes
-          setTimeout(() => setShowPressStart(true), 400);
-        }
-      }, 80);
-    }, 1400));
-
-    // Pokemon rotation
-    const pokemonInterval = setInterval(() => {
-      setActivePokemon(prev => ({
-        blue: (prev.blue + 1) % TEAM_POKEMON.blue.length,
-        red: (prev.red + 1) % TEAM_POKEMON.red.length,
-      }));
-    }, 3500);
-
-    return () => {
-      timers.forEach(t => clearTimeout(t));
-      clearInterval(pokemonInterval);
-    };
+    const timer = setTimeout(() => setPhase('ready'), 800);
+    return () => clearTimeout(timer);
   }, []);
 
-  const handleStart = () => {
-    if (showPressStart && phase !== 'menu') {
-      setPhase('menu');
-    }
-  };
-
-  const titleText = 'POKÉTACTICS';
+  // Pokemon pair rotation every 4s
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setActivePair(prev => (prev + 1) % VS_PAIRS.length);
+    }, 4000);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
-    <div
-      className="fixed inset-0 z-50 overflow-hidden select-none cursor-pointer"
-      onClick={handleStart}
-      onKeyDown={(e) => e.key === 'Enter' && handleStart()}
-      tabIndex={0}
-    >
-      {/* === DEEP BACKGROUND === */}
+    <div className="fixed inset-0 z-50 overflow-hidden select-none">
+      {/* Deep background */}
       <div className="absolute inset-0 bg-[#030305]" />
 
-      {/* Diagonal team split - appears after boot */}
-      <div className={`absolute inset-0 transition-opacity duration-1000 ${phase !== 'boot' ? 'opacity-100' : 'opacity-0'}`}>
-        {/* Blue team side */}
-        <div
-          className="absolute inset-0 bg-gradient-to-br from-blue-950/80 via-blue-900/40 to-transparent"
-          style={{ clipPath: 'polygon(0 0, 55% 0, 35% 100%, 0 100%)' }}
-        />
-        {/* Red team side */}
-        <div
-          className="absolute inset-0 bg-gradient-to-tl from-red-950/80 via-red-900/40 to-transparent"
-          style={{ clipPath: 'polygon(45% 0, 100% 0, 100% 100%, 65% 100%)' }}
-        />
-        {/* Center clash line */}
-        <div
-          className="absolute inset-0 opacity-60"
-          style={{
-            background: 'linear-gradient(135deg, transparent 47%, rgba(251,191,36,0.3) 49%, rgba(251,191,36,0.5) 50%, rgba(251,191,36,0.3) 51%, transparent 53%)',
-          }}
-        />
-      </div>
-
-      {/* Vignette */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_30%,rgba(0,0,0,0.9)_100%)]" />
-
-      {/* Floating sparkles */}
-      <div className={`absolute inset-0 pointer-events-none transition-opacity duration-1000 ${phase !== 'boot' ? 'opacity-100' : 'opacity-0'}`}>
-        {sparkles.map(s => (
-          <div
-            key={s.id}
-            className="absolute rounded-full animate-sparkle"
-            style={{
-              left: `${s.x}%`,
-              top: `${s.y}%`,
-              width: s.size,
-              height: s.size,
-              background: s.color,
-              boxShadow: `0 0 ${s.size * 2}px ${s.color}`,
-              animationDelay: `${s.delay}s`,
-              animationDuration: `${s.duration}s`,
-            }}
-          />
-        ))}
-      </div>
-
-      {/* Scanlines overlay */}
-      <div
-        className="absolute inset-0 pointer-events-none opacity-[0.03]"
-        style={{ background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.5) 2px, rgba(0,0,0,0.5) 4px)' }}
-      />
-
       {/* === BOOT SCREEN === */}
-      {phase === 'boot' && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black">
-          <div className="text-center animate-pulse">
-            <Gamepad2 className="w-16 h-16 text-amber-500 mx-auto mb-4" strokeWidth={1.5} />
+      <div
+        className={`absolute inset-0 flex items-center justify-center bg-black z-50 transition-opacity duration-500 ${
+          phase === 'boot' ? 'opacity-100' : 'opacity-0 pointer-events-none'
+        }`}
+      >
+        <div className="text-center animate-pulse">
+          <Swords className="w-12 h-12 text-amber-500 mx-auto mb-3" strokeWidth={1.5} />
+          <div
+            className="text-[9px] tracking-[0.3em] text-amber-600/80 uppercase"
+            style={{ fontFamily: '"Press Start 2P", monospace' }}
+          >
+            Loading...
+          </div>
+        </div>
+      </div>
+
+      {/* === READY STATE — everything fades in together === */}
+      <div
+        className={`absolute inset-0 transition-opacity duration-700 ${
+          phase === 'ready' ? 'opacity-100' : 'opacity-0'
+        }`}
+      >
+        {/* Background gradients */}
+        <div className="absolute inset-0">
+          <div
+            className="absolute inset-0 bg-gradient-to-br from-blue-950/60 via-transparent to-transparent"
+            style={{ clipPath: 'polygon(0 0, 55% 0, 35% 100%, 0 100%)' }}
+          />
+          <div
+            className="absolute inset-0 bg-gradient-to-tl from-red-950/60 via-transparent to-transparent"
+            style={{ clipPath: 'polygon(45% 0, 100% 0, 100% 100%, 65% 100%)' }}
+          />
+        </div>
+
+        {/* Vignette */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_30%,rgba(0,0,0,0.9)_100%)]" />
+
+        {/* Floating sparkles */}
+        <div className="absolute inset-0 pointer-events-none">
+          {sparkles.map(s => (
             <div
-              className="text-[10px] tracking-[0.3em] text-amber-600/80 uppercase"
-              style={{ fontFamily: '"Press Start 2P", monospace' }}
-            >
-              Loading...
-            </div>
-          </div>
+              key={s.id}
+              className="absolute rounded-full animate-sparkle"
+              style={{
+                left: `${s.x}%`,
+                top: `${s.y}%`,
+                width: s.size,
+                height: s.size,
+                background: s.color,
+                boxShadow: `0 0 ${s.size * 2}px ${s.color}`,
+                animationDelay: `${s.delay}s`,
+                animationDuration: `${s.duration}s`,
+              }}
+            />
+          ))}
         </div>
-      )}
 
-      {/* === POKEMON SHOWCASES (only when menu is open) === */}
-      {phase === 'menu' && (
-        <>
-          {/* Blue team Pokemon - left side */}
-          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1/3 h-full pointer-events-none">
-            {TEAM_POKEMON.blue.map((pokemon, i) => (
-              <div
-                key={pokemon.id}
-                className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 transition-all duration-700 ${
-                  i === activePokemon.blue ? 'opacity-100 scale-100' : 'opacity-0 scale-75'
-                }`}
-              >
-                {/* Glow */}
-                <div
-                  className="absolute inset-0 blur-3xl scale-150 animate-pulse"
-                  style={{ background: `radial-gradient(circle, ${pokemon.glow}50 0%, transparent 70%)` }}
-                />
-                {/* Sprite */}
-                <img
-                  src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/${pokemon.id}.gif`}
-                  alt=""
-                  className="relative w-28 h-28 md:w-40 md:h-40 lg:w-48 lg:h-48 object-contain scale-x-[-1] animate-pokemon-idle drop-shadow-2xl"
-                  style={{ imageRendering: 'pixelated' }}
-                />
-                {/* Name tag */}
-                <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 whitespace-nowrap">
-                  <span
-                    className="text-[8px] md:text-[10px] font-bold text-blue-400 uppercase tracking-wider"
-                    style={{ fontFamily: '"Press Start 2P", monospace', textShadow: '2px 2px 0 #000' }}
-                  >
-                    {pokemon.name}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
+        {/* Scanlines */}
+        <div
+          className="absolute inset-0 pointer-events-none opacity-[0.03]"
+          style={{ background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.5) 2px, rgba(0,0,0,0.5) 4px)' }}
+        />
 
-          {/* Red team Pokemon - right side */}
-          <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1/3 h-full pointer-events-none">
-            {TEAM_POKEMON.red.map((pokemon, i) => (
-              <div
-                key={pokemon.id}
-                className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 transition-all duration-700 ${
-                  i === activePokemon.red ? 'opacity-100 scale-100' : 'opacity-0 scale-75'
-                }`}
-              >
-                {/* Glow */}
-                <div
-                  className="absolute inset-0 blur-3xl scale-150 animate-pulse"
-                  style={{ background: `radial-gradient(circle, ${pokemon.glow}50 0%, transparent 70%)`, animationDelay: '0.5s' }}
-                />
-                {/* Sprite */}
-                <img
-                  src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/${pokemon.id}.gif`}
-                  alt=""
-                  className="relative w-28 h-28 md:w-40 md:h-40 lg:w-48 lg:h-48 object-contain animate-pokemon-idle drop-shadow-2xl"
-                  style={{ imageRendering: 'pixelated', animationDelay: '0.3s' }}
-                />
-                {/* Name tag */}
-                <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 whitespace-nowrap">
-                  <span
-                    className="text-[8px] md:text-[10px] font-bold text-red-400 uppercase tracking-wider"
-                    style={{ fontFamily: '"Press Start 2P", monospace', textShadow: '2px 2px 0 #000' }}
-                  >
-                    {pokemon.name}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </>
-      )}
+        {/* === LAYOUT === */}
+        <div className="relative z-10 flex flex-col items-center min-h-screen px-4 py-6">
 
-      {/* === MAIN CONTENT === */}
-      <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4">
-
-        {/* Logo + Title container */}
-        <div className={`transform transition-all duration-700 ease-out ${
-          phase === 'menu' ? '-translate-y-16 md:-translate-y-20' : 'translate-y-0'
-        }`}>
-
-          {/* Emblem/Logo */}
-          <div className={`flex justify-center mb-6 transition-all duration-700 ${
-            phase === 'boot' ? 'opacity-0 scale-50' : 'opacity-100 scale-100'
-          }`}>
-            <div className="relative">
-              {/* Outer glow */}
-              <div className="absolute -inset-8 bg-amber-500/20 rounded-full blur-3xl animate-pulse" />
-
-              {/* Main emblem */}
-              <div className={`relative transition-all duration-500 ${phase === 'menu' ? 'w-16 h-16 md:w-20 md:h-20' : 'w-20 h-20 md:w-28 md:h-28'}`}>
-                {/* Diamond shape */}
-                <div className="absolute inset-0 rotate-45 rounded-xl bg-gradient-to-br from-amber-400 via-amber-500 to-amber-600 shadow-2xl" />
-                <div className="absolute inset-1.5 rotate-45 rounded-xl bg-gradient-to-br from-amber-300 via-amber-400 to-amber-500" />
-                <div className="absolute inset-3 rotate-45 rounded-lg bg-gradient-to-br from-amber-600 to-amber-800 shadow-inner" />
-
-                {/* Icon */}
+          {/* TOP: Compact logo + title */}
+          <div className="flex-shrink-0 mt-4 md:mt-6 mb-2 animate-fade-in-down">
+            <div className="flex items-center justify-center gap-3">
+              {/* Small emblem */}
+              <div className="relative w-10 h-10 md:w-12 md:h-12 flex-shrink-0">
+                <div className="absolute inset-0 rotate-45 rounded-lg bg-gradient-to-br from-amber-400 via-amber-500 to-amber-600 shadow-lg" />
+                <div className="absolute inset-1 rotate-45 rounded-lg bg-gradient-to-br from-amber-600 to-amber-800 shadow-inner" />
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <Swords className={`text-amber-100 drop-shadow-lg transition-all duration-500 ${phase === 'menu' ? 'w-8 h-8 md:w-10 md:h-10' : 'w-10 h-10 md:w-14 md:h-14'}`} strokeWidth={1.5} />
+                  <Swords className="w-5 h-5 md:w-6 md:h-6 text-amber-100 drop-shadow" strokeWidth={1.5} />
                 </div>
-
-                {/* Shine */}
-                <div className="absolute inset-3 rotate-45 rounded-lg bg-gradient-to-br from-white/40 via-transparent to-transparent" />
+                <div className="absolute inset-1 rotate-45 rounded-lg bg-gradient-to-br from-white/30 via-transparent to-transparent" />
               </div>
 
-              {/* Corner decorations */}
-              <div className="absolute -top-3 -left-3 w-4 h-4 border-t-2 border-l-2 border-amber-500/50" />
-              <div className="absolute -top-3 -right-3 w-4 h-4 border-t-2 border-r-2 border-amber-500/50" />
-              <div className="absolute -bottom-3 -left-3 w-4 h-4 border-b-2 border-l-2 border-amber-500/50" />
-              <div className="absolute -bottom-3 -right-3 w-4 h-4 border-b-2 border-r-2 border-amber-500/50" />
-            </div>
-          </div>
-
-          {/* Title - Letter by letter animation */}
-          <div className={`text-center transition-all duration-500 ${phase === 'boot' ? 'opacity-0' : 'opacity-100'}`}>
-            <h1 className="relative mb-4">
-              {/* Shadow layer */}
-              <div
-                className="absolute inset-0 text-black/60"
-                style={{
-                  fontFamily: '"Press Start 2P", monospace',
-                  fontSize: 'clamp(1.5rem, 5vw, 3.5rem)',
-                  transform: 'translate(4px, 4px)',
-                }}
-                aria-hidden="true"
-              >
-                {titleText.slice(0, titleLetters)}
-              </div>
-
-              {/* Main title */}
-              <div
-                className="relative"
-                style={{ fontFamily: '"Press Start 2P", monospace', fontSize: 'clamp(1.5rem, 5vw, 3.5rem)' }}
-              >
-                {titleText.split('').map((letter, i) => {
-                  const isPoké = i < 4;
-                  const isVisible = i < titleLetters;
-                  return (
-                    <span
-                      key={i}
-                      className={`inline-block transition-all duration-200 ${
-                        isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'
-                      }`}
-                      style={{
-                        color: isPoké ? '#93C5FD' : '#FCD34D',
-                        textShadow: isPoké
-                          ? '0 0 30px rgba(147,197,253,0.6), 0 0 60px rgba(59,130,246,0.4)'
-                          : '0 0 30px rgba(252,211,77,0.6), 0 0 60px rgba(251,146,60,0.4)',
-                        animationDelay: `${i * 0.08}s`,
-                      }}
-                    >
-                      {letter}
-                    </span>
-                  );
-                })}
-              </div>
-            </h1>
-
-            {/* Subtitle */}
-            <div className={`flex items-center justify-center gap-3 transition-all duration-500 ${
-              titleLetters >= titleText.length ? 'opacity-100' : 'opacity-0'
-            }`}>
-              <div className="h-px w-8 md:w-16 bg-gradient-to-r from-transparent via-amber-500/60 to-amber-500/60" />
-              <span
-                className="text-[8px] md:text-[10px] tracking-[0.25em] text-amber-400/90 uppercase"
-                style={{ fontFamily: '"Press Start 2P", monospace' }}
-              >
-                Tactical Battle
-              </span>
-              <div className="h-px w-8 md:w-16 bg-gradient-to-l from-transparent via-amber-500/60 to-amber-500/60" />
-            </div>
-          </div>
-        </div>
-
-        {/* Press Start / Menu area */}
-        <div className={`mt-12 w-full max-w-sm transition-all duration-500 ${showPressStart ? 'opacity-100' : 'opacity-0'}`}>
-
-          {/* Press Start button - hidden when menu opens */}
-          <div className={`transform transition-all duration-400 ${phase === 'menu' ? 'opacity-0 scale-90 h-0 overflow-hidden' : 'opacity-100 scale-100'}`}>
-            <button
-              onClick={handleStart}
-              className="group relative w-full py-6 flex flex-col items-center gap-2"
-            >
-              <div className="flex items-center gap-3 px-6 py-3 rounded-full border-2 border-amber-500/50 bg-amber-500/10 backdrop-blur-sm group-hover:border-amber-400 group-hover:bg-amber-500/20 transition-all animate-pulse-slow">
-                <span
-                  className="text-xs md:text-sm font-bold tracking-[0.2em] text-amber-400 uppercase"
-                  style={{ fontFamily: '"Press Start 2P", monospace' }}
+              {/* Title text */}
+              <div>
+                <h1
+                  className="text-lg md:text-2xl leading-none"
+                  style={{
+                    fontFamily: '"Press Start 2P", monospace',
+                    background: 'linear-gradient(135deg, #93C5FD 0%, #93C5FD 35%, #FCD34D 36%, #FCD34D 100%)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    filter: 'drop-shadow(0 0 20px rgba(147,197,253,0.4))',
+                  }}
                 >
-                  PRESS START
+                  POKÉTACTICS
+                </h1>
+                <div className="flex items-center gap-2 mt-1">
+                  <div className="h-px flex-1 bg-gradient-to-r from-transparent via-amber-500/50 to-transparent" />
+                  <span
+                    className="text-[7px] md:text-[8px] tracking-[0.2em] text-amber-400/80 uppercase"
+                    style={{ fontFamily: '"Press Start 2P", monospace' }}
+                  >
+                    Tactical Battle
+                  </span>
+                  <div className="h-px flex-1 bg-gradient-to-r from-transparent via-amber-500/50 to-transparent" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* CENTER: Pokemon VS battle scene */}
+          <div className="flex-1 flex items-center justify-center w-full max-w-lg animate-fade-in">
+            <div className="relative w-full" style={{ aspectRatio: '16/10' }}>
+
+              {/* Battle platform — perspective grid */}
+              <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[90%] h-[35%] overflow-hidden">
+                <div
+                  className="absolute inset-0 opacity-30"
+                  style={{
+                    background: 'linear-gradient(180deg, transparent 0%, rgba(59,130,246,0.15) 50%, rgba(239,68,68,0.15) 100%)',
+                    maskImage: 'linear-gradient(180deg, transparent, black)',
+                    WebkitMaskImage: 'linear-gradient(180deg, transparent, black)',
+                  }}
+                />
+                {/* Grid lines */}
+                <div
+                  className="absolute inset-0 opacity-20"
+                  style={{
+                    backgroundImage: `
+                      linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px),
+                      linear-gradient(0deg, rgba(255,255,255,0.1) 1px, transparent 1px)
+                    `,
+                    backgroundSize: '20% 25%',
+                    transform: 'perspective(300px) rotateX(50deg)',
+                    transformOrigin: 'bottom center',
+                  }}
+                />
+              </div>
+
+              {/* Ambient glow under pokemon */}
+              <div className="absolute bottom-[20%] left-[15%] w-24 h-8 md:w-32 md:h-10 bg-blue-500/20 rounded-full blur-xl animate-pulse" />
+              <div className="absolute bottom-[20%] right-[15%] w-24 h-8 md:w-32 md:h-10 bg-red-500/20 rounded-full blur-xl animate-pulse" />
+
+              {/* Energy beam between Pokemon */}
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[40%] h-1">
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-400/60 via-white/40 to-red-400/60 rounded-full blur-sm animate-energy-pulse" />
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-300/40 via-white/20 to-red-300/40 rounded-full blur-md scale-y-[3] animate-energy-pulse" style={{ animationDelay: '0.5s' }} />
+              </div>
+
+              {/* Orbiting particles around the beam center */}
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-0 h-0">
+                {orbitParticles.map(p => (
+                  <div
+                    key={p.id}
+                    className="absolute rounded-full animate-orbit"
+                    style={{
+                      width: p.size,
+                      height: p.size,
+                      background: p.color,
+                      boxShadow: `0 0 ${p.size * 2}px ${p.color}`,
+                      '--orbit-radius': `${p.radius}px`,
+                      '--orbit-offset': `${p.offset}deg`,
+                      animationDuration: `${p.speed}s`,
+                    } as React.CSSProperties}
+                  />
+                ))}
+              </div>
+
+              {/* VS text */}
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
+                <span
+                  className="text-2xl md:text-4xl font-bold text-amber-400 animate-vs-pulse"
+                  style={{
+                    fontFamily: '"Press Start 2P", monospace',
+                    textShadow: '0 0 20px rgba(251,191,36,0.6), 0 0 40px rgba(251,191,36,0.3), 3px 3px 0 #000',
+                  }}
+                >
+                  VS
                 </span>
               </div>
-              <span className="text-[8px] text-slate-600 tracking-widest uppercase mt-2">
-                Click or press Enter
+
+              {/* Left Pokemon (blue team) */}
+              <div className="absolute left-[5%] md:left-[10%] bottom-[18%] w-[35%]">
+                {VS_PAIRS.map((pair, i) => (
+                  <div
+                    key={pair.left.id}
+                    className={`absolute bottom-0 left-1/2 -translate-x-1/2 transition-all duration-700 ${
+                      i === activePair ? 'opacity-100 scale-100' : 'opacity-0 scale-75'
+                    }`}
+                  >
+                    <div className="absolute inset-0 blur-2xl scale-150 bg-blue-500/20 animate-pulse" />
+                    <img
+                      src={SPRITE_URL(pair.left.id)}
+                      alt={pair.left.name}
+                      className="relative w-24 h-24 md:w-36 md:h-36 lg:w-44 lg:h-44 object-contain scale-x-[-1] animate-pokemon-idle drop-shadow-2xl"
+                      style={{ imageRendering: 'pixelated' }}
+                    />
+                    <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 whitespace-nowrap">
+                      <span
+                        className="text-[7px] md:text-[9px] font-bold text-blue-400 uppercase tracking-wider"
+                        style={{ fontFamily: '"Press Start 2P", monospace', textShadow: '2px 2px 0 #000' }}
+                      >
+                        {pair.left.name}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Right Pokemon (red team) */}
+              <div className="absolute right-[5%] md:right-[10%] bottom-[18%] w-[35%]">
+                {VS_PAIRS.map((pair, i) => (
+                  <div
+                    key={pair.right.id}
+                    className={`absolute bottom-0 left-1/2 -translate-x-1/2 transition-all duration-700 ${
+                      i === activePair ? 'opacity-100 scale-100' : 'opacity-0 scale-75'
+                    }`}
+                  >
+                    <div className="absolute inset-0 blur-2xl scale-150 bg-red-500/20 animate-pulse" />
+                    <img
+                      src={SPRITE_URL(pair.right.id)}
+                      alt={pair.right.name}
+                      className="relative w-24 h-24 md:w-36 md:h-36 lg:w-44 lg:h-44 object-contain animate-pokemon-idle drop-shadow-2xl"
+                      style={{ imageRendering: 'pixelated', animationDelay: '0.3s' }}
+                    />
+                    <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 whitespace-nowrap">
+                      <span
+                        className="text-[7px] md:text-[9px] font-bold text-red-400 uppercase tracking-wider"
+                        style={{ fontFamily: '"Press Start 2P", monospace', textShadow: '2px 2px 0 #000' }}
+                      >
+                        {pair.right.name}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* BOTTOM: Action buttons */}
+          <div className="flex-shrink-0 w-full max-w-md space-y-3 mb-4 animate-fade-in-up">
+
+            {/* Primary: Batalla Rapida */}
+            <button
+              onClick={handleStartWithSFX}
+              className="group relative w-full transition-all duration-200 hover:shadow-[0_0_30px_rgba(59,130,246,0.3)] active:scale-[0.98]"
+            >
+              <div className="flex items-center justify-center gap-3 px-6 py-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 rounded-xl border border-blue-400/40 transition-all duration-150">
+                <Swords className="w-5 h-5 text-white" />
+                <span
+                  className="text-sm md:text-base font-bold text-white tracking-wide"
+                  style={{ fontFamily: '"Press Start 2P", monospace', fontSize: 'clamp(11px, 2.5vw, 14px)' }}
+                >
+                  Batalla Rapida
+                </span>
+              </div>
+            </button>
+
+            {/* Secondary row: Draft + Online */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {/* Draft Mode */}
+              {onDraft && (
+                <button
+                  onClick={handleDraftWithSFX}
+                  className="group relative w-full transition-all duration-200 hover:shadow-[0_0_25px_rgba(168,85,247,0.3)] active:scale-[0.98]"
+                >
+                  <div className="flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-600 rounded-xl border border-purple-400/40 transition-all duration-150">
+                    <span
+                      className="text-xs font-bold text-white"
+                      style={{ fontFamily: '"Press Start 2P", monospace', fontSize: '10px' }}
+                    >
+                      Draft Mode
+                    </span>
+                  </div>
+                </button>
+              )}
+
+              {/* Online */}
+              {onMultiplayer && (
+                <div className="relative">
+                  <button
+                    onClick={handleOnlineWithSFX}
+                    className="group relative w-full transition-all duration-200 hover:shadow-[0_0_25px_rgba(16,185,129,0.3)] active:scale-[0.98]"
+                  >
+                    <div className="flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 rounded-xl border border-emerald-400/40 transition-all duration-150">
+                      <Wifi className="w-4 h-4 text-white" />
+                      <span
+                        className="text-xs font-bold text-white"
+                        style={{ fontFamily: '"Press Start 2P", monospace', fontSize: '10px' }}
+                      >
+                        Online
+                      </span>
+                    </div>
+                  </button>
+                  {/* Inline mode toggle */}
+                  <button
+                    onClick={toggleOnlineMode}
+                    className="absolute -top-2 -right-2 md:top-auto md:-bottom-2 md:right-2 px-2 py-0.5 rounded-full text-[8px] font-bold tracking-wide uppercase transition-all duration-200 border"
+                    style={{ fontFamily: '"Press Start 2P", monospace' }}
+                    title={`Mode: ${onlineMode === 'quick' ? 'Quick' : 'Draft'} — click to toggle`}
+                  >
+                    <span
+                      className={`${
+                        onlineMode === 'quick'
+                          ? 'text-emerald-300 border-emerald-500/60 bg-emerald-900/80'
+                          : 'text-purple-300 border-purple-500/60 bg-purple-900/80'
+                      } px-1`}
+                    >
+                      {onlineMode === 'quick' ? 'Quick' : 'Draft'}
+                    </span>
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Tertiary: Como Jugar */}
+            <button
+              onClick={handleHowToPlayWithSFX}
+              className="group w-full flex items-center justify-center gap-2 py-2 transition-all duration-200"
+            >
+              <BookOpen className="w-4 h-4 text-slate-500 group-hover:text-slate-300 transition-colors" />
+              <span
+                className="text-[9px] md:text-[10px] text-slate-500 group-hover:text-slate-300 uppercase tracking-[0.15em] transition-colors"
+                style={{ fontFamily: '"Press Start 2P", monospace' }}
+              >
+                Como Jugar
               </span>
             </button>
           </div>
 
-          {/* Menu panel - appears when menu opens */}
-          <div className={`transform transition-all duration-500 ${phase === 'menu' ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-8 pointer-events-none'}`}>
-            {/* GBA-style menu frame */}
-            <div className="relative">
-              {/* Outer glow */}
-              <div className="absolute -inset-2 bg-gradient-to-b from-amber-500/20 to-amber-900/20 rounded-xl blur-xl" />
-
-              {/* Menu container */}
-              <div
-                className="relative bg-gradient-to-b from-slate-900/95 to-slate-950/95 backdrop-blur-md rounded-xl overflow-hidden"
-                style={{
-                  border: '4px solid',
-                  borderColor: '#78350F #451A03 #451A03 #78350F',
-                  boxShadow: 'inset 0 0 30px rgba(0,0,0,0.5), 0 0 40px rgba(251,191,36,0.15)',
-                }}
+          {/* Version badge */}
+          <div className="flex-shrink-0">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900/80 border border-slate-700/50 backdrop-blur-sm">
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span
+                className="text-[9px] font-bold tracking-wider text-slate-400 uppercase"
+                style={{ fontFamily: '"Press Start 2P", monospace' }}
               >
-                {/* Top shine */}
-                <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-amber-400/50 to-transparent" />
-
-                {/* Menu header */}
-                <div className="px-4 py-3 border-b-2 border-amber-900/30 bg-gradient-to-r from-amber-900/20 via-amber-800/30 to-amber-900/20">
-                  <div className="flex items-center justify-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-                    <span
-                      className="text-[10px] font-bold tracking-[0.2em] text-amber-400/90 uppercase"
-                      style={{ fontFamily: '"Press Start 2P", monospace' }}
-                    >
-                      {submenu === 'main' ? 'Select Mode' : submenu === 'local' ? 'Batalla Local' : 'Multijugador'}
-                    </span>
-                    <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-                  </div>
-                </div>
-
-                {/* Menu buttons */}
-                <div className="p-3 space-y-2">
-                  {submenu === 'main' ? (
-                    <>
-                      {/* Main menu */}
-                      <MenuButton
-                        icon={<Swords className="w-5 h-5" />}
-                        label="Batalla Local"
-                        sublabel="2 jugadores • Hot Seat"
-                        onClick={(e) => { e.stopPropagation(); handleSubmenuToggle('local'); }}
-                        color="blue"
-                        delay={0}
-                      />
-
-                      {onMultiplayer && (
-                        <MenuButton
-                          icon={<Users className="w-5 h-5" />}
-                          label="Multijugador"
-                          sublabel="Online • Crear o unirse"
-                          onClick={(e) => { e.stopPropagation(); handleSubmenuToggle('online'); }}
-                          color="green"
-                          delay={1}
-                        />
-                      )}
-
-                      <MenuButton
-                        icon={<BookOpen className="w-5 h-5" />}
-                        label="Cómo Jugar"
-                        sublabel="Tutorial y mecánicas"
-                        onClick={(e) => { e.stopPropagation(); handleHowToPlayWithSFX(); }}
-                        color="amber"
-                        delay={2}
-                      />
-                    </>
-                  ) : submenu === 'local' ? (
-                    <>
-                      {/* Local battle submenu */}
-                      <button
-                        onClick={(e) => { e.stopPropagation(); handleSubmenuToggle('main'); }}
-                        className="flex items-center gap-2 px-3 py-2 text-slate-400 hover:text-white transition-colors text-sm"
-                      >
-                        <ArrowLeft className="w-4 h-4" />
-                        <span>Volver</span>
-                      </button>
-
-                      <MenuButton
-                        icon={<Zap className="w-5 h-5" />}
-                        label="Batalla Rápida"
-                        sublabel="Equipos aleatorios"
-                        onClick={(e) => { e.stopPropagation(); handleStartWithSFX(); }}
-                        color="blue"
-                        delay={0}
-                      />
-
-                      {onDraft && (
-                        <MenuButton
-                          icon={<Shuffle className="w-5 h-5" />}
-                          label="Draft Mode"
-                          sublabel="Ban & Pick • Competitivo"
-                          onClick={(e) => { e.stopPropagation(); handleDraftWithSFX(); }}
-                          color="purple"
-                          delay={1}
-                        />
-                      )}
-                    </>
-                  ) : (
-                    <>
-                      {/* Online multiplayer submenu */}
-                      <button
-                        onClick={(e) => { e.stopPropagation(); handleSubmenuToggle('main'); }}
-                        className="flex items-center gap-2 px-3 py-2 text-slate-400 hover:text-white transition-colors text-sm"
-                      >
-                        <ArrowLeft className="w-4 h-4" />
-                        <span>Volver</span>
-                      </button>
-
-                      <MenuButton
-                        icon={<Zap className="w-5 h-5" />}
-                        label="Batalla Rápida"
-                        sublabel="Equipos aleatorios • Online"
-                        onClick={(e) => { e.stopPropagation(); handleMultiplayerQuickWithSFX(); }}
-                        color="green"
-                        delay={0}
-                      />
-
-                      <MenuButton
-                        icon={<Shuffle className="w-5 h-5" />}
-                        label="Draft Mode"
-                        sublabel="Ban & Pick • Online"
-                        onClick={(e) => { e.stopPropagation(); handleMultiplayerDraftWithSFX(); }}
-                        color="purple"
-                        delay={1}
-                      />
-                    </>
-                  )}
-                </div>
-              </div>
+                v{VERSION}
+              </span>
+              <span className="text-[8px] text-slate-600">ALPHA</span>
             </div>
           </div>
         </div>
-
-        {/* Version badge - always visible after boot */}
-        <div className={`absolute bottom-4 md:bottom-6 left-1/2 -translate-x-1/2 transition-all duration-700 ${
-          phase !== 'boot' ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-        }`}>
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900/80 border border-slate-700/50 backdrop-blur-sm">
-            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            <span
-              className="text-[9px] font-bold tracking-wider text-slate-400 uppercase"
-              style={{ fontFamily: '"Press Start 2P", monospace' }}
-            >
-              v{VERSION}
-            </span>
-            <span className="text-[8px] text-slate-600">ALPHA</span>
-          </div>
-        </div>
       </div>
-
-      {/* Corner decorations - only when menu is open */}
-      {phase === 'menu' && (
-        <>
-          <div className="absolute top-4 left-4 w-10 h-10 border-t-2 border-l-2 border-amber-600/40 animate-fade-in" />
-          <div className="absolute top-4 right-4 w-10 h-10 border-t-2 border-r-2 border-amber-600/40 animate-fade-in" />
-          <div className="absolute bottom-16 left-4 w-10 h-10 border-b-2 border-l-2 border-amber-600/40 animate-fade-in" />
-          <div className="absolute bottom-16 right-4 w-10 h-10 border-b-2 border-r-2 border-amber-600/40 animate-fade-in" />
-        </>
-      )}
 
       {/* Animations */}
       <style>{`
@@ -577,12 +461,28 @@ export function StartScreen({ onStartGame, onHowToPlay, onMultiplayer, onDraft }
           animation: pokemon-idle 2.5s ease-in-out infinite;
         }
 
-        @keyframes pulse-slow {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.7; }
+        @keyframes energy-pulse {
+          0%, 100% { opacity: 0.5; transform: scaleX(0.95); }
+          50% { opacity: 1; transform: scaleX(1.05); }
         }
-        .animate-pulse-slow {
-          animation: pulse-slow 2s ease-in-out infinite;
+        .animate-energy-pulse {
+          animation: energy-pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes orbit {
+          0% { transform: rotate(var(--orbit-offset, 0deg)) translateX(var(--orbit-radius, 20px)) rotate(calc(-1 * var(--orbit-offset, 0deg))); }
+          100% { transform: rotate(calc(var(--orbit-offset, 0deg) + 360deg)) translateX(var(--orbit-radius, 20px)) rotate(calc(-1 * (var(--orbit-offset, 0deg) + 360deg))); }
+        }
+        .animate-orbit {
+          animation: orbit linear infinite;
+        }
+
+        @keyframes vs-pulse {
+          0%, 100% { transform: scale(1); opacity: 0.9; }
+          50% { transform: scale(1.1); opacity: 1; }
+        }
+        .animate-vs-pulse {
+          animation: vs-pulse 2s ease-in-out infinite;
         }
 
         @keyframes fade-in {
@@ -590,95 +490,31 @@ export function StartScreen({ onStartGame, onHowToPlay, onMultiplayer, onDraft }
           to { opacity: 1; }
         }
         .animate-fade-in {
-          animation: fade-in 0.5s ease-out forwards;
+          animation: fade-in 0.8s ease-out forwards;
+          animation-delay: 0.2s;
+          opacity: 0;
         }
 
-        @keyframes menu-pop {
-          from { opacity: 0; transform: translateY(8px) scale(0.95); }
-          to { opacity: 1; transform: translateY(0) scale(1); }
+        @keyframes fade-in-down {
+          from { opacity: 0; transform: translateY(-20px); }
+          to { opacity: 1; transform: translateY(0); }
         }
-        .animate-menu-pop {
-          animation: menu-pop 0.3s ease-out forwards;
+        .animate-fade-in-down {
+          animation: fade-in-down 0.6s ease-out forwards;
+          animation-delay: 0.1s;
+          opacity: 0;
+        }
+
+        @keyframes fade-in-up {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in-up {
+          animation: fade-in-up 0.6s ease-out forwards;
+          animation-delay: 0.3s;
+          opacity: 0;
         }
       `}</style>
     </div>
-  );
-}
-
-// Menu button component with GBA styling
-interface MenuButtonProps {
-  icon: React.ReactNode;
-  label: string;
-  sublabel: string;
-  onClick: (e: React.MouseEvent) => void;
-  color: 'blue' | 'green' | 'amber' | 'purple';
-  delay: number;
-}
-
-function MenuButton({ icon, label, sublabel, onClick, color, delay }: MenuButtonProps) {
-  const colors = {
-    blue: {
-      bg: 'from-blue-600 to-blue-700',
-      hover: 'hover:from-blue-500 hover:to-blue-600',
-      border: 'border-blue-400/40',
-      glow: 'hover:shadow-[0_0_25px_rgba(59,130,246,0.3)]',
-      icon: 'bg-blue-500/30',
-    },
-    green: {
-      bg: 'from-emerald-600 to-emerald-700',
-      hover: 'hover:from-emerald-500 hover:to-emerald-600',
-      border: 'border-emerald-400/40',
-      glow: 'hover:shadow-[0_0_25px_rgba(16,185,129,0.3)]',
-      icon: 'bg-emerald-500/30',
-    },
-    amber: {
-      bg: 'from-amber-600 to-amber-700',
-      hover: 'hover:from-amber-500 hover:to-amber-600',
-      border: 'border-amber-400/40',
-      glow: 'hover:shadow-[0_0_25px_rgba(245,158,11,0.3)]',
-      icon: 'bg-amber-500/30',
-    },
-    purple: {
-      bg: 'from-purple-600 to-purple-700',
-      hover: 'hover:from-purple-500 hover:to-purple-600',
-      border: 'border-purple-400/40',
-      glow: 'hover:shadow-[0_0_25px_rgba(168,85,247,0.3)]',
-      icon: 'bg-purple-500/30',
-    },
-  };
-
-  const c = colors[color];
-
-  return (
-    <button
-      onClick={onClick}
-      className={`
-        group relative w-full animate-menu-pop
-        transition-all duration-200 ${c.glow}
-      `}
-      style={{ animationDelay: `${delay * 100 + 100}ms` }}
-    >
-      <div className={`
-        flex items-center gap-3 px-4 py-3
-        bg-gradient-to-r ${c.bg} ${c.hover}
-        rounded-lg border ${c.border}
-        transition-all duration-150
-        group-active:scale-[0.98]
-      `}>
-        <div className={`p-2 rounded-lg ${c.icon}`}>
-          {icon}
-        </div>
-        <div className="flex-1 text-left">
-          <div
-            className="text-sm font-bold text-white"
-            style={{ fontFamily: '"Press Start 2P", monospace', fontSize: '10px' }}
-          >
-            {label}
-          </div>
-          <div className="text-[9px] text-white/60 mt-0.5">{sublabel}</div>
-        </div>
-        <ChevronRight className="w-4 h-4 text-white/50 group-hover:text-white/90 group-hover:translate-x-0.5 transition-all" />
-      </div>
-    </button>
   );
 }
