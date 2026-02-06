@@ -8,7 +8,7 @@
 - **Platform**: Web (Mobile-first responsive)
 - **Players**: 2 (Hot-seat or Online multiplayer)
 - **Tech Stack**: React, TypeScript, Tailwind CSS, Vite, Socket.IO
-- **Current Version**: 0.31.0 (Alpha)
+- **Current Version**: 0.32.0 (Alpha)
 
 ---
 
@@ -721,6 +721,51 @@ If defender survives and can counter:
 
 ## Audio
 
+### Audio Preloading System (v0.32.0)
+
+**Critical Performance Optimization:**
+
+The audio system uses a **preload-and-pool architecture** to eliminate timing issues in production:
+
+**Problem Solved:**
+- In production, creating `new Audio()` objects causes network delays (downloading files)
+- Battles and animations became desynchronized due to audio loading latency
+- Large files (like `wild_encounter.mp3` at 5.6 MB) caused significant delays
+- Network conditions (3G/4G/satellite) made timing unpredictable
+
+**Solution Implemented:**
+1. **Audio Preloader** (`utils/audioPreloader.ts`) - Preloads all audio files on game start
+2. **Audio Pooling** - Reuses Audio instances instead of creating new ones
+3. **Loading Screen** - Shows progress while audio files load (blocks game until ready)
+4. **Graceful Degradation** - Game continues even if some files fail to load
+
+**Technical Architecture:**
+
+```typescript
+// audioPreloader.ts singleton
+class AudioPreloader {
+  - musicCache: Map<string, HTMLAudioElement>  // Single instance per track
+  - sfxPools: Map<string, HTMLAudioElement[]>  // 2-3 instances per SFX
+  - loadingState: { total, loaded, failed, isComplete }
+
+  + preloadAll(configs): Promise<void>
+  + getMusic(key): HTMLAudioElement | null
+  + playSFX(key, volume): void
+}
+```
+
+**Pool Sizes:**
+- **Music**: 1 instance each (menu_theme, board_theme, battle_theme)
+- **UI SFX**: 2 instances each (rarely overlap)
+- **Capture SFX**: 3 instances (pokeball_shake plays 3x in sequence)
+
+**Loading Flow:**
+1. Game.tsx renders `<AudioLoadingScreen />` first
+2. `audioPreloader.preloadAll(AUDIO_CONFIGS)` starts
+3. Loading screen shows progress (X/Y files loaded)
+4. On complete, game proceeds to StartScreen
+5. All audio playback is instant (no network delays)
+
 ### Music System (useAudio hook)
 
 **Implemented Tracks:**
@@ -729,10 +774,12 @@ If defender survives and can counter:
 - **Battle Theme** - Intense tactical combat music, plays during attack phase and battles (looped at 50% volume)
 
 **Technical Details:**
-- `useAudio.ts` hook manages audio playback
+- `useAudio.ts` hook manages audio playback using preloaded instances
+- Calls `audioPreloader.getMusic(key)` to retrieve preloaded audio
 - Supports loop, volume control, and fade-out transitions
 - Audio files stored in `public/audio/music/`
 - Automatic track switching based on game state
+- **No network delays** - all files preloaded on game start
 
 ### Sound Effects (useSFX hook)
 
@@ -747,7 +794,7 @@ If defender survives and can counter:
 - **Button Click** - UI button press feedback (50% volume)
 
 *Capture Minigame Sounds:*
-- **Wild Encounter** - Surprise encounter alert (60% volume)
+- **Wild Encounter** - Surprise encounter alert (60% volume) **[TODO: Re-generate, currently 5.6 MB]**
 - **Ring Hit Perfect** - Perfect timing reward chime (60% volume)
 - **Ring Hit Good** - Good timing confirmation (50% volume)
 - **Ring Miss** - Timing miss feedback (40% volume)
@@ -758,10 +805,17 @@ If defender survives and can counter:
 - **Flee Success** - Successful retreat from encounter (60% volume)
 
 **Technical Details:**
-- `useSFX.ts` hook manages one-shot sound effects
-- Simple audio playback with volume control
+- `useSFX.ts` hook manages one-shot sound effects using audio pool
+- Calls `audioPreloader.playSFX(key, volume)` to play from pool
+- Automatically selects available Audio instance from pool (supports overlapping sounds)
 - SFX files stored in `public/audio/sfx/`
 - Integrated in Game.tsx, Header.tsx, StartScreen.tsx, and CaptureMinigame.tsx
+- **No network delays** - all files preloaded on game start
+
+**File Size Guidelines:**
+- UI SFX: 15-50 KB (0.15-0.3s duration)
+- Capture SFX: 25-90 KB (0.2-0.6s duration)
+- **Target**: Keep all SFX under 100 KB for optimal loading
 
 **Planned SFX:**
 - Attack hits (normal, critical, super effective, not effective)
@@ -1018,6 +1072,7 @@ Currently in alpha - major version stays at 0 until core features complete.
 
 | Version | Changes |
 |---------|---------|
+| **0.32.0** | **Audio System Overhaul**: Implemented audio preloader with pooling architecture to fix production timing issues. All audio files now preload on game start (eliminates network delays during gameplay). New loading screen shows progress. Fixed battle desynchronization and slow audio playback in production. Audio pool system reuses instances for better performance. TODO: Re-generate `wild_encounter.mp3` (currently 5.6 MB → target <50 KB). |
 | **0.31.0** | Multiplayer game modes: Quick Battle (random teams) and Draft Mode selection, submenu in multiplayer lobby, server stores and uses game mode, prepared infrastructure for full draft implementation |
 | **0.30.0** | Multiplayer parity with local mode: server-authoritative wild encounters (30% RNG on server), full battle cinematics with battle_zoom → VS screen → battle flow, optimistic updates for responsive UI, fixed music synchronization |
 | **0.29.0** | Ultra-premium GBA shake: flying stars emerge from pokeball center (720° rotation, motion trails), 3 sequential star indicators with epic flash bursts + 8 sparkle particles, authentic horizontal shake with scale pulse (16-24px intensity), 12 radiating energy particles, button glow, shadow quake, tension pulse effects |

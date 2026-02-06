@@ -1,19 +1,19 @@
 import { useRef, useCallback, useEffect } from 'react';
+import { audioPreloader } from '../utils/audioPreloader';
 
-const AUDIO_PATHS = {
-  menu_theme: '/audio/music/menu_theme.mp3',
-  board_theme: '/audio/music/board_theme.mp3',
-  battle_theme: '/audio/music/battle_theme.mp3',
-} as const;
-
-type AudioKey = keyof typeof AUDIO_PATHS;
+export type AudioKey = 'menu_theme' | 'board_theme' | 'battle_theme';
 
 export function useAudio() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const currentTrackRef = useRef<AudioKey | null>(null);
   const fadeIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Play a music track
+  /**
+   * Play a music track using preloaded audio
+   * - No network delay (preloaded on game start)
+   * - Reuses same Audio element for performance
+   * - Supports crossfading between tracks
+   */
   const playMusic = useCallback((key: AudioKey, options?: { loop?: boolean; volume?: number }) => {
     const { loop = false, volume = 0.7 } = options || {};
 
@@ -42,22 +42,24 @@ export function useAudio() {
       audioRef.current = null;
     }
 
-    // Create new audio instance
-    try {
-      const audio = new Audio(AUDIO_PATHS[key]);
-      audio.loop = loop;
-      audio.volume = volume;
-      audio.preload = 'auto';
-
-      audio.play().catch((err) => {
-        console.warn('Audio playback failed:', err);
-      });
-
-      audioRef.current = audio;
-      currentTrackRef.current = key;
-    } catch (err) {
-      console.warn('Failed to create audio:', err);
+    // Get preloaded audio instance
+    const audio = audioPreloader.getMusic(key);
+    if (!audio) {
+      console.warn(`Music track "${key}" not preloaded`);
+      return;
     }
+
+    // Configure and play
+    audio.loop = loop;
+    audio.volume = volume;
+    audio.currentTime = 0; // Reset to start
+
+    audio.play().catch((err) => {
+      console.warn('Audio playback failed:', err);
+    });
+
+    audioRef.current = audio;
+    currentTrackRef.current = key;
   }, []);
 
   // Stop current music with optional fade

@@ -20,6 +20,8 @@ import {
 import { CaptureMinigame } from './components/CaptureMinigame';
 import { StartScreen } from './components/StartScreen';
 import { HowToPlay } from './components/HowToPlay';
+import { AudioLoadingScreen } from './components/AudioLoadingScreen';
+import { audioPreloader, AUDIO_CONFIGS } from './utils/audioPreloader';
 import type { Position, TerrainType, Unit, GameMap, PokemonTemplate, EvolutionData } from './types/game';
 
 export default function Game() {
@@ -151,10 +153,17 @@ export default function Game() {
       playSFX('unit_select', 0.5);
     }
 
-    // Unit deselected (was unit, now null) - only when manually cancelled in MOVING phase
-    // Don't play when completing an action (Wait/Attack)
-    // Don't play when gamePhase is SELECT (that means action completed)
-    if (prevUnit && !currentUnit && gamePhase === 'MOVING' && !isCompletingActionRef.current) {
+    // Unit deselected (was unit, now null) - ONLY when manually cancelled
+    // NEVER play when:
+    // - Completing an action (Wait/Attack) - isCompletingActionRef flag
+    // - Phase is not MOVING (means action already completed)
+    // - Phase is WAITING (unit is waiting)
+    // - Phase is ATTACKING (unit is attacking)
+    const isManualCancel = prevUnit && !currentUnit &&
+                           gamePhase === 'MOVING' &&
+                           !isCompletingActionRef.current;
+
+    if (isManualCancel) {
       playSFX('unit_deselect', 0.4);
     }
 
@@ -319,6 +328,19 @@ export default function Game() {
   const [showDraft, setShowDraft] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [selectedTerrain, setSelectedTerrain] = useState<{ x: number; y: number; terrain: TerrainType } | null>(null);
+
+  // Audio preloading state
+  const [audioLoaded, setAudioLoaded] = useState(false);
+
+  // Preload all audio files on mount (fixes production timing issues)
+  useEffect(() => {
+    audioPreloader.preloadAll(AUDIO_CONFIGS).then(() => {
+      console.log('[Audio] All audio files preloaded successfully');
+    }).catch((err) => {
+      console.error('[Audio] Preload error:', err);
+      // Still set as loaded even if some failed (failed files shown in loading screen)
+    });
+  }, []);
   const [timerResetKey, setTimerResetKey] = useState(0);
   const [timerEnabled, setTimerEnabled] = useState(true);
 
@@ -521,6 +543,11 @@ export default function Game() {
       }
     };
   }, [onGameStarted, onStateUpdate, onActionResult, setMultiplayerState, triggerServerEncounter, triggerServerBattleWithZoom, myPlayer, units]);
+
+  // Show audio loading screen first (critical for production performance)
+  if (!audioLoaded) {
+    return <AudioLoadingScreen onComplete={() => setAudioLoaded(true)} />;
+  }
 
   // Show start screen
   if (gameState === 'menu') {

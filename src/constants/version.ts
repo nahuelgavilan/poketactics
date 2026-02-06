@@ -15,9 +15,12 @@
  * don't trigger version bumps unless they include breaking changes.
  */
 
-export const VERSION = '0.29.0';
+export const VERSION = '0.32.0';
 
 // Version history (Alpha - v0.x.x):
+// 0.32.0 - Audio system overhaul: preloader with pooling architecture fixes production timing issues, loading screen, eliminates network delays, audio pool reuses instances
+// 0.31.0 - Multiplayer game modes: Quick Battle (random teams) and Draft Mode selection, submenu in multiplayer lobby, server stores game mode
+// 0.30.0 - Multiplayer parity: server-authoritative wild encounters (30% RNG), full battle cinematics with zoom → VS → battle flow, optimistic updates, music sync
 // 0.29.0 - Ultra-premium GBA shake: flying stars emerge from pokeball center (720° rotation, motion trails), 3 sequential star indicators with epic flash bursts + 8 sparkle particles, authentic horizontal shake with scale pulse (16-24px intensity), 12 radiating energy particles, button glow, shadow quake, tension pulse effects
 // 0.28.4 - Authentic GBA capture: Clean horizontal shakes (no rotation), simple star flash, professional pokeball design, escalating speed (65ms→60ms→55ms)
 // 0.28.3 - Premium GBA capture: 3 unique shake animations (escalating intensity), synchronized star bursts, screen flash, triple energy waves, 360° particles, lightning effects

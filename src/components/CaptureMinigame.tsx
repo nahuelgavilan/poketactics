@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { getAnimatedFrontSprite } from '../utils/sprites';
 import { useSFX } from '../hooks/useSFX';
 import type { PokemonTemplate, Player, PokemonType } from '../types/game';
@@ -52,25 +52,48 @@ const TYPE_COLORS: Record<PokemonType, { primary: string; secondary: string; glo
   fairy: { primary: '#EE99AC', secondary: '#9B6470', glow: 'rgba(238,153,172,0.8)', dark: '#5A3A4A' },
 };
 
-const RING_BONUS = { perfect: 10, great: 6, good: 3, miss: 0 };
-const RING_SPEEDS = [1800, 1400, 1000];
+// Ring difficulty - speeds (milliseconds for full shrink)
+const RING_SPEEDS = [2200, 1600, 1100]; // Ring 1: 2.2s, Ring 2: 1.6s, Ring 3: 1.1s
+
+// The ring starts at 100% and shrinks toward center
+// These define the SIZE thresholds for each tier
+// Smaller ring = better result (closer to center/pokemon)
+const RING_ZONES = [
+  { perfect: 20, great: 40, good: 60 },  // Ring 1: Forgiving
+  { perfect: 15, great: 32, good: 52 },  // Ring 2: Medium
+  { perfect: 12, great: 25, good: 45 },  // Ring 3: Tight
+];
+
+// Bonus each ring gives to its corresponding shake check
+const RING_SHAKE_BONUS = { perfect: 20, great: 12, good: 5, miss: -5 };
 
 function getBaseRate(pokemon: PokemonTemplate): number {
   const statTotal = pokemon.hp + pokemon.atk + pokemon.def;
-  if (statTotal < 100) return 45;
-  if (statTotal < 150) return 35;
-  if (statTotal < 200) return 25;
-  return 15;
+  if (statTotal < 100) return 55;  // Weak pokemon: easier to catch
+  if (statTotal < 150) return 45;
+  if (statTotal < 200) return 35;
+  return 25;  // Strong pokemon: harder base rate
 }
 
 function getHpBonus(currentHp: number, maxHp: number): number {
   const hpRatio = currentHp / maxHp;
-  return Math.floor((1 - hpRatio) * 40);
+  return Math.floor((1 - hpRatio) * 30);  // Up to +30% if HP is low
 }
 
-function getRingBonus(result: RingResult): number {
-  if (!result) return 0;
-  return RING_BONUS[result];
+// Get the zone result based on ring index and current size
+function getRingResult(ringIndex: number, size: number): RingResult {
+  const zones = RING_ZONES[ringIndex] || RING_ZONES[0];
+  if (size <= zones.perfect) return 'perfect';
+  if (size <= zones.great) return 'great';
+  if (size <= zones.good) return 'good';
+  return 'miss';
+}
+
+// Calculate probability for a single shake check
+// baseChance is the per-shake base, ringResult affects this specific shake
+function getShakeCheckProbability(basePerShake: number, ringResult: RingResult): number {
+  const bonus = RING_SHAKE_BONUS[ringResult || 'miss'];
+  return Math.min(95, Math.max(15, basePerShake + bonus));
 }
 
 function calculateDamage(attacker: PokemonTemplate, defender: PokemonTemplate): number {
@@ -122,8 +145,11 @@ export function CaptureMinigame({
 
   const baseRate = getBaseRate(pokemon);
   const hpBonus = getHpBonus(wildHp, pokemon.hp);
-  const ringBonus = ringResults.reduce((sum, r) => sum + getRingBonus(r), 0);
-  const totalChance = Math.min(95, Math.max(5, baseRate + hpBonus + ringBonus));
+  // Base probability per shake = cube root of total desired probability
+  // We add ring bonuses during shake checks, not here
+  const basePerShake = Math.pow((baseRate + hpBonus) / 100, 1 / 3) * 100;
+  // For UI display: show approximate total chance (assuming all "good" rings)
+  const estimatedTotalChance = Math.min(95, Math.max(5, baseRate + hpBonus));
 
   // Intro sequence
   useEffect(() => {
@@ -260,40 +286,73 @@ export function CaptureMinigame({
     setRingTapFeedback(true);
     setTimeout(() => setRingTapFeedback(false), 200);
 
-    let quality: RingResult;
-    if (currentRingSize <= 20) quality = 'perfect';
-    else if (currentRingSize <= 40) quality = 'great';
-    else if (currentRingSize <= 65) quality = 'good';
-    else quality = 'miss';
+    // Use ring-specific zones for difficulty scaling
+    const quality = getRingResult(ringIndex, currentRingSize);
 
     completeRing(ringIndex, quality);
   }, [phase, currentRingSize, completeRing]);
 
-  // Shake sequence
+  // Shake sequence - 3 individual checks, one per shake
+  // Each check determines if that shake happens
+  // Only if ALL 3 shakes happen = capture success
   useEffect(() => {
     if (phase !== 'shaking') return;
 
-    const finalChance = Math.min(95, Math.max(5, baseRate + hpBonus + ringBonus));
-    const success = Math.random() * 100 < finalChance;
-    setCaptureSuccess(success);
-
     const shakeTimers: ReturnType<typeof setTimeout>[] = [];
-    shakeTimers.push(setTimeout(() => {
-      playSFX('pokeball_shake', 0.5);
-      setShakeIndex(1);
-    }, 700));
-    shakeTimers.push(setTimeout(() => {
-      playSFX('pokeball_shake', 0.5);
-      setShakeIndex(2);
-    }, 1400));
-    shakeTimers.push(setTimeout(() => {
-      playSFX('pokeball_shake', 0.5);
-      setShakeIndex(3);
-    }, 2100));
-    shakeTimers.push(setTimeout(() => setPhase('result'), 2800));
+
+    // Perform all 3 checks upfront to determine which shakes will happen
+    const shakesEarned: boolean[] = [];
+    for (let i = 0; i < 3; i++) {
+      const ringResult = ringResults[i];
+      const shakeProb = getShakeCheckProbability(basePerShake, ringResult);
+      const passed = Math.random() * 100 < shakeProb;
+      shakesEarned.push(passed);
+      // Once one fails, no more shakes can happen
+      if (!passed) break;
+    }
+
+    // Count how many consecutive shakes were earned (0, 1, 2, or 3)
+    const shakesCount = shakesEarned.filter(Boolean).length;
+
+    // Capture is only successful if ALL 3 shakes happened
+    setCaptureSuccess(shakesCount === 3);
+
+    // Visual timing constants
+    const SHAKE_INTERVAL = 700; // Time between each shake
+    const PAUSE_AFTER_LAST = 700; // Pause after last shake before result
+
+    // Schedule shakes based on how many were earned
+    // Shake 1 (at 700ms)
+    if (shakesCount >= 1) {
+      shakeTimers.push(setTimeout(() => {
+        playSFX('pokeball_shake', 0.5);
+        setShakeIndex(1);
+      }, SHAKE_INTERVAL));
+    }
+
+    // Shake 2 (at 1400ms)
+    if (shakesCount >= 2) {
+      shakeTimers.push(setTimeout(() => {
+        playSFX('pokeball_shake', 0.5);
+        setShakeIndex(2);
+      }, SHAKE_INTERVAL * 2));
+    }
+
+    // Shake 3 (at 2100ms)
+    if (shakesCount >= 3) {
+      shakeTimers.push(setTimeout(() => {
+        playSFX('pokeball_shake', 0.5);
+        setShakeIndex(3);
+      }, SHAKE_INTERVAL * 3));
+    }
+
+    // Go to result after appropriate time
+    // Time = (shakes earned * interval) + pause, minimum 1 interval for "no shakes" case
+    const resultTime = Math.max(1, shakesCount) * SHAKE_INTERVAL + PAUSE_AFTER_LAST;
+    shakeTimers.push(setTimeout(() => setPhase('result'), resultTime));
 
     return () => shakeTimers.forEach(t => clearTimeout(t));
-  }, [phase, baseRate, hpBonus, ringBonus, playSFX]);
+  }, [phase, basePerShake, ringResults, playSFX]);
 
   // Result handler - pass damageTaken to callbacks
   useEffect(() => {
@@ -331,14 +390,6 @@ export function CaptureMinigame({
   const isRingPhase = phase === 'ring1' || phase === 'ring2' || phase === 'ring3';
   const isAttackPhase = phase === 'attack_intro' || phase === 'attack_execute' || phase === 'attack_counter' || phase === 'attack_outro';
   const showWildPokemon = phase !== 'flash' && phase !== 'alert' && phase !== 'silhouette' && phase !== 'reveal';
-
-  // Generate ring particles
-  const ringParticles = useMemo(() => {
-    return Array.from({ length: 12 }, (_, i) => ({
-      id: i,
-      angle: (i * 30) * (Math.PI / 180),
-    }));
-  }, []);
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center overflow-hidden select-none">
@@ -467,11 +518,10 @@ export function CaptureMinigame({
                     <span className="text-[10px] font-bold text-yellow-400" style={{ fontFamily: '"Press Start 2P", monospace' }}>HP</span>
                     <div className="flex-1 h-5 rounded-full bg-slate-900 border-2 border-slate-700 overflow-hidden relative">
                       <div
-                        className={`absolute inset-y-0 left-0 transition-all duration-700 ease-out ${
-                          hpPercentage > 50 ? 'bg-gradient-to-r from-emerald-500 via-emerald-400 to-lime-400' :
+                        className={`absolute inset-y-0 left-0 transition-all duration-700 ease-out ${hpPercentage > 50 ? 'bg-gradient-to-r from-emerald-500 via-emerald-400 to-lime-400' :
                           hpPercentage > 25 ? 'bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-400' :
-                          'bg-gradient-to-r from-red-600 via-red-500 to-orange-500'
-                        }`}
+                            'bg-gradient-to-r from-red-600 via-red-500 to-orange-500'
+                          }`}
                         style={{ width: `${hpPercentage}%` }}
                       >
                         <div className="absolute inset-0 bg-gradient-to-b from-white/30 to-transparent h-1/2" />
@@ -489,12 +539,12 @@ export function CaptureMinigame({
                 <div className="mt-2 flex items-center justify-between">
                   <span className="text-[8px] text-slate-400">CAPTURA</span>
                   <div className="flex items-center gap-1">
-                    <div className={`w-2 h-2 rounded-full ${totalChance >= 50 ? 'bg-emerald-400' : totalChance >= 30 ? 'bg-amber-400' : 'bg-red-400'} animate-pulse`} />
+                    <div className={`w-2 h-2 rounded-full ${estimatedTotalChance >= 50 ? 'bg-emerald-400' : estimatedTotalChance >= 30 ? 'bg-amber-400' : 'bg-red-400'} animate-pulse`} />
                     <span
-                      className={`text-sm font-bold ${totalChance >= 50 ? 'text-emerald-400' : totalChance >= 30 ? 'text-amber-400' : 'text-red-400'}`}
+                      className={`text-sm font-bold ${estimatedTotalChance >= 50 ? 'text-emerald-400' : estimatedTotalChance >= 30 ? 'text-amber-400' : 'text-red-400'}`}
                       style={{ fontFamily: '"Press Start 2P", monospace' }}
                     >
-                      {totalChance}%
+                      ~{estimatedTotalChance}%
                     </span>
                   </div>
                 </div>
@@ -507,9 +557,8 @@ export function CaptureMinigame({
               <img
                 src={getAnimatedFrontSprite(pokemon.id)}
                 alt={pokemon.name}
-                className={`relative w-40 h-40 md:w-52 md:h-52 object-contain drop-shadow-2xl transition-all duration-200 ${
-                  phase === 'attack_execute' ? 'brightness-[3]' : ''
-                }`}
+                className={`relative w-40 h-40 md:w-52 md:h-52 object-contain drop-shadow-2xl transition-all duration-200 ${phase === 'attack_execute' ? 'brightness-[3]' : ''
+                  }`}
                 style={{ imageRendering: 'pixelated' }}
               />
 
@@ -530,18 +579,16 @@ export function CaptureMinigame({
           {/* === ATTACK CINEMATIC - Player Pokemon === */}
           {isAttackPhase && (
             <div className="absolute bottom-32 left-0 right-0 flex items-end justify-start px-8">
-              <div className={`relative ${
-                phase === 'attack_intro' ? 'animate-[slide-in-left_0.6s_cubic-bezier(0.34,1.56,0.64,1)_forwards]' :
+              <div className={`relative ${phase === 'attack_intro' ? 'animate-[slide-in-left_0.6s_cubic-bezier(0.34,1.56,0.64,1)_forwards]' :
                 phase === 'attack_outro' ? 'animate-[slide-out-left_0.5s_ease-in_forwards]' :
-                phase === 'attack_counter' ? 'animate-[player-hit_0.4s_ease-out]' : ''
-              }`}>
+                  phase === 'attack_counter' ? 'animate-[player-hit_0.4s_ease-out]' : ''
+                }`}>
                 <div className="absolute inset-0 blur-[40px] scale-125" style={{ background: playerTypeColor.glow, opacity: 0.6 }} />
                 <img
                   src={getAnimatedFrontSprite(activePlayerPokemon.id)}
                   alt={activePlayerPokemon.name}
-                  className={`relative w-32 h-32 md:w-40 md:h-40 object-contain drop-shadow-2xl scale-x-[-1] ${
-                    phase === 'attack_counter' ? 'brightness-[3]' : ''
-                  }`}
+                  className={`relative w-32 h-32 md:w-40 md:h-40 object-contain drop-shadow-2xl scale-x-[-1] ${phase === 'attack_counter' ? 'brightness-[3]' : ''
+                    }`}
                   style={{ imageRendering: 'pixelated' }}
                 />
 
@@ -608,9 +655,8 @@ export function CaptureMinigame({
                     disabled={hasAttacked}
                     onMouseEnter={() => setHoveredButton('attack')}
                     onMouseLeave={() => setHoveredButton(null)}
-                    className={`relative group rounded-xl overflow-hidden transition-all duration-200 ${
-                      hasAttacked ? 'opacity-40 cursor-not-allowed' : 'hover:scale-105 active:scale-95'
-                    }`}
+                    className={`relative group rounded-xl overflow-hidden transition-all duration-200 ${hasAttacked ? 'opacity-40 cursor-not-allowed' : 'hover:scale-105 active:scale-95'
+                      }`}
                     style={{
                       background: hasAttacked ? '#1a1a2e' : 'linear-gradient(180deg, #dc2626 0%, #991b1b 50%, #7f1d1d 100%)',
                       boxShadow: hasAttacked ? 'none' : hoveredButton === 'attack'
@@ -717,386 +763,400 @@ export function CaptureMinigame({
             </div>
           )}
 
-          {/* === RING MINIGAME === */}
+          {/* === CAPTURE RING - POKEMON GO STYLE === */}
           {(isRingPhase || phase === 'ring_result') && (
             <div
-              className="absolute inset-0 flex items-center justify-center bg-black/80 z-30 cursor-pointer"
+              className="absolute inset-0 flex items-center justify-center z-30 cursor-pointer"
               onClick={isRingPhase ? handleRingTap : undefined}
+              style={{ background: '#0a0a0f' }}
             >
-              <div className="relative">
-                {/* Ring Number Indicator */}
-                <div className="absolute -top-20 left-1/2 -translate-x-1/2 flex items-center gap-4">
-                  {[0, 1, 2].map(i => (
-                    <div
-                      key={i}
-                      className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 ${
-                        ringResults[i] === 'perfect' ? 'bg-emerald-500 scale-110' :
-                        ringResults[i] === 'great' ? 'bg-blue-500 scale-105' :
-                        ringResults[i] === 'good' ? 'bg-amber-500' :
-                        ringResults[i] === 'miss' ? 'bg-red-500/60' :
-                        currentRingIndex === i ? 'bg-white/20 animate-pulse' : 'bg-slate-800/60'
-                      }`}
-                      style={{
-                        border: `3px solid ${
-                          ringResults[i] === 'perfect' ? '#34d399' :
-                          ringResults[i] === 'great' ? '#60a5fa' :
-                          ringResults[i] === 'good' ? '#fbbf24' :
-                          ringResults[i] === 'miss' ? '#f87171' :
-                          currentRingIndex === i ? '#fff' : '#475569'
-                        }`,
-                        boxShadow: ringResults[i] ? `0 0 20px ${
-                          ringResults[i] === 'perfect' ? 'rgba(52,211,153,0.5)' :
-                          ringResults[i] === 'great' ? 'rgba(96,165,250,0.5)' :
-                          ringResults[i] === 'good' ? 'rgba(251,191,36,0.5)' : 'rgba(248,113,113,0.3)'
-                        }` : currentRingIndex === i ? '0 0 30px rgba(255,255,255,0.3)' : 'none',
-                      }}
-                    >
-                      <span className="text-[10px] font-bold text-white" style={{ fontFamily: '"Press Start 2P", monospace' }}>
-                        {ringResults[i] === 'perfect' ? '★' :
-                         ringResults[i] === 'great' ? '◆' :
-                         ringResults[i] === 'good' ? '●' :
-                         ringResults[i] === 'miss' ? '✕' : i + 1}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Target Ring with particles */}
-                <div className="relative w-44 h-44 md:w-52 md:h-52">
-                  {/* Outer glow */}
-                  <div
-                    className="absolute inset-0 rounded-full animate-pulse"
-                    style={{ background: `radial-gradient(circle, ${typeColor.glow} 0%, transparent 70%)` }}
-                  />
-
-                  {/* Particle orbit */}
-                  {isRingPhase && ringParticles.map(p => (
-                    <div
-                      key={p.id}
-                      className="absolute w-2 h-2 rounded-full bg-white animate-[orbit_3s_linear_infinite]"
-                      style={{
-                        top: '50%',
-                        left: '50%',
-                        transform: `rotate(${p.angle}rad) translateX(90px)`,
-                        animationDelay: `${p.id * 0.25}s`,
-                        opacity: 0.6,
-                        boxShadow: '0 0 10px #fff',
-                      }}
-                    />
-                  ))}
-
-                  {/* Target circle */}
-                  <div
-                    className="absolute inset-0 rounded-full"
-                    style={{
-                      border: `6px solid ${typeColor.primary}`,
-                      boxShadow: `0 0 40px ${typeColor.glow}, inset 0 0 60px ${typeColor.glow}`,
-                    }}
-                  />
-
-                  {/* Zone indicators */}
-                  <div className="absolute inset-[15%] rounded-full border-2 border-emerald-500/30" />
-                  <div className="absolute inset-[30%] rounded-full border-2 border-blue-500/20" />
-                  <div className="absolute inset-[45%] rounded-full border-2 border-amber-500/15" />
-
-                  {/* Shrinking ring */}
-                  {isRingPhase && (
-                    <div
-                      className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full transition-colors duration-50 ${
-                        ringTapFeedback ? 'scale-90' : ''
-                      }`}
-                      style={{
-                        width: `${currentRingSize * (window.innerWidth < 768 ? 1.76 : 2.08)}px`,
-                        height: `${currentRingSize * (window.innerWidth < 768 ? 1.76 : 2.08)}px`,
-                        border: `5px solid ${
-                          currentRingSize <= 20 ? '#22c55e' :
-                          currentRingSize <= 40 ? '#3b82f6' :
-                          currentRingSize <= 65 ? '#f59e0b' : '#ef4444'
-                        }`,
-                        boxShadow: `0 0 ${currentRingSize <= 20 ? '40px #22c55e' : currentRingSize <= 40 ? '30px #3b82f6' : '20px rgba(239,68,68,0.5)'}, inset 0 0 ${currentRingSize <= 20 ? '30px rgba(34,197,94,0.4)' : '20px rgba(255,255,255,0.1)'}`,
-                        transition: 'box-shadow 0.1s, border-color 0.1s',
-                      }}
-                    />
-                  )}
-
-                  {/* Pokeball center */}
-                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-                    <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-gradient-to-b from-red-500 to-red-600 border-4 border-slate-900 relative overflow-hidden shadow-[0_0_30px_rgba(239,68,68,0.4)]">
-                      <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-2.5 bg-slate-900" />
-                      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-6 h-6 md:w-7 md:h-7 rounded-full bg-white border-[3px] border-slate-900 shadow-inner" />
-                      <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-b from-slate-100 to-white" />
-                    </div>
-                  </div>
-
-                  {/* Tap feedback burst */}
-                  {ringTapFeedback && (
-                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                      {[...Array(8)].map((_, i) => (
-                        <div
-                          key={i}
-                          className="absolute w-3 h-3 rounded-full bg-white animate-[burst_0.4s_ease-out_forwards]"
-                          style={{
-                            transform: `rotate(${i * 45}deg) translateY(-50px)`,
-                            animationDelay: `${i * 0.02}s`,
-                          }}
-                        />
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* Ring result message */}
-                {phase === 'ring_result' && lastRingResult && (
-                  <div className="absolute -bottom-16 left-1/2 -translate-x-1/2 animate-[result-bounce_0.5s_cubic-bezier(0.34,1.56,0.64,1)_forwards]">
-                    <span
-                      className={`text-2xl font-black ${
-                        lastRingResult === 'perfect' ? 'text-emerald-400' :
-                        lastRingResult === 'great' ? 'text-blue-400' :
-                        lastRingResult === 'good' ? 'text-amber-400' : 'text-red-400'
-                      }`}
-                      style={{
-                        fontFamily: '"Press Start 2P", monospace',
-                        textShadow: lastRingResult === 'perfect' ? '0 0 30px rgba(34,197,94,0.8), 3px 3px 0 #000' :
-                                   lastRingResult === 'great' ? '0 0 20px rgba(59,130,246,0.6), 3px 3px 0 #000' :
-                                   '3px 3px 0 #000',
-                      }}
-                    >
-                      {lastRingResult === 'perfect' ? '¡¡PERFECTO!!' :
-                       lastRingResult === 'great' ? '¡GENIAL!' :
-                       lastRingResult === 'good' ? '¡BIEN!' : 'Fallaste...'}
-                    </span>
-                  </div>
-                )}
-
-                {/* Instruction */}
-                {isRingPhase && (
-                  <div className="absolute -bottom-16 left-1/2 -translate-x-1/2 whitespace-nowrap">
-                    <span
-                      className="text-sm text-white/80 animate-pulse"
-                      style={{ fontFamily: '"Press Start 2P", monospace' }}
-                    >
-                      ¡TOCA!
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* === PREMIUM THROW ANIMATION === */}
-          {phase === 'throw' && (
-            <div className="absolute inset-0 bg-gradient-radial from-black/60 via-black/80 to-black z-30 overflow-hidden">
-              {/* Energy trail particles */}
-              <div className="absolute inset-0 pointer-events-none">
-                {[...Array(20)].map((_, i) => (
+              {/* Progress dots - top */}
+              <div className="absolute top-8 left-1/2 -translate-x-1/2 flex gap-3">
+                {[0, 1, 2].map(i => (
                   <div
                     key={i}
-                    className="absolute animate-[trail-particle_0.8s_ease-out_forwards]"
-                    style={{
-                      left: '50%',
-                      bottom: '20%',
-                      width: '8px',
-                      height: '8px',
-                      background: 'radial-gradient(circle, rgba(239,68,68,0.8) 0%, rgba(239,68,68,0) 70%)',
-                      filter: 'blur(2px)',
-                      animationDelay: `${i * 0.04}s`,
-                    }}
+                    className={`w-4 h-4 rounded-full border-2 transition-all ${ringResults[i]
+                      ? ringResults[i] === 'perfect' ? 'bg-green-400 border-green-400'
+                        : ringResults[i] === 'great' ? 'bg-blue-400 border-blue-400'
+                          : ringResults[i] === 'good' ? 'bg-yellow-400 border-yellow-400'
+                            : 'bg-red-400 border-red-400'
+                      : currentRingIndex === i ? 'border-white bg-white/20 animate-pulse'
+                        : 'border-white/30'
+                      }`}
                   />
                 ))}
               </div>
 
-              {/* Pokeball with premium throw arc */}
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="animate-[throw-arc_1s_cubic-bezier(0.34,0.06,0.25,1)_forwards]">
-                  {/* Motion blur effect */}
-                  <div className="absolute inset-0 animate-[motion-blur_1s_ease-out_forwards] opacity-40">
-                    <div className="w-24 h-24 rounded-full bg-red-500/40 blur-xl" />
+              {/* Ring counter */}
+              <div className="absolute top-16 left-1/2 -translate-x-1/2">
+                <span className="text-white/60 text-sm font-bold">
+                  RING {currentRingIndex + 1} / 3
+                </span>
+              </div>
+
+              {/* Main capture area */}
+              <div className="relative">
+                {/* Target circle with VISIBLE ZONES */}
+                <div
+                  className="w-64 h-64 md:w-80 md:h-80 rounded-full relative overflow-hidden"
+                  style={{
+                    background: '#1a1a2e',
+                    border: `3px solid ${typeColor.primary}`,
+                    boxShadow: `0 0 40px ${typeColor.glow}`,
+                  }}
+                >
+                  {/* MISS zone - outer red ring */}
+                  <div
+                    className="absolute inset-0 rounded-full"
+                    style={{
+                      background: 'radial-gradient(circle, transparent 60%, rgba(239,68,68,0.3) 60%, rgba(239,68,68,0.15) 100%)',
+                    }}
+                  />
+
+                  {/* GOOD zone - yellow ring */}
+                  <div
+                    className="absolute rounded-full"
+                    style={{
+                      inset: `${(100 - RING_ZONES[currentRingIndex].good) / 2}%`,
+                      background: 'rgba(250,204,21,0.25)',
+                      border: '2px solid rgba(250,204,21,0.6)',
+                    }}
+                  />
+
+                  {/* GREAT zone - blue ring */}
+                  <div
+                    className="absolute rounded-full"
+                    style={{
+                      inset: `${(100 - RING_ZONES[currentRingIndex].great) / 2}%`,
+                      background: 'rgba(59,130,246,0.3)',
+                      border: '2px solid rgba(59,130,246,0.7)',
+                    }}
+                  />
+
+                  {/* PERFECT zone - green center (THE GOAL!) */}
+                  <div
+                    className="absolute rounded-full animate-pulse"
+                    style={{
+                      inset: `${(100 - RING_ZONES[currentRingIndex].perfect) / 2}%`,
+                      background: 'rgba(34,197,94,0.4)',
+                      border: '3px solid rgba(34,197,94,0.9)',
+                      boxShadow: '0 0 20px rgba(34,197,94,0.5)',
+                    }}
+                  />
+
+                  {/* Zone labels */}
+                  <div className="absolute top-2 left-1/2 -translate-x-1/2 text-[8px] text-red-400/80 font-bold">MISS</div>
+                  <div
+                    className="absolute text-[8px] text-yellow-400/90 font-bold"
+                    style={{
+                      top: `${(100 - RING_ZONES[currentRingIndex].good) / 2 + 2}%`,
+                      left: '50%',
+                      transform: 'translateX(-50%)',
+                    }}
+                  >GOOD</div>
+                  <div
+                    className="absolute text-[8px] text-blue-400 font-bold"
+                    style={{
+                      top: `${(100 - RING_ZONES[currentRingIndex].great) / 2 + 2}%`,
+                      left: '50%',
+                      transform: 'translateX(-50%)',
+                    }}
+                  >GREAT</div>
+
+                  {/* Shrinking ring - THE INDICATOR */}
+                  {isRingPhase && (
+                    <div
+                      className="absolute top-1/2 left-1/2 rounded-full pointer-events-none"
+                      style={{
+                        width: `${currentRingSize}%`,
+                        height: `${currentRingSize}%`,
+                        transform: 'translate(-50%, -50%)',
+                        border: `4px solid ${currentRingSize <= RING_ZONES[currentRingIndex].perfect ? '#22c55e' :
+                            currentRingSize <= RING_ZONES[currentRingIndex].great ? '#3b82f6' :
+                              currentRingSize <= RING_ZONES[currentRingIndex].good ? '#facc15' :
+                                '#fff'
+                          }`,
+                        boxShadow: `0 0 15px ${currentRingSize <= RING_ZONES[currentRingIndex].perfect ? 'rgba(34,197,94,1)' :
+                            currentRingSize <= RING_ZONES[currentRingIndex].great ? 'rgba(59,130,246,0.8)' :
+                              currentRingSize <= RING_ZONES[currentRingIndex].good ? 'rgba(250,204,21,0.6)' :
+                                'rgba(255,255,255,0.4)'
+                          }`,
+                      }}
+                    />
+                  )}
+
+                  {/* Pokemon in center - BIG and clear */}
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
+                    <img
+                      src={getAnimatedFrontSprite(pokemon.id)}
+                      alt={pokemon.name}
+                      className="w-28 h-28 md:w-36 md:h-36"
+                      style={{
+                        imageRendering: 'pixelated',
+                        filter: `drop-shadow(0 0 15px ${typeColor.glow})`,
+                      }}
+                    />
                   </div>
 
-                  {/* Pokeball */}
-                  <div className="relative w-24 h-24 animate-[throw-spin_0.8s_linear_infinite]">
-                    <div className="w-full h-full rounded-full bg-gradient-to-br from-red-400 via-red-500 to-red-700 border-4 border-slate-900 relative overflow-hidden shadow-[0_0_60px_rgba(239,68,68,0.8),0_0_120px_rgba(239,68,68,0.4)]">
-                      {/* Top white shine */}
-                      <div className="absolute top-2 left-4 w-8 h-6 bg-white/60 rounded-full blur-sm" />
-                      {/* Center black band */}
-                      <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-3 bg-slate-900" />
-                      {/* Center button */}
-                      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white border-4 border-slate-900 shadow-inner">
-                        <div className="absolute inset-2 rounded-full bg-gradient-to-br from-slate-100 via-white to-slate-200 animate-pulse" />
+                  {/* Tap feedback flash */}
+                  {ringTapFeedback && (
+                    <div className="absolute inset-0 rounded-full bg-white/50 animate-[flash-out_0.2s_ease-out_forwards]" />
+                  )}
+                </div>
+
+                {/* Result display - BIG and clear */}
+                {phase === 'ring_result' && lastRingResult && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div
+                      className="text-center animate-[pop-in_0.3s_ease-out]"
+                      style={{ fontFamily: '"Press Start 2P", monospace' }}
+                    >
+                      <div className={`text-4xl md:text-5xl font-black ${lastRingResult === 'perfect' ? 'text-green-400' :
+                        lastRingResult === 'great' ? 'text-blue-400' :
+                          lastRingResult === 'good' ? 'text-yellow-400' : 'text-red-400'
+                        }`}>
+                        {lastRingResult === 'perfect' ? 'PERFECT!' :
+                          lastRingResult === 'great' ? 'GREAT!' :
+                            lastRingResult === 'good' ? 'GOOD!' : 'MISS!'}
                       </div>
-                      {/* Bottom white half */}
-                      <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-b from-slate-50 to-white" />
-                      {/* Bottom shine */}
-                      <div className="absolute bottom-3 right-5 w-6 h-4 bg-white/40 rounded-full blur-sm" />
+                      <div className={`text-lg mt-2 ${lastRingResult === 'perfect' ? 'text-green-300' :
+                        lastRingResult === 'great' ? 'text-blue-300' :
+                          lastRingResult === 'good' ? 'text-yellow-300' : 'text-red-300'
+                        }`}>
+                        {lastRingResult === 'perfect' ? '+20%' :
+                          lastRingResult === 'great' ? '+12%' :
+                            lastRingResult === 'good' ? '+5%' : '-5%'}
+                      </div>
                     </div>
                   </div>
+                )}
+              </div>
 
-                  {/* Energy glow pulse */}
-                  <div className="absolute inset-0 animate-[energy-pulse_0.8s_ease-out_forwards]">
-                    <div className="w-full h-full rounded-full bg-red-400/20 blur-2xl" />
+              {/* Instruction - only during ring phase */}
+              {isRingPhase && (
+                <div className="absolute bottom-16 left-1/2 -translate-x-1/2 text-center">
+                  <div
+                    className="text-white text-lg font-bold animate-pulse"
+                    style={{ fontFamily: '"Press Start 2P", monospace' }}
+                  >
+                    TAP!
+                  </div>
+                  <div className="text-white/50 text-xs mt-2">
+                    Tap when the ring is smallest
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* === THROW ANIMATION WITH SHOWDOWN SPRITE === */}
+          {phase === 'throw' && (
+            <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-[#080810] to-slate-950 z-30 overflow-hidden">
+              {/* Pokeball throw arc with Showdown sprite */}
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="animate-[throw-arc_1s_cubic-bezier(0.22,0.61,0.36,1)_forwards]">
+                  {/* Motion blur trail */}
+                  <div className="absolute inset-[-50%] animate-[motion-blur_1s_ease-out_forwards] opacity-50">
+                    <div
+                      className="w-full h-full rounded-full"
+                      style={{ background: 'radial-gradient(circle, rgba(239,68,68,0.6) 0%, transparent 70%)' }}
+                    />
+                  </div>
+
+                  {/* Showdown Pokeball Sprite - spinning */}
+                  <div className="relative animate-[throw-spin_0.25s_linear_infinite]">
+                    <img
+                      src="https://play.pokemonshowdown.com/sprites/itemicons/poke-ball.png"
+                      alt="Pokeball"
+                      className="w-16 h-16 md:w-20 md:h-20"
+                      style={{
+                        imageRendering: 'pixelated',
+                        transform: 'scale(2.5)',
+                        filter: 'drop-shadow(0 0 20px rgba(239,68,68,0.8)) drop-shadow(0 0 40px rgba(239,68,68,0.4))',
+                      }}
+                    />
                   </div>
                 </div>
               </div>
 
-              {/* Impact flash effect (appears at end) */}
+              {/* Impact flash at end */}
               <div className="absolute inset-0 flex items-center justify-center animate-[impact-flash_1s_ease-out_forwards] opacity-0">
-                <div className="w-96 h-96 rounded-full bg-white/30 blur-3xl" />
+                <div className="w-64 h-64 rounded-full bg-white/40 blur-3xl" />
               </div>
             </div>
           )}
 
-          {/* === GBA AUTHENTIC SHAKING ANIMATION === */}
+          {/* === POKEBALL CAPTURE ANIMATION WITH SHOWDOWN SPRITE === */}
           {phase === 'shaking' && (
-            <div className="absolute inset-0 bg-gradient-to-b from-black via-slate-900 to-black z-30 overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-[#080810] to-slate-950 z-30 overflow-hidden">
+              {/* Subtle ambient glow */}
+              <div
+                className="absolute inset-0 opacity-30"
+                style={{ background: 'radial-gradient(ellipse at 50% 60%, rgba(239,68,68,0.15) 0%, transparent 50%)' }}
+              />
+
               <div className="relative h-full flex flex-col items-center justify-center">
-                {/* GBA Stars - appear one by one */}
-                <div className="flex justify-center gap-8 mb-16">
+                {/* Hatch Counter Stars - positioned above pokeball */}
+                <div className="flex justify-center gap-4 md:gap-6 mb-8 md:mb-12">
                   {[1, 2, 3].map(i => (
-                    <div key={i} className="relative w-16 h-16 flex items-center justify-center">
-                      {/* Epic flash burst when star appears */}
+                    <div key={i} className="relative w-12 h-12 md:w-16 md:h-16 flex items-center justify-center">
+                      {/* Star arrival effects */}
                       {shakeIndex === i && (
                         <>
-                          {/* Main flash */}
-                          <div className="absolute inset-0 animate-[star-flash_0.3s_ease-out_forwards]">
-                            <div className="w-28 h-28 -translate-x-1/4 -translate-y-1/4 rounded-full bg-yellow-300/80 blur-xl" />
+                          {/* Bright flash */}
+                          <div className="absolute inset-[-100%] animate-[star-flash-burst_0.4s_ease-out_forwards]">
+                            <div
+                              className="w-full h-full rounded-full"
+                              style={{ background: 'radial-gradient(circle, rgba(255,255,255,0.9) 0%, rgba(250,204,21,0.6) 30%, transparent 60%)' }}
+                            />
                           </div>
-                          {/* Secondary glow */}
-                          <div className="absolute inset-0 animate-[star-flash_0.4s_ease-out_forwards]" style={{ animationDelay: '0.05s' }}>
-                            <div className="w-20 h-20 -translate-x-1/4 -translate-y-1/4 rounded-full bg-white/60 blur-lg" />
-                          </div>
-                          {/* Sparkle particles around star */}
+                          {/* Sparkle ring */}
                           {[...Array(8)].map((_, idx) => (
                             <div
                               key={idx}
-                              className="absolute w-2 h-2 rounded-full bg-yellow-200 animate-[star-sparkle_0.5s_ease-out_forwards]"
+                              className="absolute w-1 h-1 md:w-1.5 md:h-1.5 rounded-full bg-yellow-200 animate-[sparkle-explode_0.5s_ease-out_forwards]"
                               style={{
                                 left: '50%',
                                 top: '50%',
-                                transform: `rotate(${idx * 45}deg) translateY(-30px)`,
-                                animationDelay: `${idx * 0.05}s`,
+                                transformOrigin: 'center',
+                                transform: `rotate(${idx * 45}deg) translateY(-20px)`,
+                                animationDelay: `${idx * 0.03}s`,
                               }}
                             />
                           ))}
                         </>
                       )}
-                      <div
-                        className={`text-6xl transition-all duration-200 ${
-                          shakeIndex >= i
-                            ? 'text-yellow-400 scale-110 animate-[star-bounce_0.4s_ease-out]'
-                            : 'text-slate-800 scale-90'
-                        }`}
+
+                      {/* The star itself */}
+                      <svg
+                        className={`w-10 h-10 md:w-14 md:h-14 transition-all duration-300 ${shakeIndex >= i
+                          ? 'text-yellow-400 scale-110 animate-[star-pop-in_0.3s_ease-out]'
+                          : 'text-slate-800 scale-75'
+                          }`}
+                        viewBox="0 0 24 24"
+                        fill="currentColor"
                         style={{
                           filter: shakeIndex >= i
-                            ? 'drop-shadow(0 0 25px rgba(250,204,21,1)) drop-shadow(0 0 10px rgba(255,255,255,0.8))'
+                            ? 'drop-shadow(0 0 15px rgba(250,204,21,1)) drop-shadow(0 0 30px rgba(250,204,21,0.5))'
                             : 'none',
-                          fontFamily: 'system-ui',
                         }}
                       >
-                        ★
-                      </div>
+                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                      </svg>
                     </div>
                   ))}
                 </div>
 
-                {/* GBA Pokeball - clean horizontal shake */}
+                {/* Main Pokeball Container */}
                 <div className="relative">
-                  {/* FLYING STAR - emerges from pokeball center */}
+                  {/* Star emerging from pokeball center and flying up */}
                   {shakeIndex >= 1 && shakeIndex <= 3 && (
                     <div
-                      className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-10"
-                      style={{
-                        animation: `star-fly-to-top-${shakeIndex === 1 ? 'left' : shakeIndex === 2 ? 'center' : 'right'} 0.6s cubic-bezier(0.34, 0.8, 0.64, 1) forwards`,
-                      }}
+                      key={`star-${shakeIndex}`}
+                      className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-30"
                     >
-                      {/* Star with trail */}
-                      <div className="relative">
-                        {/* Motion trail */}
-                        <div className="absolute inset-0 animate-[star-trail_0.6s_ease-out_forwards]">
-                          <div className="text-5xl text-yellow-300/60 blur-sm">★</div>
+                      {/* Flying star with trail */}
+                      <div
+                        className="relative"
+                        style={{
+                          animation: `star-emerge-fly-${shakeIndex} 0.55s cubic-bezier(0.22, 0.61, 0.36, 1) forwards`,
+                        }}
+                      >
+                        {/* Glow trail behind star */}
+                        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-16 animate-[trail-fade_0.55s_ease-out_forwards]">
+                          <div
+                            className="w-full h-full"
+                            style={{ background: 'linear-gradient(to bottom, rgba(250,204,21,0) 0%, rgba(250,204,21,0.6) 50%, rgba(255,255,255,0.8) 100%)' }}
+                          />
                         </div>
+
                         {/* Main star */}
-                        <div
-                          className="relative text-5xl text-yellow-400 animate-[star-spin_0.6s_linear_forwards]"
+                        <svg
+                          className="w-8 h-8 md:w-10 md:h-10 text-yellow-400 animate-[star-spin-fly_0.55s_linear_forwards]"
+                          viewBox="0 0 24 24"
+                          fill="currentColor"
                           style={{
-                            filter: 'drop-shadow(0 0 20px rgba(250,204,21,1)) drop-shadow(0 0 10px rgba(255,255,255,1))',
+                            filter: 'drop-shadow(0 0 12px rgba(250,204,21,1)) drop-shadow(0 0 25px rgba(255,255,255,0.8))',
                           }}
                         >
-                          ★
-                        </div>
-                        {/* Glow pulse */}
-                        <div className="absolute inset-0 -z-10">
-                          <div className="text-6xl text-yellow-200/40 blur-lg animate-pulse">★</div>
-                        </div>
+                          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                        </svg>
                       </div>
                     </div>
                   )}
 
-                  {/* Pokeball with authentic GBA shake - NO rotation, just horizontal movement */}
-                  <div className={`relative ${
-                    shakeIndex === 1 ? 'animate-[gba-shake-authentic-1_0.65s_ease-in-out]' :
-                    shakeIndex === 2 ? 'animate-[gba-shake-authentic-2_0.6s_ease-in-out]' :
-                    shakeIndex === 3 ? 'animate-[gba-shake-authentic-3_0.55s_ease-in-out]' : ''
-                  }`}>
-                    {/* Energy burst when shaking starts */}
-                    {(shakeIndex === 1 || shakeIndex === 2 || shakeIndex === 3) && (
-                      <>
-                        <div className="absolute inset-0 flex items-center justify-center animate-[shake-burst_0.4s_ease-out_forwards]">
-                          <div className="w-52 h-52 rounded-full bg-yellow-400/20 blur-2xl" />
-                        </div>
-                        {/* Premium energy particles radiating outward */}
-                        {[...Array(12)].map((_, i) => (
-                          <div
-                            key={i}
-                            className="absolute top-1/2 left-1/2 w-3 h-3 rounded-full bg-yellow-300 animate-[energy-particle_0.8s_ease-out_forwards]"
-                            style={{
-                              transform: `rotate(${i * 30}deg) translateY(-10px)`,
-                              animationDelay: `${i * 0.03}s`,
-                              filter: 'blur(1px)',
-                            }}
-                          />
-                        ))}
-                      </>
-                    )}
+                  {/* Pokeball with single wobble per shake - use fragment with key to force remount */}
+                  {shakeIndex === 0 ? (
+                    <div
+                      className="relative"
+                      style={{ transformOrigin: 'center bottom' }}
+                    >
+                      {/* Center button glow overlay - hidden when no shake */}
+                      <div
+                        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 md:w-5 md:h-5 rounded-full z-10 pointer-events-none opacity-0"
+                      />
 
-                    {/* Clean pokeball design */}
-                    <div className="w-44 h-44 rounded-full bg-gradient-to-br from-red-400 via-red-500 to-red-600 border-[7px] border-slate-950 relative overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.6)]">
-                      {/* Top shine - animated during shake */}
-                      <div className={`absolute top-5 left-7 w-14 h-11 bg-white/60 rounded-full blur-md transition-all duration-200 ${
-                        shakeIndex > 0 ? 'animate-[shine-pulse_0.6s_ease-in-out]' : ''
-                      }`} />
-
-                      {/* Center black band */}
-                      <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-5 bg-slate-950" />
-
-                      {/* Center button - pulses with intensity */}
-                      <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 rounded-full bg-white border-[6px] border-slate-950 transition-all duration-200 ${
-                        shakeIndex > 0 ? 'shadow-[0_0_30px_rgba(255,255,255,0.8)]' : ''
-                      }`}>
-                        <div className={`absolute inset-2.5 rounded-full bg-gradient-to-br from-slate-50 to-slate-200 ${
-                          shakeIndex > 0 ? 'animate-[button-glow_0.6s_ease-in-out_infinite]' : ''
-                        }`} />
-                      </div>
-
-                      {/* Bottom white half */}
-                      <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-b from-slate-100 to-white" />
-
-                      {/* Bottom shine */}
-                      <div className="absolute bottom-5 right-7 w-10 h-7 bg-white/40 rounded-full blur-md" />
+                      {/* Pokemon Showdown Pokeball Sprite - smaller size */}
+                      <img
+                        src="https://play.pokemonshowdown.com/sprites/itemicons/poke-ball.png"
+                        alt="Pokeball"
+                        className="w-16 h-16 md:w-20 md:h-20"
+                        style={{
+                          imageRendering: 'pixelated',
+                          transform: 'scale(2)',
+                          transformOrigin: 'center',
+                          filter: 'drop-shadow(0 3px 6px rgba(0,0,0,0.5))',
+                        }}
+                      />
                     </div>
+                  ) : (
+                    <div
+                      key={`wobble-${shakeIndex}`}
+                      className="relative animate-[pokeball-single-wobble_0.5s_ease-in-out]"
+                      style={{ transformOrigin: 'center bottom' }}
+                    >
+                      {/* Center button glow overlay */}
+                      <div
+                        key={`glow-${shakeIndex}`}
+                        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 md:w-5 md:h-5 rounded-full z-10 pointer-events-none opacity-100 animate-[center-button-flash_0.3s_ease-out]"
+                        style={{
+                          background: 'radial-gradient(circle, rgba(255,255,255,1) 0%, rgba(250,204,21,0.8) 40%, rgba(250,204,21,0) 70%)',
+                        }}
+                      />
 
-                    {/* Ground shadow - quakes during shake */}
-                    <div className={`absolute -bottom-3 left-1/2 -translate-x-1/2 w-36 h-8 bg-black/40 rounded-full blur-xl transition-all duration-100 ${
-                      shakeIndex > 0 ? 'animate-[shadow-quake_0.6s_ease-in-out]' : ''
-                    }`} />
-                  </div>
+                      {/* Pokemon Showdown Pokeball Sprite - smaller size */}
+                      <img
+                        src="https://play.pokemonshowdown.com/sprites/itemicons/poke-ball.png"
+                        alt="Pokeball"
+                        className="w-16 h-16 md:w-20 md:h-20"
+                        style={{
+                          imageRendering: 'pixelated',
+                          transform: 'scale(2)',
+                          transformOrigin: 'center',
+                          filter: 'drop-shadow(0 0 12px rgba(239,68,68,0.6)) drop-shadow(0 0 20px rgba(250,204,21,0.4))',
+                        }}
+                      />
+                    </div>
+                  )}
+
+                  {/* Ground shadow */}
+                  {shakeIndex === 0 ? (
+                    <div
+                      className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-12 h-2 md:w-16 md:h-3 rounded-full blur-sm bg-black/30"
+                    />
+                  ) : (
+                    <div
+                      key={`shadow-${shakeIndex}`}
+                      className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-12 h-2 md:w-16 md:h-3 rounded-full blur-sm bg-black/50 animate-[shadow-single-wobble_0.5s_ease-in-out]"
+                    />
+                  )}
                 </div>
 
-                {/* Tension indicator with premium styling */}
-                <div className="mt-16 text-center">
+                {/* Tension dots */}
+                <div className="mt-10 md:mt-14 text-center">
                   <div
-                    className={`text-2xl tracking-[0.5em] transition-all duration-300 ${
-                      shakeIndex > 0 ? 'text-yellow-400/60 animate-[tension-pulse_1s_ease-in-out_infinite]' : 'text-slate-500'
-                    }`}
+                    className={`text-xl md:text-2xl tracking-[0.4em] ${shakeIndex > 0 ? 'text-yellow-400/70 animate-[dots-pulse_0.8s_ease-in-out_infinite]' : 'text-slate-600'
+                      }`}
                     style={{ fontFamily: '"Press Start 2P", monospace' }}
                   >
                     . . .
@@ -1174,7 +1234,8 @@ export function CaptureMinigame({
             </div>
           )}
         </div>
-      )}
+      )
+      }
 
       {/* === ANIMATIONS === */}
       <style>{`
@@ -1330,288 +1391,129 @@ export function CaptureMinigame({
           100% { opacity: 0; }
         }
 
-        /* === AUTHENTIC GBA SHAKE ANIMATIONS === */
-        /* Clean horizontal shake - NO rotation, just like real GBA Pokemon */
-
-        /* Shake 1 - First attempt (intense back-and-forth) */
-        @keyframes gba-shake-authentic-1 {
-          0% { transform: translateX(0) scale(1); }
-          6% { transform: translateX(-16px) scale(1.02); }
-          12% { transform: translateX(16px) scale(1.02); }
-          18% { transform: translateX(-16px) scale(1.02); }
-          24% { transform: translateX(16px) scale(1.02); }
-          30% { transform: translateX(-14px) scale(1.01); }
-          36% { transform: translateX(14px) scale(1.01); }
-          42% { transform: translateX(-12px) scale(1.01); }
-          48% { transform: translateX(12px) scale(1.01); }
-          54% { transform: translateX(-10px) scale(1.01); }
-          60% { transform: translateX(10px) scale(1.01); }
-          66% { transform: translateX(-8px) scale(1); }
-          72% { transform: translateX(8px) scale(1); }
-          78% { transform: translateX(-6px) scale(1); }
-          84% { transform: translateX(6px) scale(1); }
-          90% { transform: translateX(-3px) scale(1); }
-          96% { transform: translateX(3px) scale(1); }
-          100% { transform: translateX(0) scale(1); }
+        /* === POKEBALL SINGLE WOBBLE ANIMATION === */
+        /* One wobble per shake - tilts left then right then settles */
+        @keyframes pokeball-single-wobble {
+          0% { transform: rotate(0deg); }
+          20% { transform: rotate(-20deg); }
+          40% { transform: rotate(18deg); }
+          60% { transform: rotate(-10deg); }
+          80% { transform: rotate(5deg); }
+          100% { transform: rotate(0deg); }
         }
 
-        /* Shake 2 - Second attempt (faster, more violent) */
-        @keyframes gba-shake-authentic-2 {
-          0% { transform: translateX(0) scale(1); }
-          5% { transform: translateX(-20px) scale(1.03); }
-          10% { transform: translateX(20px) scale(1.03); }
-          15% { transform: translateX(-20px) scale(1.03); }
-          20% { transform: translateX(20px) scale(1.03); }
-          25% { transform: translateX(-18px) scale(1.02); }
-          30% { transform: translateX(18px) scale(1.02); }
-          35% { transform: translateX(-16px) scale(1.02); }
-          40% { transform: translateX(16px) scale(1.02); }
-          45% { transform: translateX(-14px) scale(1.01); }
-          50% { transform: translateX(14px) scale(1.01); }
-          55% { transform: translateX(-12px) scale(1.01); }
-          60% { transform: translateX(12px) scale(1.01); }
-          65% { transform: translateX(-9px) scale(1); }
-          70% { transform: translateX(9px) scale(1); }
-          75% { transform: translateX(-6px) scale(1); }
-          80% { transform: translateX(6px) scale(1); }
-          85% { transform: translateX(-4px) scale(1); }
-          90% { transform: translateX(4px) scale(1); }
-          95% { transform: translateX(-2px) scale(1); }
-          100% { transform: translateX(0) scale(1); }
+        /* Shadow follows the single wobble */
+        @keyframes shadow-single-wobble {
+          0% { transform: translateX(-50%) scaleX(1); }
+          20% { transform: translateX(-60%) scaleX(0.85); }
+          40% { transform: translateX(-40%) scaleX(0.85); }
+          60% { transform: translateX(-55%) scaleX(0.92); }
+          80% { transform: translateX(-47%) scaleX(0.96); }
+          100% { transform: translateX(-50%) scaleX(1); }
         }
 
-        /* Shake 3 - Final attempt (maximum intensity) */
-        @keyframes gba-shake-authentic-3 {
-          0% { transform: translateX(0) scale(1); }
-          4% { transform: translateX(-24px) scale(1.04); }
-          8% { transform: translateX(24px) scale(1.04); }
-          12% { transform: translateX(-24px) scale(1.04); }
-          16% { transform: translateX(24px) scale(1.04); }
-          20% { transform: translateX(-22px) scale(1.03); }
-          24% { transform: translateX(22px) scale(1.03); }
-          28% { transform: translateX(-20px) scale(1.03); }
-          32% { transform: translateX(20px) scale(1.03); }
-          36% { transform: translateX(-18px) scale(1.02); }
-          40% { transform: translateX(18px) scale(1.02); }
-          44% { transform: translateX(-16px) scale(1.02); }
-          48% { transform: translateX(16px) scale(1.02); }
-          52% { transform: translateX(-14px) scale(1.01); }
-          56% { transform: translateX(14px) scale(1.01); }
-          60% { transform: translateX(-12px) scale(1.01); }
-          64% { transform: translateX(12px) scale(1.01); }
-          68% { transform: translateX(-10px) scale(1); }
-          72% { transform: translateX(10px) scale(1); }
-          76% { transform: translateX(-7px) scale(1); }
-          80% { transform: translateX(7px) scale(1); }
-          84% { transform: translateX(-5px) scale(1); }
-          88% { transform: translateX(5px) scale(1); }
-          92% { transform: translateX(-3px) scale(1); }
-          96% { transform: translateX(3px) scale(1); }
-          100% { transform: translateX(0) scale(1); }
-        }
-
-        /* === PREMIUM STAR ANIMATIONS === */
-
-        /* Star flash - enhanced with more intensity */
-        @keyframes star-flash {
+        /* === STAR FLIGHT FROM CENTER TO TOP === */
+        /* Star emerges from pokeball center, flies to first indicator (left) */
+        @keyframes star-emerge-fly-1 {
           0% {
+            transform: translateY(0) scale(0);
             opacity: 0;
-            transform: scale(0.3);
           }
-          30% {
+          15% {
+            transform: translateY(0) scale(1.2);
             opacity: 1;
-            transform: scale(1.4);
           }
           100% {
+            transform: translateY(-120px) translateX(-55px) scale(0.7);
             opacity: 0;
-            transform: scale(2.5);
           }
         }
 
-        /* Star sparkle particles */
-        @keyframes star-sparkle {
+        /* Star flies to second indicator (center) */
+        @keyframes star-emerge-fly-2 {
+          0% {
+            transform: translateY(0) scale(0);
+            opacity: 0;
+          }
+          15% {
+            transform: translateY(0) scale(1.2);
+            opacity: 1;
+          }
+          100% {
+            transform: translateY(-120px) translateX(0) scale(0.7);
+            opacity: 0;
+          }
+        }
+
+        /* Star flies to third indicator (right) */
+        @keyframes star-emerge-fly-3 {
+          0% {
+            transform: translateY(0) scale(0);
+            opacity: 0;
+          }
+          15% {
+            transform: translateY(0) scale(1.2);
+            opacity: 1;
+          }
+          100% {
+            transform: translateY(-120px) translateX(55px) scale(0.7);
+            opacity: 0;
+          }
+        }
+
+        /* Star spinning while flying */
+        @keyframes star-spin-fly {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+
+        /* Trail fading behind flying star */
+        @keyframes trail-fade {
+          0% { opacity: 0; transform: scaleY(0); }
+          20% { opacity: 0.8; transform: scaleY(1); }
+          100% { opacity: 0; transform: scaleY(1.5); }
+        }
+
+        /* === STAR ARRIVAL EFFECTS === */
+        /* Flash burst when star arrives at indicator */
+        @keyframes star-flash-burst {
+          0% { opacity: 0; transform: scale(0.3); }
+          30% { opacity: 1; transform: scale(1); }
+          100% { opacity: 0; transform: scale(1.8); }
+        }
+
+        /* Sparkles exploding from star arrival */
+        @keyframes sparkle-explode {
           0% {
             opacity: 1;
             transform: rotate(var(--r, 0deg)) translateY(0) scale(1);
           }
           100% {
             opacity: 0;
-            transform: rotate(var(--r, 0deg)) translateY(-50px) scale(0);
+            transform: rotate(var(--r, 0deg)) translateY(-30px) scale(0);
           }
         }
 
-        /* Star bounce when it reaches destination */
-        @keyframes star-bounce {
-          0% {
-            transform: scale(0.5) rotate(-180deg);
-          }
-          50% {
-            transform: scale(1.3) rotate(0deg);
-          }
-          70% {
-            transform: scale(0.9) rotate(10deg);
-          }
-          100% {
-            transform: scale(1.1) rotate(0deg);
-          }
+        /* Star popping into place */
+        @keyframes star-pop-in {
+          0% { transform: scale(0) rotate(-180deg); }
+          60% { transform: scale(1.3) rotate(10deg); }
+          80% { transform: scale(0.9) rotate(-5deg); }
+          100% { transform: scale(1.1) rotate(0deg); }
         }
 
-        /* Flying star animations - from pokeball center to each indicator */
-        @keyframes star-fly-to-top-left {
-          0% {
-            transform: translate(-50%, -50%) scale(0.3);
-            opacity: 0;
-          }
-          10% {
-            opacity: 1;
-          }
-          100% {
-            transform: translate(-200px, -280px) scale(1);
-            opacity: 0;
-          }
+        /* === CENTER BUTTON EFFECTS === */
+        /* Center button flash when star emerges */
+        @keyframes center-button-flash {
+          0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+          30% { opacity: 1; transform: translate(-50%, -50%) scale(1.5); }
+          100% { opacity: 0; transform: translate(-50%, -50%) scale(2); }
         }
 
-        @keyframes star-fly-to-top-center {
-          0% {
-            transform: translate(-50%, -50%) scale(0.3);
-            opacity: 0;
-          }
-          10% {
-            opacity: 1;
-          }
-          100% {
-            transform: translate(-50%, -280px) scale(1);
-            opacity: 0;
-          }
-        }
-
-        @keyframes star-fly-to-top-right {
-          0% {
-            transform: translate(-50%, -50%) scale(0.3);
-            opacity: 0;
-          }
-          10% {
-            opacity: 1;
-          }
-          100% {
-            transform: translate(100px, -280px) scale(1);
-            opacity: 0;
-          }
-        }
-
-        /* Star rotation during flight */
-        @keyframes star-spin {
-          0% {
-            transform: rotate(0deg);
-          }
-          100% {
-            transform: rotate(720deg);
-          }
-        }
-
-        /* Star trail effect */
-        @keyframes star-trail {
-          0% {
-            opacity: 0.6;
-            transform: scale(1);
-          }
-          50% {
-            opacity: 0.3;
-          }
-          100% {
-            opacity: 0;
-            transform: scale(1.5);
-          }
-        }
-
-        /* Energy burst when shake starts */
-        @keyframes shake-burst {
-          0% {
-            transform: scale(0);
-            opacity: 0;
-          }
-          30% {
-            opacity: 0.4;
-          }
-          100% {
-            transform: scale(1.5);
-            opacity: 0;
-          }
-        }
-
-        /* Shine pulse on pokeball */
-        @keyframes shine-pulse {
-          0%, 100% {
-            opacity: 0.6;
-            transform: translateX(0);
-          }
-          50% {
-            opacity: 0.9;
-            transform: translateX(5px);
-          }
-        }
-
-        /* Button glow effect */
-        @keyframes button-glow {
-          0%, 100% {
-            box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
-          }
-          50% {
-            box-shadow: 0 0 25px rgba(255, 255, 255, 0.6), inset 0 0 15px rgba(255, 255, 255, 0.4);
-          }
-        }
-
-        /* Energy particles radiating from pokeball */
-        @keyframes energy-particle {
-          0% {
-            opacity: 1;
-            transform: rotate(var(--r, 0deg)) translateY(-10px) scale(1);
-          }
-          50% {
-            opacity: 0.6;
-          }
-          100% {
-            opacity: 0;
-            transform: rotate(var(--r, 0deg)) translateY(-90px) scale(0.3);
-          }
-        }
-
-        @keyframes shadow-quake {
-          0%, 100% { transform: translateX(-50%) scale(1, 1); }
-          25% { transform: translateX(-50%) scale(1.1, 0.9); }
-          50% { transform: translateX(-50%) scale(0.9, 1.1); }
-          75% { transform: translateX(-50%) scale(1.05, 0.95); }
-        }
-
-        @keyframes shine-move {
-          0%, 100% { transform: translateX(0); opacity: 0.7; }
-          50% { transform: translateX(10px); opacity: 0.9; }
-        }
-
-        @keyframes tension-pulse {
+        /* Dots pulsing animation */
+        @keyframes dots-pulse {
           0%, 100% { opacity: 0.5; letter-spacing: 0.3em; }
-          50% { opacity: 1; letter-spacing: 0.6em; }
-        }
-
-        @keyframes float {
-          0%, 100% { transform: translateY(0); opacity: 0.3; }
-          50% { transform: translateY(-20px); opacity: 0.1; }
-        }
-
-        @keyframes star-pop {
-          0% { transform: scale(0.5); }
-          50% { transform: scale(1.4); }
-          100% { transform: scale(1.25); }
-        }
-
-        @keyframes sparkle-fly {
-          0% { transform: rotate(var(--r, 0deg)) translateY(0) scale(1); opacity: 1; }
-          100% { transform: rotate(var(--r, 0deg)) translateY(-60px) scale(0); opacity: 0; }
-        }
-
-        @keyframes dots {
-          0%, 100% { opacity: 0.3; }
-          50% { opacity: 1; }
+          50% { opacity: 1; letter-spacing: 0.5em; }
         }
 
         @keyframes confetti-fall {
@@ -1635,7 +1537,120 @@ export function CaptureMinigame({
           0%, 100% { transform: translateY(0); }
           50% { transform: translateY(-20px); }
         }
+
+        /* === PREMIUM RING MINIGAME ANIMATIONS === */
+        
+        /* Floating background particles */
+        @keyframes float-up {
+          0% { transform: translateY(0) scale(0); opacity: 0; }
+          10% { opacity: 0.6; transform: translateY(-10vh) scale(1); }
+          90% { opacity: 0.4; }
+          100% { transform: translateY(-110vh) scale(0.5); opacity: 0; }
+        }
+
+        /* Ring pulsing glow */
+        @keyframes ring-pulse {
+          0%, 100% { transform: scale(1); opacity: 0.3; }
+          50% { transform: scale(1.1); opacity: 0.5; }
+        }
+
+        /* Zone glow animation */
+        @keyframes zone-glow {
+          0%, 100% { opacity: 0.7; box-shadow: inset 0 0 25px rgba(52,211,153,0.4), 0 0 15px rgba(52,211,153,0.3); }
+          50% { opacity: 1; box-shadow: inset 0 0 35px rgba(52,211,153,0.6), 0 0 25px rgba(52,211,153,0.5); }
+        }
+
+        /* Pokemon idle breathing */
+        @keyframes pokemon-idle {
+          0%, 100% { transform: translate(-50%, -50%) scale(1); }
+          50% { transform: translate(-50%, -50%) scale(1.03) translateY(-2px); }
+        }
+
+        /* Pokemon struggling - medium intensity */
+        @keyframes pokemon-struggle {
+          0%, 100% { transform: translate(-50%, -50%) scale(1) rotate(0deg); }
+          25% { transform: translate(-50%, -50%) scale(1.05) rotate(-3deg) translateX(-3px); }
+          50% { transform: translate(-50%, -50%) scale(0.98) rotate(0deg); }
+          75% { transform: translate(-50%, -50%) scale(1.05) rotate(3deg) translateX(3px); }
+        }
+
+        /* Pokemon fierce struggle - high intensity */
+        @keyframes pokemon-fierce {
+          0%, 100% { transform: translate(-50%, -50%) scale(1) rotate(0deg); }
+          10% { transform: translate(-50%, -50%) scale(1.08) rotate(-5deg) translateX(-5px); }
+          30% { transform: translate(-50%, -50%) scale(0.95) rotate(3deg) translateX(3px); }
+          50% { transform: translate(-50%, -50%) scale(1.1) rotate(-3deg) translateY(-5px); }
+          70% { transform: translate(-50%, -50%) scale(0.97) rotate(5deg) translateX(-3px); }
+          90% { transform: translate(-50%, -50%) scale(1.05) rotate(-2deg) translateX(5px); }
+        }
+
+        /* Flash burst on tap */
+        @keyframes flash-burst {
+          0% { opacity: 0.8; transform: scale(1); }
+          100% { opacity: 0; transform: scale(2); }
+        }
+
+        /* Particle burst outward */
+        @keyframes particle-burst {
+          0% { opacity: 1; transform: rotate(var(--r)) translateY(0) scaleY(1); }
+          100% { opacity: 0; transform: rotate(var(--r)) translateY(-120px) scaleY(0.3); }
+        }
+
+        /* Ring expanding outward */
+        @keyframes ring-expand {
+          0% { opacity: 1; transform: scale(1); }
+          100% { opacity: 0; transform: scale(2); border-width: 1px; }
+        }
+
+        /* Result flash background */
+        @keyframes result-flash {
+          0% { opacity: 1; transform: scale(1); }
+          100% { opacity: 0; transform: scale(1.5); }
+        }
+
+        /* Result text pop in */
+        @keyframes result-text-pop {
+          0% { transform: translate(-50%, -50%) scale(0) rotate(-10deg); opacity: 0; }
+          50% { transform: translate(-50%, -50%) scale(1.2) rotate(3deg); }
+          70% { transform: translate(-50%, -50%) scale(0.9) rotate(-2deg); }
+          100% { transform: translate(-50%, -50%) scale(1) rotate(0deg); opacity: 1; }
+        }
+
+        /* Pokeball animations for ring minigame */
+        @keyframes pokeball-idle {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.05); }
+        }
+
+        @keyframes pokeball-shake {
+          0%, 100% { transform: rotate(0deg); }
+          20% { transform: rotate(-8deg); }
+          40% { transform: rotate(8deg); }
+          60% { transform: rotate(-5deg); }
+          80% { transform: rotate(5deg); }
+        }
+
+        @keyframes pokeball-intense {
+          0%, 100% { transform: rotate(0deg) scale(1); }
+          10% { transform: rotate(-12deg) scale(1.1); }
+          30% { transform: rotate(12deg) scale(0.95); }
+          50% { transform: rotate(-10deg) scale(1.08); }
+          70% { transform: rotate(10deg) scale(0.97); }
+          90% { transform: rotate(-8deg) scale(1.05); }
+        }
+
+        @keyframes bounce-in {
+          0% { transform: scale(0.5); opacity: 0; }
+          60% { transform: scale(1.1); opacity: 1; }
+          100% { transform: scale(1); }
+        }
+
+        @keyframes pop-in {
+          0% { transform: scale(0); opacity: 0; }
+          70% { transform: scale(1.2); }
+          100% { transform: scale(1); opacity: 1; }
+        }
       `}</style>
-    </div>
+    </div >
   );
 }
