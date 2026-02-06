@@ -114,8 +114,11 @@ export default function Game() {
     } else if (phase === 'ATTACKING' || state === 'battle' || state === 'battle_zoom') {
       // Battle theme - plays during attack phase and battle cinematics
       playMusic('battle_theme', { loop: true, volume: 0.5 });
+    } else if (state === 'victory') {
+      // Victory fanfare
+      playMusic('victory', { loop: false, volume: 0.6 });
     } else if (state !== 'playing' && state !== 'menu' && state !== 'battle' && state !== 'battle_zoom') {
-      // Stop music during other states (victory, capture, etc.)
+      // Stop music during other states (capture, etc.)
       stopMusic(500); // 500ms fade out
     }
   }, [gameState, gamePhase, playMusic, stopMusic]);

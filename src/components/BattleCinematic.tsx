@@ -3,6 +3,7 @@ import { Swords, Zap, Shield, Sparkles, Target } from 'lucide-react';
 import { TERRAIN_PROPS } from '../constants/terrain';
 import { getAnimatedFrontSprite, getAnimatedBackSprite } from '../utils/sprites';
 import { getImpactColor, getEffectivenessText } from '../utils/combat';
+import { useSFX } from '../hooks/useSFX';
 import type { BattleData } from '../types/game';
 
 type BattlePhase =
@@ -56,6 +57,7 @@ export function BattleCinematic({
   const [attackerHp, setAttackerHp] = useState(attacker.currentHp);
   const [displayedText, setDisplayedText] = useState('');
   const [textToDisplay, setTextToDisplay] = useState('');
+  const { playSFX } = useSFX();
 
   const hasCounter = defenderResult !== null;
   const attackerDamage = attackerResult.damage;
@@ -121,6 +123,12 @@ export function BattleCinematic({
     timers.push(setTimeout(() => {
       setPhase('impact');
       setTextToDisplay('');
+      // Impact SFX
+      if (attackerResult.isCritical) {
+        playSFX('critical_hit', 0.6);
+      } else {
+        playSFX('attack_hit', 0.5);
+      }
     }, t += 350));
     timers.push(setTimeout(() => {
       setPhase('result');
@@ -128,6 +136,16 @@ export function BattleCinematic({
       const effText = getEffectivenessText(attackerResult.effectiveness);
       const critText = attackerResult.isCritical ? '¡GOLPE CRÍTICO! ' : '';
       setTextToDisplay(critText + (effText || `¡${attackerDamage} de daño!`));
+      // Effectiveness SFX
+      if (attackerResult.effectiveness > 1) {
+        playSFX('super_effective', 0.6);
+      } else if (attackerResult.effectiveness < 1) {
+        playSFX('not_effective', 0.5);
+      }
+      // Faint SFX
+      if (defender.currentHp - attackerDamage <= 0) {
+        playSFX('unit_faint', 0.5);
+      }
     }, t += 500));
 
     // Counter-attack if applicable
@@ -144,6 +162,12 @@ export function BattleCinematic({
       timers.push(setTimeout(() => {
         setPhase('counter_impact');
         setTextToDisplay('');
+        // Counter impact SFX
+        if (defenderResult?.isCritical) {
+          playSFX('critical_hit', 0.6);
+        } else {
+          playSFX('attack_hit', 0.5);
+        }
       }, t += 350));
       timers.push(setTimeout(() => {
         setPhase('counter_result');
@@ -151,6 +175,16 @@ export function BattleCinematic({
         const effText = defenderResult ? getEffectivenessText(defenderResult.effectiveness) : '';
         const critText = defenderResult?.isCritical ? '¡CRÍTICO! ' : '';
         setTextToDisplay(critText + (effText || `¡${counterDamage} de daño!`));
+        // Counter effectiveness SFX
+        if (defenderResult && defenderResult.effectiveness > 1) {
+          playSFX('super_effective', 0.6);
+        } else if (defenderResult && defenderResult.effectiveness < 1) {
+          playSFX('not_effective', 0.5);
+        }
+        // Counter faint SFX
+        if (attacker.currentHp - counterDamage <= 0) {
+          playSFX('unit_faint', 0.5);
+        }
       }, t += 500));
       timers.push(setTimeout(() => {
         setPhase('end');
@@ -166,7 +200,7 @@ export function BattleCinematic({
     }
 
     return () => timers.forEach(clearTimeout);
-  }, [onComplete, hasCounter, attackerDamage, counterDamage, attacker, defender, attackerResult, defenderResult]);
+  }, [onComplete, hasCounter, attackerDamage, counterDamage, attacker, defender, attackerResult, defenderResult, playSFX]);
 
   const isCounterPhase = phase.startsWith('counter_');
   const currentAttacker = isCounterPhase ? defender : attacker;

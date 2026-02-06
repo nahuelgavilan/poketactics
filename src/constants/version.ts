@@ -15,9 +15,10 @@
  * don't trigger version bumps unless they include breaking changes.
  */
 
-export const VERSION = '0.32.0';
+export const VERSION = '0.33.0';
 
 // Version history (Alpha - v0.x.x):
+// 0.33.0 - Battle SFX & Victory Audio: combat sound effects (attack_hit, critical_hit, super_effective, not_effective, unit_faint), victory fanfare, version sync
 // 0.32.0 - Audio system overhaul: preloader with pooling architecture fixes production timing issues, loading screen, eliminates network delays, audio pool reuses instances
 // 0.31.0 - Multiplayer game modes: Quick Battle (random teams) and Draft Mode selection, submenu in multiplayer lobby, server stores game mode
 // 0.30.0 - Multiplayer parity: server-authoritative wild encounters (30% RNG), full battle cinematics with zoom → VS → battle flow, optimistic updates, music sync

@@ -249,6 +249,8 @@ export const AUDIO_CONFIGS: Record<string, AudioConfig> = {
   menu_theme: { path: '/audio/music/menu_theme.mp3', category: 'music' },
   board_theme: { path: '/audio/music/board_theme.mp3', category: 'music' },
   battle_theme: { path: '/audio/music/battle_theme.mp3', category: 'music' },
+  victory: { path: '/audio/music/victory.mp3', category: 'music' },
+  defeat: { path: '/audio/music/defeat.mp3', category: 'music' },
 
   // UI SFX (2 instances each - rarely overlap)
   menu_open: { path: '/audio/sfx/menu_open.mp3', category: 'sfx', poolSize: 2 },
@@ -257,6 +259,13 @@ export const AUDIO_CONFIGS: Record<string, AudioConfig> = {
   unit_select: { path: '/audio/sfx/unit_select.mp3', category: 'sfx', poolSize: 2 },
   unit_deselect: { path: '/audio/sfx/unit_deselect.mp3', category: 'sfx', poolSize: 2 },
   unit_move: { path: '/audio/sfx/unit_move.mp3', category: 'sfx', poolSize: 2 },
+
+  // Battle SFX (2 instances each)
+  attack_hit: { path: '/audio/sfx/attack_hit.mp3', category: 'sfx', poolSize: 2 },
+  critical_hit: { path: '/audio/sfx/critical_hit.mp3', category: 'sfx', poolSize: 2 },
+  super_effective: { path: '/audio/sfx/super_effective.mp3', category: 'sfx', poolSize: 2 },
+  not_effective: { path: '/audio/sfx/not_effective.mp3', category: 'sfx', poolSize: 2 },
+  unit_faint: { path: '/audio/sfx/unit_faint.mp3', category: 'sfx', poolSize: 2 },
 
   // Capture minigame (3 instances - pokeball_shake plays 3x in sequence)
   wild_encounter: { path: '/audio/sfx/wild_encounter.mp3', category: 'sfx', poolSize: 2 },

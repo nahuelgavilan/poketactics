@@ -1,7 +1,7 @@
 import { useRef, useCallback, useEffect } from 'react';
 import { audioPreloader } from '../utils/audioPreloader';
 
-export type AudioKey = 'menu_theme' | 'board_theme' | 'battle_theme';
+export type AudioKey = 'menu_theme' | 'board_theme' | 'battle_theme' | 'victory' | 'defeat';
 
 export function useAudio() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
