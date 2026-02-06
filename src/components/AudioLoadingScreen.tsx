@@ -18,6 +18,9 @@ function generateSparkles(count: number) {
   }));
 }
 
+const MAX_WAIT_MS = 10_000; // Auto-skip after 10s
+const SKIP_BUTTON_DELAY_MS = 4_000; // Show skip button after 4s
+
 export function AudioLoadingScreen({ onComplete }: AudioLoadingScreenProps) {
   const [loadingState, setLoadingState] = useState<AudioLoadingState>({
     total: 0,
@@ -25,6 +28,7 @@ export function AudioLoadingScreen({ onComplete }: AudioLoadingScreenProps) {
     failed: [],
     isComplete: false,
   });
+  const [showSkip, setShowSkip] = useState(false);
 
   const sparkles = useMemo(() => generateSparkles(20), []);
 
@@ -33,6 +37,20 @@ export function AudioLoadingScreen({ onComplete }: AudioLoadingScreenProps) {
     const unsubscribe = audioPreloader.onLoadingStateChange(setLoadingState);
     return unsubscribe;
   }, []);
+
+  // Show skip button after a delay, auto-skip after max wait
+  useEffect(() => {
+    const skipTimer = setTimeout(() => setShowSkip(true), SKIP_BUTTON_DELAY_MS);
+    const autoSkipTimer = setTimeout(() => {
+      console.warn('[Audio] Loading timed out, skipping to game');
+      onComplete();
+    }, MAX_WAIT_MS);
+
+    return () => {
+      clearTimeout(skipTimer);
+      clearTimeout(autoSkipTimer);
+    };
+  }, [onComplete]);
 
   useEffect(() => {
     // When loading completes, call onComplete after a brief delay
@@ -164,6 +182,16 @@ export function AudioLoadingScreen({ onComplete }: AudioLoadingScreenProps) {
                 ))}
               </ul>
             </div>
+          )}
+
+          {/* Skip button - appears after delay */}
+          {showSkip && !loadingState.isComplete && (
+            <button
+              onClick={onComplete}
+              className="mt-6 px-4 py-2 text-[10px] font-bold text-slate-400 hover:text-white tracking-wider uppercase transition-colors"
+            >
+              SKIP
+            </button>
           )}
         </div>
       </div>
