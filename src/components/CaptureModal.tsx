@@ -388,17 +388,17 @@ export function CaptureModal({ pokemon, player, onComplete }: CaptureModalProps)
                       className="text-[10px] font-bold text-white"
                       style={{ fontFamily: "'Press Start 2P', monospace" }}
                     >
-                      {pokemon.moveName}
+                      {pokemon.moves[0]?.name ?? '—'}
                     </span>
                     <span
                       className="px-2 py-0.5 text-[8px] rounded"
                       style={{
-                        background: TYPE_COLORS[pokemon.moveType]?.primary || '#888',
+                        background: TYPE_COLORS[pokemon.moves[0]?.type]?.primary || '#888',
                         color: '#fff',
                         fontFamily: "'Press Start 2P', monospace",
                       }}
                     >
-                      {pokemon.moveType.toUpperCase()}
+                      {(pokemon.moves[0]?.type ?? 'normal').toUpperCase()}
                     </span>
                   </div>
                 </div>

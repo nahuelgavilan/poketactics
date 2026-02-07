@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Swords, Zap, Shield, Sparkles, Target } from 'lucide-react';
+import { Swords, Zap, Shield, Sparkles } from 'lucide-react';
 import { TERRAIN_PROPS } from '../constants/terrain';
 import { getAnimatedFrontSprite, getAnimatedBackSprite } from '../utils/sprites';
-import { getImpactColor, getEffectivenessText } from '../utils/combat';
+import { getEffectivenessText } from '../utils/combat';
 import { useSFX } from '../hooks/useSFX';
-import type { BattleData } from '../types/game';
+import type { BattleData, StatusEffect } from '../types/game';
 
 type BattlePhase =
   | 'intro'
@@ -44,9 +44,20 @@ const TYPE_COLORS: Record<string, { primary: string; secondary: string; glow: st
   normal: { primary: '#a8a29e', secondary: '#78716c', glow: 'rgba(168,162,158,0.6)' },
 };
 
+// Status effect display names (Spanish)
+const STATUS_NAMES: Record<StatusEffect, string> = {
+  burn: 'Quemado',
+  paralysis: 'Paralizado',
+  poison: 'Envenenado',
+  sleep: 'Dormido',
+  freeze: 'Congelado',
+};
+
 export function BattleCinematic({
   attacker,
   defender,
+  attackerMove,
+  defenderMove,
   attackerResult,
   defenderResult,
   terrainType,
@@ -117,34 +128,42 @@ export function BattleCinematic({
     // Attacker's turn
     timers.push(setTimeout(() => {
       setPhase('charge');
-      setTextToDisplay(`¡${attacker.template.name} usa ${attacker.template.moveName}!`);
+      setTextToDisplay(`¡${attacker.template.name} usa ${attackerMove.name}!`);
     }, t += 600));
     timers.push(setTimeout(() => setPhase('lunge'), t += 700));
     timers.push(setTimeout(() => {
       setPhase('impact');
       setTextToDisplay('');
-      // Impact SFX
-      if (attackerResult.isCritical) {
-        playSFX('critical_hit', 0.6);
-      } else {
-        playSFX('attack_hit', 0.5);
+      // Impact SFX (skip on miss)
+      if (!attackerResult.missed) {
+        if (attackerResult.isCritical) {
+          playSFX('critical_hit', 0.6);
+        } else {
+          playSFX('attack_hit', 0.5);
+        }
       }
     }, t += 350));
     timers.push(setTimeout(() => {
       setPhase('result');
-      setDefenderHp(Math.max(0, defender.currentHp - attackerDamage));
-      const effText = getEffectivenessText(attackerResult.effectiveness);
-      const critText = attackerResult.isCritical ? '¡GOLPE CRÍTICO! ' : '';
-      setTextToDisplay(critText + (effText || `¡${attackerDamage} de daño!`));
-      // Effectiveness SFX
-      if (attackerResult.effectiveness > 1) {
-        playSFX('super_effective', 0.6);
-      } else if (attackerResult.effectiveness < 1) {
-        playSFX('not_effective', 0.5);
-      }
-      // Faint SFX
-      if (defender.currentHp - attackerDamage <= 0) {
-        playSFX('unit_faint', 0.5);
+      if (attackerResult.missed) {
+        setTextToDisplay('¡Falló!');
+      } else {
+        setDefenderHp(Math.max(0, defender.currentHp - attackerDamage));
+        const effText = getEffectivenessText(attackerResult.effectiveness);
+        const critText = attackerResult.isCritical ? '¡GOLPE CRÍTICO! ' : '';
+        const stabText = attackerResult.isStab ? ' (STAB)' : '';
+        const statusText = attackerResult.statusApplied ? ` ¡${STATUS_NAMES[attackerResult.statusApplied]}!` : '';
+        setTextToDisplay(critText + (effText || `¡${attackerDamage} de daño!`) + stabText + statusText);
+        // Effectiveness SFX
+        if (attackerResult.effectiveness > 1) {
+          playSFX('super_effective', 0.6);
+        } else if (attackerResult.effectiveness < 1) {
+          playSFX('not_effective', 0.5);
+        }
+        // Faint SFX
+        if (defender.currentHp - attackerDamage <= 0) {
+          playSFX('unit_faint', 0.5);
+        }
       }
     }, t += 500));
 
@@ -156,34 +175,42 @@ export function BattleCinematic({
       }, t += 1800));
       timers.push(setTimeout(() => {
         setPhase('counter_charge');
-        setTextToDisplay(`¡${defender.template.name} usa ${defender.template.moveName}!`);
+        setTextToDisplay(`¡${defender.template.name} usa ${defenderMove?.name ?? '???'}!`);
       }, t += 700));
       timers.push(setTimeout(() => setPhase('counter_lunge'), t += 700));
       timers.push(setTimeout(() => {
         setPhase('counter_impact');
         setTextToDisplay('');
-        // Counter impact SFX
-        if (defenderResult?.isCritical) {
-          playSFX('critical_hit', 0.6);
-        } else {
-          playSFX('attack_hit', 0.5);
+        // Counter impact SFX (skip on miss)
+        if (!defenderResult?.missed) {
+          if (defenderResult?.isCritical) {
+            playSFX('critical_hit', 0.6);
+          } else {
+            playSFX('attack_hit', 0.5);
+          }
         }
       }, t += 350));
       timers.push(setTimeout(() => {
         setPhase('counter_result');
-        setAttackerHp(Math.max(0, attacker.currentHp - counterDamage));
-        const effText = defenderResult ? getEffectivenessText(defenderResult.effectiveness) : '';
-        const critText = defenderResult?.isCritical ? '¡CRÍTICO! ' : '';
-        setTextToDisplay(critText + (effText || `¡${counterDamage} de daño!`));
-        // Counter effectiveness SFX
-        if (defenderResult && defenderResult.effectiveness > 1) {
-          playSFX('super_effective', 0.6);
-        } else if (defenderResult && defenderResult.effectiveness < 1) {
-          playSFX('not_effective', 0.5);
-        }
-        // Counter faint SFX
-        if (attacker.currentHp - counterDamage <= 0) {
-          playSFX('unit_faint', 0.5);
+        if (defenderResult?.missed) {
+          setTextToDisplay('¡Falló!');
+        } else {
+          setAttackerHp(Math.max(0, attacker.currentHp - counterDamage));
+          const effText = defenderResult ? getEffectivenessText(defenderResult.effectiveness) : '';
+          const critText = defenderResult?.isCritical ? '¡CRÍTICO! ' : '';
+          const stabText = defenderResult?.isStab ? ' (STAB)' : '';
+          const statusText = defenderResult?.statusApplied ? ` ¡${STATUS_NAMES[defenderResult.statusApplied]}!` : '';
+          setTextToDisplay(critText + (effText || `¡${counterDamage} de daño!`) + stabText + statusText);
+          // Counter effectiveness SFX
+          if (defenderResult && defenderResult.effectiveness > 1) {
+            playSFX('super_effective', 0.6);
+          } else if (defenderResult && defenderResult.effectiveness < 1) {
+            playSFX('not_effective', 0.5);
+          }
+          // Counter faint SFX
+          if (attacker.currentHp - counterDamage <= 0) {
+            playSFX('unit_faint', 0.5);
+          }
         }
       }, t += 500));
       timers.push(setTimeout(() => {
@@ -223,7 +250,8 @@ export function BattleCinematic({
     ? (showCounterDamage ? Math.max(0, attacker.currentHp - counterDamage) : attackerHp)
     : (showAttackerDamage && !isCounterPhase ? Math.max(0, defender.currentHp - attackerDamage) : defenderHp);
 
-  const moveType = currentAttacker.template.moveType;
+  const currentMove = isCounterPhase ? defenderMove : attackerMove;
+  const moveType = currentMove?.type ?? 'normal';
   const typeColors = TYPE_COLORS[moveType] || TYPE_COLORS.normal;
   const bgGradient = TERRAIN_PROPS[terrainType]?.bg || 'from-slate-800 to-black';
 
@@ -339,8 +367,8 @@ export function BattleCinematic({
                 <span className="text-[10px] font-bold text-sky-300">{unit.template.def}</span>
               </div>
               <div className="flex items-center gap-1">
-                <Target className="w-3 h-3 text-purple-400" />
-                <span className="text-[10px] font-bold text-purple-300">{unit.template.rng}</span>
+                <Zap className="w-3 h-3 text-yellow-400" />
+                <span className="text-[10px] font-bold text-yellow-300">{unit.template.spe}</span>
               </div>
             </div>
           </div>
@@ -437,12 +465,46 @@ export function BattleCinematic({
           </div>
         )}
 
+        {/* Move name display during charge */}
+        {simplePhase === 'charge' && currentMove && (
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-30 animate-bounce-in">
+            <div
+              className="flex items-center gap-2 px-5 py-2.5 rounded-full border-2 shadow-[0_4px_0_0_rgba(0,0,0,0.3)]"
+              style={{
+                background: `linear-gradient(to right, ${typeColors.primary}, ${typeColors.secondary})`,
+                borderColor: typeColors.primary,
+              }}
+            >
+              <Sparkles className="w-5 h-5 text-white/80" />
+              <span className="text-white font-black text-sm uppercase tracking-wider">{currentMove.name}</span>
+            </div>
+          </div>
+        )}
+
         {/* Critical hit indicator */}
         {currentResult?.isCritical && ['impact', 'result'].includes(simplePhase) && (
           <div className="absolute top-4 right-4 z-30 animate-crit-flash">
             <div className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-orange-600 to-red-600 rounded-full border-2 border-orange-400 shadow-[0_0_20px_rgba(249,115,22,0.5)]">
               <Zap className="w-5 h-5 text-yellow-300" />
               <span className="text-yellow-100 font-black text-sm uppercase">¡Crítico!</span>
+            </div>
+          </div>
+        )}
+
+        {/* STAB indicator */}
+        {currentResult?.isStab && ['impact', 'result'].includes(simplePhase) && (
+          <div className="absolute top-16 right-4 z-30 animate-bounce-in">
+            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-full border-2 border-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.4)]">
+              <span className="text-emerald-100 font-black text-xs uppercase">STAB</span>
+            </div>
+          </div>
+        )}
+
+        {/* Miss indicator */}
+        {currentResult?.missed && simplePhase === 'result' && (
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-30 animate-bounce-in">
+            <div className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-slate-600 to-slate-700 rounded-full border-2 border-slate-400 shadow-[0_4px_0_0_rgba(0,0,0,0.3)]">
+              <span className="text-slate-200 font-black text-sm uppercase tracking-wider">¡Falló!</span>
             </div>
           </div>
         )}
@@ -490,8 +552,8 @@ export function BattleCinematic({
                 alt="Defensor"
               />
             </div>
-            {/* Damage number */}
-            {simplePhase === 'result' && (
+            {/* Damage number (hidden on miss) */}
+            {simplePhase === 'result' && !currentResult?.missed && (
               <div className="absolute -top-8 left-1/2 -translate-x-1/2 animate-damage-pop">
                 <span className={`
                   text-5xl md:text-6xl font-black

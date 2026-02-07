@@ -1,7 +1,15 @@
 import React from 'react';
-import { Sword, Shield, Zap, Heart, Navigation, Target } from 'lucide-react';
+import { Sword, Shield, Zap, Heart, Navigation, Target, AlertCircle } from 'lucide-react';
 import { TYPE_COLORS } from '../constants/types';
 import type { Unit } from '../types/game';
+
+const STATUS_ICONS: Record<string, { label: string; color: string }> = {
+  burn: { label: 'QUE', color: 'bg-orange-600' },
+  paralysis: { label: 'PAR', color: 'bg-yellow-600' },
+  poison: { label: 'ENV', color: 'bg-purple-600' },
+  sleep: { label: 'DOR', color: 'bg-blue-600' },
+  freeze: { label: 'CON', color: 'bg-cyan-600' },
+};
 
 interface UnitTooltipProps {
   unit: Unit;
@@ -91,22 +99,37 @@ export function UnitTooltip({ unit, screenX, screenY, isEnemy = false }: UnitToo
             <div className="flex items-center gap-1.5 bg-slate-800/50 rounded px-2 py-1">
               <Target className="w-3 h-3 text-purple-400" />
               <span className="text-slate-400">RNG</span>
-              <span className="text-white font-bold ml-auto">{unit.template.rng}</span>
+              <span className="text-white font-bold ml-auto">{Math.max(...unit.template.moves.map(m => m.range))}</span>
             </div>
           </div>
 
-          {/* Move */}
-          <div className="bg-slate-800/50 rounded px-2 py-1.5">
-            <div className="flex items-center gap-1.5 text-xs">
-              <Zap className="w-3 h-3 text-yellow-400" />
-              <span className="text-slate-300">{unit.template.moveName}</span>
-              <span className={`ml-auto text-[9px] px-1 py-0.5 rounded text-white font-bold ${TYPE_COLORS[unit.template.moveType]}`}>
-                {unit.template.moveType.slice(0, 3).toUpperCase()}
+          {/* Move — show first attack move */}
+          {(() => {
+            const firstAttack = unit.template.moves.find(m => m.category !== 'status') ?? unit.template.moves[0];
+            return firstAttack ? (
+              <div className="bg-slate-800/50 rounded px-2 py-1.5">
+                <div className="flex items-center gap-1.5 text-xs">
+                  <Zap className="w-3 h-3 text-yellow-400" />
+                  <span className="text-slate-300">{firstAttack.name}</span>
+                  <span className={`ml-auto text-[9px] px-1 py-0.5 rounded text-white font-bold ${TYPE_COLORS[firstAttack.type]}`}>
+                    {firstAttack.type.slice(0, 3).toUpperCase()}
+                  </span>
+                </div>
+              </div>
+            ) : null;
+          })()}
+
+          {/* Status effect */}
+          {unit.status && (
+            <div className="flex items-center justify-center gap-1 text-[10px]">
+              <AlertCircle className="w-3 h-3" />
+              <span className={`px-1.5 py-0.5 rounded text-white font-bold ${STATUS_ICONS[unit.status]?.color ?? 'bg-slate-600'}`}>
+                {STATUS_ICONS[unit.status]?.label ?? unit.status.toUpperCase()}
               </span>
             </div>
-          </div>
+          )}
 
-          {/* Status */}
+          {/* Moved status */}
           {unit.hasMoved && (
             <div className="text-center text-[10px] text-slate-500 italic">
               Ya se movió este turno

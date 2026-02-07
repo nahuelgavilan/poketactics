@@ -3,9 +3,9 @@
  */
 
 // Re-export shared types
-export type { Player, PokemonType, PokemonTemplate, Position } from '@poketactics/shared';
+export type { Player, PokemonType, PokemonTemplate, Position, StatusEffect, Move } from '@poketactics/shared';
 
-import type { Player, PokemonType, PokemonTemplate, Position } from '@poketactics/shared';
+import type { Player, PokemonType, PokemonTemplate, Position, StatusEffect } from '@poketactics/shared';
 
 export interface Room {
   id: string;
@@ -55,6 +55,9 @@ export interface ServerUnit {
   currentHp: number;
   hasMoved: boolean;
   kills: number;
+  pp: number[];
+  status: StatusEffect | null;
+  statusTurns: number;
 }
 
 // What client receives (filtered by fog of war)
@@ -83,6 +86,9 @@ export interface ClientUnit {
   currentHp: number;
   hasMoved: boolean;
   kills: number;
+  pp: number[];
+  status: StatusEffect | null;
+  statusTurns: number;
 }
 
 // Socket events - Server to Client
@@ -120,7 +126,7 @@ export interface ClientToServerEvents {
   'draft-ban': (data: { pokemonId: number }) => void;
   'draft-pick': (data: { pokemonId: number }) => void;
   'action-move': (data: { unitId: string; x: number; y: number }) => void;
-  'action-attack': (data: { attackerId: string; defenderId: string }) => void;
+  'action-attack': (data: { attackerId: string; defenderId: string; moveId?: string }) => void;
   'action-wait': (data: { unitId: string }) => void;
   'action-capture': (data: { unitId: string; success?: boolean }) => void;
   'action-end-turn': () => void;

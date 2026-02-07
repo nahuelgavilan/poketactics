@@ -313,7 +313,7 @@ io.on('connection', (socket) => {
   });
 
   // Handle attack action
-  socket.on('action-attack', ({ attackerId, defenderId }) => {
+  socket.on('action-attack', ({ attackerId, defenderId, moveId }) => {
     const room = roomManager.getPlayerRoom(socket.id);
     if (!room?.game) {
       socket.emit('error', 'No hay juego activo');
@@ -326,7 +326,7 @@ io.on('connection', (socket) => {
       return;
     }
 
-    const result = executeAttack(room.game, player, attackerId, defenderId);
+    const result = executeAttack(room.game, player, attackerId, defenderId, moveId);
 
     if (!result.success) {
       socket.emit('error', result.error || 'Ataque inválido');
@@ -440,7 +440,10 @@ io.on('connection', (socket) => {
         y: result.newUnit.y,
         currentHp: result.newUnit.currentHp,
         hasMoved: result.newUnit.hasMoved,
-        kills: result.newUnit.kills
+        kills: result.newUnit.kills,
+        pp: [...result.newUnit.pp],
+        status: result.newUnit.status,
+        statusTurns: result.newUnit.statusTurns
       } : undefined,
       pokemon: result.pokemon
     });

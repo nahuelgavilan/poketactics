@@ -16,7 +16,8 @@ export {
   getEffectivenessText,
   CRIT_CHANCE,
   CRIT_MULTIPLIER,
-  DAMAGE_VARIANCE,
+  VARIANCE_MIN,
+  VARIANCE_MAX,
   COUNTER_DAMAGE_PENALTY
 } from './combat';
 

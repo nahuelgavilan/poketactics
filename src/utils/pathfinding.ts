@@ -1,6 +1,6 @@
 import { TERRAIN_PROPS } from '../constants/terrain';
 import { TYPES } from '../constants/types';
-import { calculateMoveRange as sharedCalculateMoveRange } from '@poketactics/shared';
+import { calculateMoveRange as sharedCalculateMoveRange, getMaxAttackRange } from '@poketactics/shared';
 import type { Unit, Position, AttackTarget, GameMap } from '../types/game';
 
 /**
@@ -26,14 +26,16 @@ export function calculateMoveRange(
 
 /**
  * Calculate all attackable enemy positions for a unit
+ * Uses the max range across all moves with PP remaining
  */
 export function calculateAttackRange(
   unit: Unit,
   units: Unit[]
 ): AttackTarget[] {
+  const maxRange = getMaxAttackRange(unit.template, unit.pp);
   return units
     .filter(u => u.owner !== unit.owner)
-    .filter(u => getDistance(unit, u) <= unit.template.rng)
+    .filter(u => getDistance(unit, u) <= maxRange)
     .map(u => ({ x: u.x, y: u.y, uid: u.uid }));
 }
 

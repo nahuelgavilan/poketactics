@@ -174,7 +174,28 @@ export function EvolutionCinematic({ evolutionData, onComplete }: EvolutionCinem
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 mt-4 text-center">
+            <div className="grid grid-cols-4 gap-4 mt-4 text-center">
+              <div>
+                <div className="text-gray-400 text-xs uppercase">SpA</div>
+                <div className="text-white font-bold">{toTemplate.spa}</div>
+                <div className="text-emerald-400 text-sm font-bold">
+                  {statDiff(fromTemplate.spa, toTemplate.spa)}
+                </div>
+              </div>
+              <div>
+                <div className="text-gray-400 text-xs uppercase">SpD</div>
+                <div className="text-white font-bold">{toTemplate.spd}</div>
+                <div className="text-emerald-400 text-sm font-bold">
+                  {statDiff(fromTemplate.spd, toTemplate.spd)}
+                </div>
+              </div>
+              <div>
+                <div className="text-gray-400 text-xs uppercase">SPE</div>
+                <div className="text-white font-bold">{toTemplate.spe}</div>
+                <div className="text-emerald-400 text-sm font-bold">
+                  {statDiff(fromTemplate.spe, toTemplate.spe)}
+                </div>
+              </div>
               <div>
                 <div className="text-gray-400 text-xs uppercase">MOV</div>
                 <div className="text-white font-bold">{toTemplate.mov}</div>
@@ -182,20 +203,13 @@ export function EvolutionCinematic({ evolutionData, onComplete }: EvolutionCinem
                   {statDiff(fromTemplate.mov, toTemplate.mov)}
                 </div>
               </div>
-              <div>
-                <div className="text-gray-400 text-xs uppercase">RNG</div>
-                <div className="text-white font-bold">{toTemplate.rng}</div>
-                <div className="text-emerald-400 text-sm font-bold">
-                  {statDiff(fromTemplate.rng, toTemplate.rng)}
-                </div>
-              </div>
             </div>
 
             {/* New move */}
-            {fromTemplate.moveName !== toTemplate.moveName && (
+            {fromTemplate.moves[0]?.name !== toTemplate.moves[0]?.name && (
               <div className="mt-4 pt-4 border-t border-slate-700 text-center">
                 <div className="text-gray-400 text-xs uppercase mb-1">Nuevo Movimiento</div>
-                <div className="text-yellow-400 font-bold">{toTemplate.moveName}</div>
+                <div className="text-yellow-400 font-bold">{toTemplate.moves[0]?.name}</div>
               </div>
             )}
           </div>

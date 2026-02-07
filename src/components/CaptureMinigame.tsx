@@ -138,8 +138,9 @@ export function CaptureMinigame({
 
   const activePlayerPokemon: PokemonTemplate = playerPokemon || {
     id: 25, name: 'Pikachu', types: ['electric'] as PokemonType[],
-    hp: 60, atk: 25, def: 15, mov: 3, rng: 2,
-    moveName: 'Rayo', moveType: 'electric' as PokemonType
+    hp: 60, atk: 25, def: 15, spa: 20, spd: 20, spe: 30, mov: 3,
+    moves: [{ id: 'thunderbolt', name: 'Rayo', type: 'electric' as PokemonType, category: 'special' as const, power: 90, accuracy: 100, pp: 15, range: 2, priority: 0, description: 'A strong electric attack.' }],
+    ability: { id: 'static', name: 'Static', description: 'Contact may paralyze.' },
   };
 
   const playerTypeColor = TYPE_COLORS[activePlayerPokemon.types[0]] || TYPE_COLORS.normal;

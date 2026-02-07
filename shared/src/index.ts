@@ -6,3 +6,6 @@ export * from './pokemon';
 export * from './combat';
 export * from './pathfinding';
 export * from './constants';
+export * from './moves';
+export * from './status';
+export * from './abilities';

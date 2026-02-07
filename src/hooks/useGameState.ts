@@ -6,6 +6,7 @@ import { calculateMoveRange, calculateAttackRange } from '../utils/pathfinding';
 import { createBattleData } from '../utils/combat';
 import { triggerWildEncounter, createCapturedUnit } from '../utils/capture';
 import { generateRandomMap, DEFAULT_MAP_SIZE } from '../utils/mapGenerator';
+import { applyStatusTick, getMovReduction } from '@poketactics/shared';
 import type {
   GameState,
   GamePhase,
@@ -18,7 +19,8 @@ import type {
   CaptureData,
   TerrainType,
   EvolutionData,
-  PokemonTemplate
+  PokemonTemplate,
+  Move
 } from '../types/game';
 
 interface UseGameStateReturn {
@@ -67,6 +69,11 @@ interface UseGameStateReturn {
   selectAttack: () => void;
   selectWait: () => void;
   cancelAction: () => void;
+  // Move selection
+  selectedMove: Move | null;
+  attackTarget: Unit | null;
+  selectMove: (move: Move) => void;
+  cancelMoveSelect: () => void;
   // Multiplayer battle (triggered by server result)
   startServerBattle: (attackerId: string, defenderId: string, damage: number, counterDamage: number) => void;
   // Multiplayer encounter
@@ -114,6 +121,8 @@ export function useGameState(): UseGameStateReturn {
   const [battleData, setBattleData] = useState<BattleData | null>(null);
   const [captureData, setCaptureData] = useState<CaptureData | null>(null);
   const [evolutionData, setEvolutionData] = useState<EvolutionData | null>(null);
+  const [selectedMove, setSelectedMove] = useState<Move | null>(null);
+  const [attackTarget, setAttackTarget] = useState<Unit | null>(null);
   const [logs, setLogs] = useState<string[]>([]);
   const [winner, setWinner] = useState<Player | null>(null);
 
@@ -145,6 +154,8 @@ export function useGameState(): UseGameStateReturn {
     setPendingPosition(null);
     setGamePhase('SELECT');
     setUnitHasMoved(false);
+    setSelectedMove(null);
+    setAttackTarget(null);
   }, []);
 
   const initGame = useCallback((width?: number, height?: number) => {
@@ -170,7 +181,10 @@ export function useGameState(): UseGameStateReturn {
         y: h - 1 - Math.floor(i / w),
         currentHp: temp.hp,
         hasMoved: false,
-        kills: 0
+        kills: 0,
+        pp: temp.moves.map(m => m.pp),
+        status: null,
+        statusTurns: 0
       });
     }
 
@@ -185,7 +199,10 @@ export function useGameState(): UseGameStateReturn {
         y: 0 + Math.floor(i / w),
         currentHp: temp.hp,
         hasMoved: false,
-        kills: 0
+        kills: 0,
+        pp: temp.moves.map(m => m.pp),
+        status: null,
+        statusTurns: 0
       });
     }
 
@@ -224,7 +241,10 @@ export function useGameState(): UseGameStateReturn {
       y: h - 1 - Math.floor(i / w),
       currentHp: temp.hp,
       hasMoved: false,
-      kills: 0
+      kills: 0,
+      pp: temp.moves.map(m => m.pp),
+      status: null,
+      statusTurns: 0
     }));
 
     const p2Units: Unit[] = p2Team.map((temp, i) => ({
@@ -235,7 +255,10 @@ export function useGameState(): UseGameStateReturn {
       y: 0 + Math.floor(i / w),
       currentHp: temp.hp,
       hasMoved: false,
-      kills: 0
+      kills: 0,
+      pp: temp.moves.map(m => m.pp),
+      status: null,
+      statusTurns: 0
     }));
 
     setUnits([...p1Units, ...p2Units]);
@@ -279,7 +302,10 @@ export function useGameState(): UseGameStateReturn {
         y: h - 1 - Math.floor(i / w),
         currentHp: temp.hp,
         hasMoved: false,
-        kills: 0
+        kills: 0,
+        pp: temp.moves.map(m => m.pp),
+        status: null,
+        statusTurns: 0
       });
     }
 
@@ -294,7 +320,10 @@ export function useGameState(): UseGameStateReturn {
         y: 0 + Math.floor(i / w),
         currentHp: temp.hp,
         hasMoved: false,
-        kills: 0
+        kills: 0,
+        pp: temp.moves.map(m => m.pp),
+        status: null,
+        statusTurns: 0
       });
     }
 
@@ -487,13 +516,13 @@ export function useGameState(): UseGameStateReturn {
 
     // Phase: ATTACKING - selecting attack target
     if (gamePhase === 'ATTACKING' && selectedUnit) {
-      // Click on valid target: attack
+      // Click on valid target: go to move selection
       if (attackRange.some(a => a.x === x && a.y === y)) {
         const target = units.find(u => u.x === x && u.y === y);
         if (target) {
+          setAttackTarget(target);
           setAttackRange([]);
-          setGameState('battle_zoom');
-          setBattleData(createBattleData(selectedUnit, target, map));
+          setGamePhase('MOVE_SELECT');
         }
         return;
       }
@@ -506,12 +535,24 @@ export function useGameState(): UseGameStateReturn {
       }
       return;
     }
+
+    // Phase: MOVE_SELECT - waiting for move picker (no tile clicks needed)
+    if (gamePhase === 'MOVE_SELECT') {
+      // Click elsewhere: go back to attacking
+      if (selectedUnit) {
+        const attacks = calculateAttackRange(selectedUnit, units);
+        setAttackRange(attacks);
+        setAttackTarget(null);
+        setGamePhase('ATTACKING');
+      }
+      return;
+    }
   }, [gameState, gamePhase, units, currentPlayer, selectedUnit, moveRange, attackRange, map, unitHasMoved, waitUnit, resetSelection, tryRandomEncounter, isMultiplayer, isMyTurn]);
 
   const endBattle = useCallback(() => {
     if (!battleData) return;
 
-    const { defender, attacker, attackerResult, defenderResult } = battleData;
+    const { defender, attacker, attackerResult, defenderResult, attackerMove, defenderMove } = battleData;
     const attackerDamage = attackerResult.damage;
     const counterDamage = defenderResult?.damage || 0;
 
@@ -520,13 +561,39 @@ export function useGameState(): UseGameStateReturn {
     // Check if attacker died from counter
     const attackerDied = defenderResult && attacker.currentHp - counterDamage <= 0;
 
-    // Apply damage to both units
+    // Apply damage, PP deduction, and status effects
     let nextUnits = units.map(u => {
-      if (u.uid === defender.uid) {
-        return { ...u, currentHp: Math.max(0, u.currentHp - attackerDamage) };
+      if (u.uid === attacker.uid) {
+        // Deduct PP for attacker's move
+        const moveIndex = u.template.moves.findIndex(m => m.id === attackerMove.id);
+        const newPP = [...u.pp];
+        if (moveIndex >= 0 && newPP[moveIndex] > 0) newPP[moveIndex]--;
+
+        let updated = { ...u, pp: newPP };
+        // Apply counter damage
+        if (defenderResult) {
+          updated = { ...updated, currentHp: Math.max(0, u.currentHp - counterDamage) };
+        }
+        // Apply status from counter (if any)
+        if (defenderResult?.statusApplied && !u.status) {
+          updated = { ...updated, status: defenderResult.statusApplied, statusTurns: 0 };
+        }
+        return updated;
       }
-      if (u.uid === attacker.uid && defenderResult) {
-        return { ...u, currentHp: Math.max(0, u.currentHp - counterDamage) };
+      if (u.uid === defender.uid) {
+        let updated = { ...u, currentHp: Math.max(0, u.currentHp - attackerDamage) };
+        // Deduct PP for defender's counter move
+        if (defenderMove && defenderResult) {
+          const moveIndex = u.template.moves.findIndex(m => m.id === defenderMove.id);
+          const newPP = [...u.pp];
+          if (moveIndex >= 0 && newPP[moveIndex] > 0) newPP[moveIndex]--;
+          updated = { ...updated, pp: newPP };
+        }
+        // Apply status from attacker's move (if any)
+        if (attackerResult.statusApplied && !u.status) {
+          updated = { ...updated, status: attackerResult.statusApplied, statusTurns: 0 };
+        }
+        return updated;
       }
       return u;
     });
@@ -701,14 +768,17 @@ export function useGameState(): UseGameStateReturn {
 
     const { unitId, toTemplate } = evolutionData;
 
-    // Apply evolution: new template + full HP restore
+    // Apply evolution: new template + full HP restore + full PP restore
     const nextUnits = units.map(u => {
       if (u.uid === unitId) {
         return {
           ...u,
           template: toTemplate,
-          currentHp: toTemplate.hp, // Full HP restore
-          hasMoved: true // Mark as moved after evolution
+          currentHp: toTemplate.hp,
+          hasMoved: true,
+          pp: toTemplate.moves.map(m => m.pp),
+          status: null,
+          statusTurns: 0
         };
       }
       return u;
@@ -735,18 +805,40 @@ export function useGameState(): UseGameStateReturn {
   const confirmTurnChange = useCallback(() => {
     const nextPlayer: Player = currentPlayer === 'P1' ? 'P2' : 'P1';
 
-    // Apply healing to units on Pokémon Centers at turn start
+    // Apply status ticks + healing at turn start
     const healedUnits = units.map(u => {
       // Reset hasMoved for all units
       let updated = { ...u, hasMoved: false };
 
-      // Heal units on Pokémon Center (20% of max HP)
+      // Apply status effects for the incoming player's units
+      if (u.owner === nextPlayer && u.status) {
+        const tick = applyStatusTick(u.status, u.statusTurns, u.template.hp, u.currentHp);
+        updated = {
+          ...updated,
+          currentHp: tick.newHp,
+          status: tick.newStatus,
+          statusTurns: tick.newStatusTurns,
+        };
+        if (tick.chipDamage > 0) {
+          addLog(`${u.template.name} perdió ${tick.chipDamage} HP por ${u.status === 'burn' ? 'quemadura' : 'veneno'}`);
+        }
+        if (tick.newStatus === null && u.status !== null) {
+          addLog(`¡${u.template.name} se recuperó de ${u.status === 'sleep' ? 'sueño' : u.status === 'freeze' ? 'congelación' : u.status}!`);
+        }
+      }
+
+      // Heal units on Pokémon Center (20% of max HP + cure status)
       if (u.owner === nextPlayer && map[u.y]?.[u.x] === TERRAIN.POKEMON_CENTER) {
         const healAmount = Math.floor(u.template.hp * 0.2);
-        const newHp = Math.min(u.template.hp, u.currentHp + healAmount);
-        if (newHp > u.currentHp) {
+        const newHp = Math.min(u.template.hp, updated.currentHp + healAmount);
+        if (newHp > updated.currentHp) {
           addLog(`¡${u.template.name} recuperó ${healAmount} HP en el Centro Pokémon!`);
           updated = { ...updated, currentHp: newHp };
+        }
+        // Pokemon Center also heals status
+        if (updated.status) {
+          addLog(`¡${u.template.name} fue curado en el Centro Pokémon!`);
+          updated = { ...updated, status: null, statusTurns: 0 };
         }
       }
 
@@ -796,13 +888,13 @@ export function useGameState(): UseGameStateReturn {
     const attacks = calculateAttackRange(movedUnit, nextUnits);
     setAttackRange(attacks);
 
-    // AUTO-ATTACK if only 1 enemy in range
+    // AUTO-TARGET if only 1 enemy in range → go straight to move selection
     if (attacks.length === 1) {
       const target = nextUnits.find(u => u.x === attacks[0].x && u.y === attacks[0].y);
       if (target) {
+        setAttackTarget(target);
         setAttackRange([]);
-        setGameState('battle_zoom');
-        setBattleData(createBattleData(movedUnit, target, map));
+        setGamePhase('MOVE_SELECT');
         return;
       }
     }
@@ -849,6 +941,26 @@ export function useGameState(): UseGameStateReturn {
     waitUnit(movedUnit.uid, nextUnits);
   }, [selectedUnit, pendingPosition, units, map, tryRandomEncounter, waitUnit, setMap, addLog]);
 
+  // Move selection: player picked a move → initiate battle
+  const selectMove = useCallback((move: Move) => {
+    if (!selectedUnit || !attackTarget) return;
+
+    setSelectedMove(move);
+    setGameState('battle_zoom');
+    setBattleData(createBattleData(selectedUnit, attackTarget, map, move));
+    setGamePhase('SELECT');
+  }, [selectedUnit, attackTarget, map]);
+
+  // Cancel move selection - go back to ATTACKING phase
+  const cancelMoveSelect = useCallback(() => {
+    if (!selectedUnit) return;
+    setAttackTarget(null);
+    setSelectedMove(null);
+    const attacks = calculateAttackRange(selectedUnit, units);
+    setAttackRange(attacks);
+    setGamePhase('ATTACKING');
+  }, [selectedUnit, units]);
+
   // Cancel action - deselect if on same position, otherwise go back to MOVING phase
   const cancelAction = useCallback(() => {
     // If pending position is same as current unit position, deselect
@@ -875,22 +987,22 @@ export function useGameState(): UseGameStateReturn {
       return;
     }
 
-    // Calculate effectiveness from types
-    const effectiveness = attacker.template.moveType && defender.template.types
-      ? defender.template.types.reduce((acc, defType) => {
-          // Simple effectiveness calculation
-          return acc;
-        }, 1)
-      : 1;
+    // Use first available attack move as placeholder for multiplayer
+    const attackerMove = attacker.template.moves.find(m => m.category !== 'status') || attacker.template.moves[0];
+    const defenderMove = counterDamage > 0
+      ? (defender.template.moves.find(m => m.category !== 'status') || defender.template.moves[0])
+      : null;
 
-    // Create battle data with server-provided damage values
-    const battleData: BattleData = {
+    const serverBattleData: BattleData = {
       attacker,
       defender,
+      attackerMove,
       attackerResult: {
         damage,
-        effectiveness,
-        isCritical: false, // Server doesn't send this, default to false
+        effectiveness: 1,
+        isCritical: false,
+        isStab: false,
+        missed: false,
         terrainBonus: 0,
         typeTerrainBonus: false
       },
@@ -898,22 +1010,22 @@ export function useGameState(): UseGameStateReturn {
         damage: counterDamage,
         effectiveness: 1,
         isCritical: false,
+        isStab: false,
+        missed: false,
         terrainBonus: 0,
         typeTerrainBonus: false
       } : null,
-      terrainType: map[defender.y]?.[defender.x] ?? TERRAIN.GRASS,
-      damage,
-      effectiveness
+      defenderMove,
+      terrainType: map[defender.y]?.[defender.x] ?? TERRAIN.GRASS as TerrainType,
     };
 
-    // Reset selection state before starting battle
     setSelectedUnit(null);
     setMoveRange([]);
     setAttackRange([]);
     setPendingPosition(null);
     setGamePhase('SELECT');
 
-    setBattleData(battleData);
+    setBattleData(serverBattleData);
     setGameState('battle_zoom');
   }, [units, map]);
 
@@ -973,13 +1085,21 @@ export function useGameState(): UseGameStateReturn {
     damage: number,
     counterDamage: number
   ) => {
-    const battleData: BattleData = {
+    const attackerMove = attacker.template.moves.find(m => m.category !== 'status') || attacker.template.moves[0];
+    const defenderMove = counterDamage > 0
+      ? (defender.template.moves.find(m => m.category !== 'status') || defender.template.moves[0])
+      : null;
+
+    const serverBattleData: BattleData = {
       attacker,
       defender,
+      attackerMove,
       attackerResult: {
         damage,
         effectiveness: 1,
         isCritical: false,
+        isStab: false,
+        missed: false,
         terrainBonus: 0,
         typeTerrainBonus: false
       },
@@ -987,15 +1107,16 @@ export function useGameState(): UseGameStateReturn {
         damage: counterDamage,
         effectiveness: 1,
         isCritical: false,
+        isStab: false,
+        missed: false,
         terrainBonus: 0,
         typeTerrainBonus: false
       } : null,
-      terrainType: map[defender.y]?.[defender.x] ?? TERRAIN.GRASS,
-      damage,
-      effectiveness: 1
+      defenderMove,
+      terrainType: map[defender.y]?.[defender.x] ?? TERRAIN.GRASS as TerrainType,
     };
 
-    setBattleData(battleData);
+    setBattleData(serverBattleData);
     setGameState('battle_zoom');
   }, [map]);
 
@@ -1071,6 +1192,11 @@ export function useGameState(): UseGameStateReturn {
     selectAttack,
     selectWait,
     cancelAction,
+    // Move selection
+    selectedMove,
+    attackTarget,
+    selectMove,
+    cancelMoveSelect,
     // Multiplayer
     startServerBattle,
     triggerMultiplayerEncounter,

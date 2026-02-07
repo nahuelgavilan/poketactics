@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
-import type { Player, PokemonTemplate } from '../types/game';
+import type { Player, PokemonTemplate, StatusEffect } from '../types/game';
 
 export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected';
 export type RoomStatus = 'none' | 'creating' | 'joining' | 'waiting' | 'ready' | 'playing';
@@ -16,6 +16,9 @@ export interface ClientUnit {
   currentHp: number;
   hasMoved: boolean;
   kills: number;
+  pp?: number[];
+  status?: StatusEffect | null;
+  statusTurns?: number;
 }
 
 export interface ClientGameState {

@@ -1,11 +1,11 @@
 /**
- * Type definitions for PokéWar: Capture Edition
+ * Type definitions for PokéTactics
  */
 
 // Shared types re-exported from @poketactics/shared
-export type { PokemonType, Player, TerrainType, PokemonTemplate, Position, GameMap } from '@poketactics/shared';
+export type { PokemonType, Player, TerrainType, PokemonTemplate, Position, GameMap, Move, StatusEffect, Ability } from '@poketactics/shared';
 
-import type { PokemonTemplate, PokemonType, Player, Position, TerrainType } from '@poketactics/shared';
+import type { PokemonTemplate, PokemonType, Player, Position, TerrainType, Move, StatusEffect } from '@poketactics/shared';
 
 export type GameState =
   | 'menu'
@@ -27,6 +27,7 @@ export type GamePhase =
   | 'ACTION_MENU'  // Unit selected, showing action menu
   | 'MOVING'       // Player selecting move destination
   | 'ATTACKING'    // Player selecting attack target
+  | 'MOVE_SELECT'  // Player choosing which move to use
   | 'WAITING';     // Unit waiting
 
 /**
@@ -48,7 +49,10 @@ export interface Unit {
   y: number;
   currentHp: number;
   hasMoved: boolean;
-  kills: number;  // Track kills for evolution
+  kills: number;
+  pp: number[];
+  status: StatusEffect | null;
+  statusTurns: number;
 }
 
 export interface AttackTarget extends Position {
@@ -61,11 +65,11 @@ export interface TerrainProps {
   name: string;
   bg: string;
   capture?: boolean;
-  typeBonus?: PokemonType[]; // Types that get bonus on this terrain
-  heals?: boolean; // Pokemon Center healing
-  visionBonus?: number; // Extra vision range on this terrain
-  consumable?: boolean; // Berry bush: consumed on step, heals 10% HP, becomes grass
-  hidesUnit?: boolean; // Cave: unit hidden from enemies unless adjacent
+  typeBonus?: PokemonType[];
+  heals?: boolean;
+  visionBonus?: number;
+  consumable?: boolean;
+  hidesUnit?: boolean;
 }
 
 /**
@@ -75,8 +79,11 @@ export interface CombatResult {
   damage: number;
   effectiveness: number;
   isCritical: boolean;
+  isStab: boolean;
+  missed: boolean;
   terrainBonus: number;
   typeTerrainBonus: boolean;
+  statusApplied?: StatusEffect;
 }
 
 /**
@@ -85,25 +92,28 @@ export interface CombatResult {
 export interface BattleData {
   attacker: Unit;
   defender: Unit;
+  attackerMove: Move;
   attackerResult: CombatResult;
-  defenderResult: CombatResult | null; // null if defender can't counter
+  defenderResult: CombatResult | null;
+  defenderMove: Move | null;
   terrainType: TerrainType;
-  // Legacy support
-  damage: number;
-  effectiveness: number;
 }
 
 /**
- * Attack preview before confirming
+ * Attack preview before confirming (per-move)
  */
 export interface AttackPreview {
   attacker: Unit;
   defender: Unit;
+  move: Move;
   predictedDamage: { min: number; max: number };
   effectiveness: number;
+  isStab: boolean;
+  accuracy: number;
   canCounter: boolean;
   counterDamage: { min: number; max: number } | null;
   counterEffectiveness: number | null;
+  counterMove: Move | null;
   attackerTerrainBonus: boolean;
   defenderTerrainBonus: boolean;
   critChance: number;
@@ -137,6 +147,6 @@ export interface EvolutionData {
  * Fog of War visibility map
  */
 export interface VisibilityMap {
-  explored: boolean[][];  // Tiles that have been seen (permanent)
-  visible: boolean[][];   // Tiles currently visible
+  explored: boolean[][];
+  visible: boolean[][];
 }

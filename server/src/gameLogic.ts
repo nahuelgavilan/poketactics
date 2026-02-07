@@ -4,7 +4,7 @@
  */
 
 import type { ServerGameState, ServerUnit, Player, ClientGameState, ClientUnit } from './types';
-import type { PokemonTemplate, PokemonType, TerrainType, GameMap } from '@poketactics/shared';
+import type { PokemonTemplate, PokemonType, TerrainType, GameMap, Move, StatusEffect } from '@poketactics/shared';
 import {
   BOARD_WIDTH, BOARD_HEIGHT, VISION_RANGE,
   TERRAIN, TERRAIN_GAME_PROPS,
@@ -13,9 +13,16 @@ import {
   WILD_POKEMON_POOL,
   getFullEffectiveness,
   calculateBaseDamage as sharedCalculateBaseDamage,
+  checkAccuracy,
+  getCounterMove,
+  getMaxAttackRange,
+  initPP,
+  STRUGGLE_MOVE,
   getNextEvolution as sharedGetNextEvolution,
   calculateMoveRange,
-  CRIT_CHANCE, CRIT_MULTIPLIER, DAMAGE_VARIANCE, COUNTER_DAMAGE_PENALTY
+  applyStatusTick,
+  getMovReduction,
+  CRIT_CHANCE, CRIT_MULTIPLIER, VARIANCE_MIN, VARIANCE_MAX, COUNTER_DAMAGE_PENALTY
 } from '@poketactics/shared';
 
 // Re-export for draftLogic
@@ -129,7 +136,10 @@ function generateUnits(): ServerUnit[] {
       y: BOARD_HEIGHT - 1 - Math.floor(i / BOARD_WIDTH),
       currentHp: template.hp,
       hasMoved: false,
-      kills: 0
+      kills: 0,
+      pp: initPP(template),
+      status: null,
+      statusTurns: 0
     });
   }
 
@@ -151,7 +161,10 @@ function generateUnits(): ServerUnit[] {
       y: 0 + Math.floor(i / BOARD_WIDTH),
       currentHp: template.hp,
       hasMoved: false,
-      kills: 0
+      kills: 0,
+      pp: initPP(template),
+      status: null,
+      statusTurns: 0
     });
   }
 
@@ -177,7 +190,10 @@ export function createGameStateWithTeams(p1Team: PokemonTemplate[], p2Team: Poke
       y: BOARD_HEIGHT - 1 - Math.floor(i / BOARD_WIDTH),
       currentHp: template.hp,
       hasMoved: false,
-      kills: 0
+      kills: 0,
+      pp: initPP(template),
+      status: null,
+      statusTurns: 0
     });
   }
 
@@ -193,7 +209,10 @@ export function createGameStateWithTeams(p1Team: PokemonTemplate[], p2Team: Poke
       y: 0 + Math.floor(i / BOARD_WIDTH),
       currentHp: template.hp,
       hasMoved: false,
-      kills: 0
+      kills: 0,
+      pp: initPP(template),
+      status: null,
+      statusTurns: 0
     });
   }
 
@@ -289,7 +308,10 @@ export function getClientState(game: ServerGameState, player: Player): ClientGam
       y: unit.y,
       currentHp: unit.currentHp,
       hasMoved: unit.hasMoved,
-      kills: unit.kills
+      kills: unit.kills,
+      pp: [...unit.pp],
+      status: unit.status,
+      statusTurns: unit.statusTurns
     }));
 
   return {
@@ -414,29 +436,37 @@ export function executeMove(game: ServerGameState, playerId: Player, unitId: str
 }
 
 /**
- * Calculate damage (uses shared formulas)
+ * Calculate damage using new division-based formula with Move
  */
-function calculateDamage(attacker: ServerUnit, defender: ServerUnit, terrain: number, isCounter: boolean, game: ServerGameState): { damage: number; isCritical: boolean } {
-  const attackerTerrain = game.map[attacker.y][attacker.x] as TerrainType;
+function calculateDamage(attacker: ServerUnit, defender: ServerUnit, move: Move, isCounter: boolean, game: ServerGameState): { damage: number; isCritical: boolean; missed: boolean; effectiveness: number; isStab: boolean } {
+  // Check accuracy
+  const missed = !checkAccuracy(move);
+  if (missed) {
+    return { damage: 0, isCritical: false, missed: true, effectiveness: 1, isStab: false };
+  }
 
-  const { base, effectiveness } = sharedCalculateBaseDamage(
-    attacker.template.atk,
-    attacker.template.types,
-    attacker.template.moveType,
-    defender.template.def,
-    defender.template.types,
+  const attackerTerrain = game.map[attacker.y][attacker.x] as TerrainType;
+  const defenderTerrain = game.map[defender.y][defender.x] as TerrainType;
+
+  const result = sharedCalculateBaseDamage({
+    move,
+    attackerTemplate: attacker.template,
+    attackerTypes: attacker.template.types,
+    defenderTemplate: defender.template,
+    defenderTypes: defender.template.types,
     attackerTerrain,
-    terrain as TerrainType,
-    isCounter
-  );
+    defenderTerrain,
+    isCounter,
+    attackerStatus: attacker.status
+  });
 
   const isCritical = Math.random() < CRIT_CHANCE;
   const critMultiplier = isCritical ? CRIT_MULTIPLIER : 1;
-  const variance = 1 - DAMAGE_VARIANCE + Math.random() * DAMAGE_VARIANCE * 2;
+  const variance = VARIANCE_MIN + Math.random() * (VARIANCE_MAX - VARIANCE_MIN);
 
-  const damage = Math.max(1, Math.floor(base * critMultiplier * variance));
+  const damage = Math.max(1, Math.floor(result.base * critMultiplier * variance));
 
-  return { damage, isCritical };
+  return { damage, isCritical, missed: false, effectiveness: result.effectiveness, isStab: result.isStab };
 }
 
 /**
@@ -447,9 +477,9 @@ function getNextEvolution(unit: ServerUnit): PokemonTemplate | null {
 }
 
 /**
- * Execute attack action
+ * Execute attack action with move selection
  */
-export function executeAttack(game: ServerGameState, playerId: Player, attackerId: string, defenderId: string): {
+export function executeAttack(game: ServerGameState, playerId: Player, attackerId: string, defenderId: string, moveId?: string): {
   success: boolean;
   damage: number;
   counterDamage: number;
@@ -474,12 +504,45 @@ export function executeAttack(game: ServerGameState, playerId: Player, attackerI
   }
 
   const distance = Math.abs(defender.x - attacker.x) + Math.abs(defender.y - attacker.y);
-  if (distance > attacker.template.rng) {
+
+  // Find the move to use
+  let move: Move;
+  let moveIndex: number;
+  if (moveId) {
+    moveIndex = attacker.template.moves.findIndex(m => m.id === moveId);
+    if (moveIndex === -1) {
+      return { success: false, damage: 0, counterDamage: 0, attackerDied: false, defenderDied: false, error: 'Movimiento no válido' };
+    }
+    move = attacker.template.moves[moveIndex];
+    if (attacker.pp[moveIndex] <= 0) {
+      return { success: false, damage: 0, counterDamage: 0, attackerDied: false, defenderDied: false, error: 'Sin PP' };
+    }
+  } else {
+    // Fallback: use first attack move in range (backwards compatibility)
+    const attackMoves = attacker.template.moves
+      .map((m, i) => ({ move: m, index: i }))
+      .filter(({ move: m, index: i }) => m.category !== 'status' && m.range >= distance && attacker.pp[i] > 0);
+    if (attackMoves.length === 0) {
+      move = STRUGGLE_MOVE;
+      moveIndex = -1;
+    } else {
+      move = attackMoves[0].move;
+      moveIndex = attackMoves[0].index;
+    }
+  }
+
+  // Validate range
+  if (distance > move.range) {
     return { success: false, damage: 0, counterDamage: 0, attackerDied: false, defenderDied: false, error: 'Fuera de rango' };
   }
 
-  const defenderTerrain = game.map[defender.y][defender.x];
-  const { damage } = calculateDamage(attacker, defender, defenderTerrain, false, game);
+  // Deduct PP
+  if (moveIndex >= 0) {
+    attacker.pp[moveIndex]--;
+  }
+
+  // Calculate damage
+  const { damage } = calculateDamage(attacker, defender, move, false, game);
 
   defender.currentHp = Math.max(0, defender.currentHp - damage);
   const defenderDied = defender.currentHp <= 0;
@@ -487,12 +550,15 @@ export function executeAttack(game: ServerGameState, playerId: Player, attackerI
   let counterDamage = 0;
   let attackerDied = false;
 
-  if (!defenderDied) {
-    const counterDistance = Math.abs(attacker.x - defender.x) + Math.abs(attacker.y - defender.y);
-    if (counterDistance <= defender.template.rng) {
-      const attackerTerrain = game.map[attacker.y][attacker.x];
-      const counterResult = calculateDamage(defender, attacker, attackerTerrain, true, game);
-      counterDamage = counterResult.damage;
+  // Counter-attack (priority moves prevent counter)
+  if (!defenderDied && move.priority <= 0) {
+    const counterResult = getCounterMove(defender.template, distance, defender.pp);
+    if (counterResult) {
+      const { move: counterMove, moveIndex: counterIdx } = counterResult;
+      // Deduct counter PP
+      defender.pp[counterIdx]--;
+      const counterCalc = calculateDamage(defender, attacker, counterMove, true, game);
+      counterDamage = counterCalc.damage;
       attacker.currentHp = Math.max(0, attacker.currentHp - counterDamage);
       attackerDied = attacker.currentHp <= 0;
     }
@@ -508,6 +574,9 @@ export function executeAttack(game: ServerGameState, playerId: Player, attackerI
       attacker.template = nextEvo;
       attacker.templateId = nextEvo.id;
       attacker.currentHp = nextEvo.hp;
+      attacker.pp = initPP(nextEvo);
+      attacker.status = null;
+      attacker.statusTurns = 0;
       evolution = { unitId: attacker.uid, newTemplate: nextEvo };
     }
   }
@@ -614,7 +683,10 @@ export function executeCapture(game: ServerGameState, playerId: Player, unitId: 
     y: spawnY,
     currentHp: pokemon.hp,
     hasMoved: true,
-    kills: 0
+    kills: 0,
+    pp: initPP(pokemon),
+    status: null,
+    statusTurns: 0
   };
 
   game.units.push(newUnit);
@@ -659,14 +731,37 @@ function executeTurnEnd(game: ServerGameState): { turnEnded: boolean; nextPlayer
   game.units.forEach(u => {
     u.hasMoved = false;
 
+    // Apply status ticks for incoming player's units
+    if (u.owner === nextPlayer && u.status) {
+      const statusResult = applyStatusTick(u.status, u.statusTurns, u.template.hp, u.currentHp);
+      u.currentHp = statusResult.newHp;
+      u.status = statusResult.newStatus;
+      u.statusTurns = statusResult.newStatusTurns;
+    }
+
+    // Pokemon Center heals HP and cures status
     if (u.owner === nextPlayer && game.map[u.y][u.x] === TERRAIN.POKEMON_CENTER) {
       const healAmount = Math.floor(u.template.hp * 0.2);
       u.currentHp = Math.min(u.template.hp, u.currentHp + healAmount);
+      u.status = null;
+      u.statusTurns = 0;
     }
   });
 
+  // Remove dead units (from status damage)
+  game.units = game.units.filter(u => u.currentHp > 0);
+
   game.currentPlayer = nextPlayer;
   game.turn = newTurn;
+
+  // Check win condition
+  if (!game.units.some(u => u.owner === 'P1')) {
+    game.winner = 'P2';
+    game.status = 'finished';
+  } else if (!game.units.some(u => u.owner === 'P2')) {
+    game.winner = 'P1';
+    game.status = 'finished';
+  }
 
   return { turnEnded: true, nextPlayer, turn: newTurn };
 }

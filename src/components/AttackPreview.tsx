@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { TYPE_COLORS } from '../constants/types';
 import { getTerrainName } from '../constants/terrain';
-import type { AttackPreview as AttackPreviewType, GameMap } from '../types/game';
+import type { AttackPreview as AttackPreviewType, GameMap, Move } from '../types/game';
 
 interface AttackPreviewProps {
   preview: AttackPreviewType;
@@ -42,11 +42,15 @@ export function AttackPreview({ preview, map, onConfirm, onCancel }: AttackPrevi
   const {
     attacker,
     defender,
+    move,
     predictedDamage,
     effectiveness,
+    isStab,
+    accuracy,
     canCounter,
     counterDamage,
     counterEffectiveness,
+    counterMove,
     attackerTerrainBonus,
     defenderTerrainBonus,
     critChance
@@ -209,7 +213,13 @@ export function AttackPreview({ preview, map, onConfirm, onCancel }: AttackPrevi
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Sword className="w-4 h-4 text-red-400" />
-                  <span className="text-sm text-white font-medium">{attacker.template.moveName}</span>
+                  <span className="text-sm text-white font-medium">{move.name}</span>
+                  <span className={`text-[9px] px-1 py-0.5 rounded text-white font-bold ${TYPE_COLORS[move.type]}`}>
+                    {move.type.slice(0, 3).toUpperCase()}
+                  </span>
+                  {isStab && (
+                    <span className="text-[9px] px-1 py-0.5 rounded bg-yellow-600 text-white font-bold">STAB</span>
+                  )}
                 </div>
                 <div className="text-right">
                   <div className="text-lg font-bold text-red-400">
@@ -220,6 +230,9 @@ export function AttackPreview({ preview, map, onConfirm, onCancel }: AttackPrevi
                   </div>
                   <EffectivenessLabel effectiveness={effectiveness} />
                 </div>
+              </div>
+              <div className="mt-1 text-xs text-slate-400">
+                Precisión: {accuracy}% · {move.category === 'physical' ? 'Físico' : move.category === 'special' ? 'Especial' : 'Estado'}
               </div>
               {willKO && (
                 <div className="mt-2 flex items-center gap-1 text-green-400 text-xs">
@@ -248,7 +261,7 @@ export function AttackPreview({ preview, map, onConfirm, onCancel }: AttackPrevi
                   </div>
                 </div>
                 <div className="mt-1 text-xs text-yellow-300/60">
-                  El defensor puede devolver el golpe (75% daño)
+                  Contraataque{counterMove ? `: ${counterMove.name}` : ''} (75% daño)
                 </div>
               </div>
             )}
@@ -258,7 +271,7 @@ export function AttackPreview({ preview, map, onConfirm, onCancel }: AttackPrevi
                 El defensor no puede contraatacar
                 {defender.currentHp - predictedDamage.min <= 0
                   ? ' (será noqueado)'
-                  : ` (fuera de rango: RNG ${defender.template.rng})`
+                  : ` (fuera de rango)`
                 }
               </div>
             )}

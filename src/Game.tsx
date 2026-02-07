@@ -24,6 +24,7 @@ import { AudioLoadingScreen } from './components/AudioLoadingScreen';
 import { MapSizeSelector } from './components/MapSizeSelector';
 import { MapEditor } from './components/MapEditor';
 import { audioPreloader, AUDIO_CONFIGS } from './utils/audioPreloader';
+import { MoveSelector } from './components/MoveSelector';
 import type { Position, TerrainType, Unit, GameMap, PokemonTemplate, EvolutionData } from './types/game';
 
 export default function Game() {
@@ -75,6 +76,11 @@ export default function Game() {
     triggerServerEncounter,
     triggerServerBattleWithZoom,
     updateUnitsOptimistic,
+    // Move selection
+    selectedMove,
+    attackTarget,
+    selectMove,
+    cancelMoveSelect,
     // Timer
     autoWaitAllUnits
   } = useGameState();
@@ -117,7 +123,7 @@ export default function Game() {
     } else if (state === 'playing' && (phase === 'SELECT' || phase === 'MOVING' || phase === 'ACTION_MENU')) {
       // Board theme - plays during normal gameplay (not battle) - lowered volume
       playMusic('board_theme', { loop: true, volume: 0.3 });
-    } else if (phase === 'ATTACKING' || state === 'battle' || state === 'battle_zoom') {
+    } else if (phase === 'ATTACKING' || phase === 'MOVE_SELECT' || state === 'battle' || state === 'battle_zoom') {
       // Battle theme - plays during attack phase and battle cinematics
       playMusic('battle_theme', { loop: true, volume: 0.5 });
     } else if (state === 'victory') {
@@ -524,7 +530,7 @@ export default function Game() {
       // Cast map from number[][] to GameMap (TerrainType[][])
       setMultiplayerState({
         map: serverState.map as GameMap,
-        units: serverState.units as Unit[],
+        units: serverState.units.map(u => ({ ...u, pp: u.pp ?? u.template.moves.map(m => m.pp), status: u.status ?? null, statusTurns: u.statusTurns ?? 0 })) as Unit[],
         turn: serverState.turn,
         currentPlayer: serverState.currentPlayer,
         myPlayer: serverState.myPlayer,
@@ -541,7 +547,7 @@ export default function Game() {
 
       setMultiplayerState({
         map: serverState.map as GameMap,
-        units: serverState.units as Unit[],
+        units: serverState.units.map(u => ({ ...u, pp: u.pp ?? u.template.moves.map(m => m.pp), status: u.status ?? null, statusTurns: u.statusTurns ?? 0 })) as Unit[],
         turn: serverState.turn,
         currentPlayer: serverState.currentPlayer,
         myPlayer: serverState.myPlayer,
@@ -730,7 +736,7 @@ export default function Game() {
 
         {/* Fixed HUD overlay - positioned over scroll area */}
         {/* Phase indicator - floating top-right during MOVING/ATTACKING */}
-        {gameState === 'playing' && (gamePhase === 'MOVING' || gamePhase === 'ATTACKING') && (
+        {gameState === 'playing' && (gamePhase === 'MOVING' || gamePhase === 'ATTACKING' || gamePhase === 'MOVE_SELECT') && (
           <div className="absolute top-1 right-1 md:top-3 md:right-3 z-20 animate-in pointer-events-none">
             <div className={`
               px-3 py-1.5 md:px-4 md:py-2 rounded-lg
@@ -741,7 +747,7 @@ export default function Game() {
                 : 'bg-red-900/90 border border-red-500/50 text-red-300 shadow-red-500/30'
               }
             `}>
-              {gamePhase === 'MOVING' ? 'Elige destino' : 'Elige objetivo'}
+              {gamePhase === 'MOVING' ? 'Elige destino' : gamePhase === 'MOVE_SELECT' ? 'Elige movimiento' : 'Elige objetivo'}
             </div>
           </div>
         )}
@@ -927,6 +933,15 @@ export default function Game() {
         <TurnTransition
           currentPlayer={currentPlayer}
           onConfirm={confirmTurnChange}
+        />
+      )}
+
+      {gamePhase === 'MOVE_SELECT' && selectedUnit && attackTarget && (
+        <MoveSelector
+          attacker={selectedUnit}
+          target={attackTarget}
+          onSelectMove={selectMove}
+          onCancel={cancelMoveSelect}
         />
       )}
 

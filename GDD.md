@@ -8,7 +8,7 @@
 - **Platform**: Web (Mobile-first responsive)
 - **Players**: 2 (Hot-seat or Online multiplayer)
 - **Tech Stack**: React, TypeScript, Tailwind CSS, Vite, Socket.IO
-- **Current Version**: 0.42.0 (Alpha)
+- **Current Version**: 0.43.0 (Alpha)
 
 ---
 
@@ -33,6 +33,7 @@ The game uses a **preview-then-confirm** flow like Fire Emblem:
 | **MOVING** | Click destination to preview path (red arrow shows route) |
 | **ACTION_MENU** | Contextual menu appears next to tile with options |
 | **ATTACKING** | If "Atacar" chosen, click red tile to select target |
+| **MOVE_SELECT** | After selecting target, choose which move to use (4 moves) |
 | **WAITING** | Unit's turn ends, marked as moved |
 
 ### Contextual Action Menu
@@ -74,6 +75,7 @@ When moving to **Tall Grass**, there's a **30% chance** of triggering a wild Pok
 | `MOVING` | Player selecting move destination (shows blue tiles) |
 | `ACTION_MENU` | Contextual menu shown, player chooses action |
 | `ATTACKING` | Player selecting attack target (shows red tiles) |
+| `MOVE_SELECT` | Player choosing which move to use (4-move picker overlay) |
 | `WAITING` | Unit waiting (ending turn) |
 
 ---
@@ -85,34 +87,100 @@ When moving to **Tall Grass**, there's a **30% chance** of triggering a wild Pok
 ```typescript
 interface Unit {
   uid: string;           // Unique identifier
-  owner: 'P1' | 'P2';    // Controlling player
+  owner: 'P1' | 'P2';   // Controlling player
   template: PokemonTemplate;
   x: number;             // Board position X
   y: number;             // Board position Y
   currentHp: number;     // Current health points
   hasMoved: boolean;     // Has acted this turn
   kills: number;         // Kill count for evolution
+  pp: number[];          // Current PP for each of the 4 moves
+  status: StatusEffect | null; // Active status condition
+  statusTurns: number;   // Turns elapsed with current status
 }
 ```
 
-### Pokémon Template
+### Pokémon Template (v0.43.0 — Real Showdown Data)
 
-Each Pokémon has base stats and typing:
+All Pokémon data is sourced from `@pkmn/dex` (Pokémon Showdown's data) via a build-time script. Each Pokémon has **6 real base stats**, **4 curated moves**, and **1 ability**.
 
-| Stat | Description | Range |
-|------|-------------|-------|
-| `hp` | Health Points | 60-100 |
-| `atk` | Attack Power | 35-60 |
-| `def` | Defense | 25-50 |
-| `mov` | Movement Range | 2-4 tiles |
-| `rng` | Attack Range | 1-3 tiles |
+| Stat | Description | Source |
+|------|-------------|--------|
+| `hp` | Health Points | Real Showdown base stat |
+| `atk` | Physical Attack | Real Showdown base stat |
+| `def` | Physical Defense | Real Showdown base stat |
+| `spa` | Special Attack | Real Showdown base stat |
+| `spd` | Special Defense | Real Showdown base stat |
+| `spe` | Speed | Real Showdown base stat |
+| `mov` | Movement Range (2-5 tiles) | Derived: `max(2, min(5, floor(spe/30) + 2))` |
+
+#### Move Template
+
+Each Pokémon has 4 moves (hand-curated per species):
+
+| Field | Description |
+|-------|-------------|
+| `id` | Internal ID (e.g., 'flamethrower') |
+| `name` | Display name (e.g., 'Flamethrower') |
+| `type` | Move type (fire, water, etc.) |
+| `category` | `physical`, `special`, or `status` |
+| `power` | Base power (0 for status moves) |
+| `accuracy` | Hit chance (70-100%) |
+| `pp` | Tactical PP (2-5, scaled from Showdown's 5-40) |
+| `range` | 0=self, 1=melee, 2=ranged, 3=long-range |
+| `priority` | 0=normal, 1+=quick (prevents counter) |
+| `effect` | Optional status effect to apply |
+| `effectChance` | Chance to apply effect (0-100) |
+
+**PP Scaling** from Showdown:
+- 5-10 PP → tactical 2
+- 15-20 PP → tactical 3
+- 25-30 PP → tactical 4
+- 35-40 PP → tactical 5
+
+**Range Assignment** (not in Showdown — assigned by move flavor):
+- `range: 1` — Contact/melee (Punch, Claw, Bite, Tackle)
+- `range: 2` — Projectile (Flamethrower, Thunderbolt, Water Pulse)
+- `range: 3` — Long-range (Snipe Shot, Hyper Beam) — rare
+
+#### Ability
+
+Each Pokémon has one ability (the most iconic from its species):
+
+| Ability | Effect | Pokémon |
+|---------|--------|---------|
+| Blaze | Fire moves +50% when HP < 33% | Charmander line |
+| Torrent | Water moves +50% when HP < 33% | Squirtle line |
+| Overgrow | Grass moves +50% when HP < 33% | Bulbasaur line |
+| Intimidate | Enemy ATK -1 stage on contact | Growlithe/Arcanine, Gyarados |
+| Levitate | Immune to Ground, ignore terrain cost | Flygon |
+| Sturdy | Survive any hit with 1 HP from full | Geodude line, Beldum line |
+| Guts | +50% ATK when statused | Machop line |
+| Thick Fat | Fire/Ice damage -50% | Snorlax |
+| Static | 30% paralyze on contact | Electric types |
+| Poison Point | 30% poison on contact | Poison types |
+| Flash Fire | Immune to Fire, +50% own Fire power | Fire types |
+| Marvel Scale | +50% DEF when statused | Fairy types |
+
+#### Status Effects
+
+| Status | Effect | Duration |
+|--------|--------|----------|
+| **Burn** | -50% physical ATK, 6% max HP chip/turn | Permanent |
+| **Paralysis** | -50% MOV (min 1), 25% chance skip turn | Permanent |
+| **Poison** | 12% max HP chip damage/turn | Permanent |
+| **Sleep** | Cannot act | 1-3 turns (random) |
+| **Freeze** | Cannot act | 1-2 turns, 20% thaw/turn |
+
+Status ticks apply at **start of unit's turn** (before movement). Pokémon Center heals status.
 
 ### Starting Teams
 
-- Each player starts with **3 random Pokémon**
-- No duplicate Pokémon within a team
+- Each player starts with **3 random Pokémon** (base forms)
+- No duplicate evolution chains within a team
 - P1 spawns at bottom-left corner
 - P2 spawns at top-right corner
+- 21 evolution chains available (~58 total Pokémon)
 
 ---
 
@@ -225,34 +293,87 @@ Flying-type Pokémon ignore terrain movement costs (always 1) and can traverse w
 
 ---
 
-## Combat System
+## Combat System (v0.43.0 — Full Overhaul)
 
-### Damage Formula
+### Move Selection Phase
+
+After selecting an attack target, a **Move Selector overlay** appears showing all 4 moves:
+- Move name, type color badge, category icon (physical ⚔️ / special ✨ / status 🛡️)
+- Power, accuracy, PP remaining, range
+- STAB indicator if move type matches attacker's type
+- Grayed out if: no PP remaining, out of range, or status move
+- "LEJOS" warning if target is beyond move range
+- "SIN PP" warning if PP depleted
+
+### Damage Formula (Division-Based)
 
 ```
-Base Damage = (ATK × Effectiveness × TerrainBonus × CounterPenalty) - (DEF × DefenseMultiplier)
-Final Damage = Base × CritMultiplier × Variance
+innerDamage = floor(22 × power × A / (D × defenseMultiplier) / 50 + 2)
+rawDamage = innerDamage × STAB × effectiveness × terrainAttackBonus × counterPenalty
+finalDamage = max(1, floor(rawDamage × critMultiplier × variance))
 ```
+
+Where:
+- `A` = attacker's `atk` (physical moves) or `spa` (special moves)
+- `D` = defender's `def` (physical moves) or `spd` (special moves)
+- `22` = fixed level factor (calibrated for tactical play)
+- `STAB` = 1.5× if move type matches attacker's type, else 1.0×
+- `effectiveness` = from TYPE_CHART (0×, 0.25×, 0.5×, 1×, 2×, 4×)
+- `defenseMultiplier` = 1 + (terrain defense bonus / 100)
+- `terrainAttackBonus` = 1.15× if attacker's type matches terrain bonus
+- `counterPenalty` = 0.75× for counter-attacks, 1.0× otherwise
+- `critMultiplier` = 1.5× (10% chance), 1.0× otherwise
+- `variance` = random 0.85 - 1.00
+
+### Accuracy
+
+Before calculating damage, an accuracy check occurs:
+```
+hit = random(0, 100) < move.accuracy
+```
+If miss: 0 damage, "Falló!" shown in cinematic. Status moves also check accuracy.
+
+### Physical/Special Split
+
+- **Physical moves** use ATK vs DEF (e.g., Close Combat, Thunder Punch)
+- **Special moves** use SPA vs SPD (e.g., Flamethrower, Psychic)
+- **Status moves** deal 0 damage but apply effects (e.g., Will-O-Wisp, Bulk Up)
+- **Burn** halves the attacker's physical ATK before calculation
 
 ### Combat Constants
 
 | Constant | Value | Description |
 |----------|-------|-------------|
+| `LEVEL_FACTOR` | 22 | Fixed level factor in formula |
 | `CRIT_CHANCE` | 10% | Chance for critical hit |
 | `CRIT_MULTIPLIER` | 1.5× | Critical hit damage bonus |
-| `DAMAGE_VARIANCE` | ±10% | Random damage spread |
+| `STAB_MULTIPLIER` | 1.5× | Same Type Attack Bonus |
+| `VARIANCE_MIN` | 0.85 | Minimum damage variance |
+| `VARIANCE_MAX` | 1.00 | Maximum damage variance |
 | `COUNTER_PENALTY` | 0.75× | Counter-attack deals 75% damage |
 
 ### Counter-Attack System
 
 After the attacker strikes, the defender may counter-attack if:
 1. Defender **survives** the initial attack (HP > 0)
-2. Attacker is **within defender's attack range**
+2. Defender has an **attack move** that can reach the attacker (move.range ≥ distance)
+3. The attacker's move does **not** have priority > 0 (priority moves prevent counters)
 
 Counter-attacks:
+- Use the **first usable move** that can reach the attacker
 - Deal **75% of normal damage**
+- Deduct **PP** from the counter move
 - Can land critical hits
 - Apply type effectiveness normally
+
+### PP System
+
+Each move has limited PP (Power Points):
+- PP is deducted on use (both attacks and counter-attacks)
+- Moves with 0 PP cannot be used
+- If all moves are depleted, the unit uses **Struggle** (Normal/Physical, 50 power, range 1)
+- **Evolution** restores all PP to full
+- PP is tracked per unit, not per template
 
 ### Type Effectiveness
 
@@ -260,9 +381,11 @@ Full 18-type Pokémon type chart implemented (includes Dark type):
 
 | Multiplier | Effect |
 |------------|--------|
+| 4.0× | Double Super Effective (dual type) |
 | 2.0× | Super Effective |
 | 1.0× | Normal |
 | 0.5× | Not Very Effective |
+| 0.25× | Double Resist (dual type) |
 | 0.0× | Immune (No Damage) |
 
 Dual-typed defenders multiply effectiveness (e.g., 2.0 × 2.0 = 4.0×)
@@ -270,9 +393,12 @@ Dual-typed defenders multiply effectiveness (e.g., 2.0 × 2.0 = 4.0×)
 ### Attack Preview
 
 Before confirming an attack, players see:
+- **Move name** and type badge
 - **Damage range** (min-max with crit potential)
+- **Accuracy** percentage
+- **STAB** indicator
 - **Type effectiveness** indicator
-- **Counter-attack prediction** (if applicable)
+- **Counter-attack prediction** with counter move name
 - **Terrain bonuses** for both units
 - **Critical hit chance**
 
@@ -1125,6 +1251,7 @@ Currently in alpha - major version stays at 0 until core features complete.
 
 | Version | Changes |
 |---------|---------|
+| **0.43.0** | **Complete Combat Overhaul — Real Pokémon Data from Showdown**: Replaced shallow 1-move combat with full Pokémon mechanics using `@pkmn/dex` as build-time data source. **4 moves per Pokémon** (hand-curated per species) with Physical/Special/Status categories. **Division-based damage formula** (`floor(22 × power × A/D / 50 + 2) × modifiers`) replacing old subtraction formula. **Physical/Special split** — physical uses ATK/DEF, special uses SPA/SPD. **STAB** (1.5× Same Type Attack Bonus). **Accuracy checks** (70-100%). **6 real base stats** (HP/ATK/DEF/SPA/SPD/SPE) from Showdown replacing custom stats. **PP system** (2-5 per move, Struggle fallback). **Move ranges** (1=melee, 2=ranged, 3=long-range). **Priority moves** prevent counter-attacks. **Counter uses first in-range move** (auto-selected). **5 status effects** — Burn (-50% phys ATK, 6% chip), Paralysis (-50% MOV, 25% skip), Poison (12% chip), Sleep (1-3 turns), Freeze (20% thaw/turn). **15+ abilities** (Blaze/Torrent/Overgrow, Intimidate, Levitate, Sturdy, Guts, Thick Fat, Static, Poison Point, Flash Fire, Marvel Scale). **MOVE_SELECT game phase** with 4-button move picker overlay (type colors, PP, power, accuracy, STAB badge, range/PP warnings). **Build-time code generation** — `scripts/generate-pokemon-data.ts` queries `@pkmn/dex` for 21 chains / 58 Pokémon / ~250 curated moves → outputs `shared/src/generatedPokemon.ts`. **Server updated** with PP tracking, status ticks on turn change, move-based combat with moveId validation, Pokémon Center cures status. Battle cinematic shows move name + STAB + miss animation + status applied. Attack preview shows per-move stats. Sidebar shows 6 stats + moves + ability + status. |
 | **0.42.0** | **Shared Package (`@poketactics/shared`)**: Eliminated ~600+ lines of duplicated game data between client and server. Created npm workspace package as single source of truth for: TYPE_CHART (18x18), TERRAIN definitions (16 types with game props), EVOLUTION_CHAINS (21 chains, 55 Pokémon), combat formulas (`calculateBaseDamage`, `getEffectiveness`, `getFullEffectiveness`), Dijkstra pathfinding (`calculateMoveRange`), core types (`PokemonType`, `PokemonTemplate`, `Position`, `TerrainType`, `GameMap`), and constants (`BOARD_WIDTH`, `BOARD_HEIGHT`, `VISION_RANGE`). Architecture: npm workspaces with Vite alias (client resolves raw `.ts`) and tsconfig paths (server resolves built `.d.ts` declarations). Client barrel files re-export from shared + add client-only fields (`name`, `bg` for terrain, `TYPE_COLORS`). Shared `calculateBaseDamage` is framework-agnostic (raw stats, not Unit objects). `PathfindingUnit` structural interface allows both client `Unit` and server `ServerUnit`. Zero desync risk — adding types, Pokémon, or terrain only requires updating one location. |
 | **0.41.0** | **Audio & Multiplayer Parity Fixes**: Generated 7 missing audio files (attack_hit, critical_hit, super_effective, not_effective, unit_faint SFX + victory/defeat music jingles). Fixed browser autoplay policy — audio now unlocks on first user interaction (click/touch/keydown) with queued playback for pre-interaction sounds. **Server-client sync**: All 16 terrain types synced (was only 7: added Sand, Bridge, Berry Bush, Ice, Lava, Swamp, Road, Ruins, Cave with proper properties). All 21 evolution chains synced (was 12: added Scyther, Munchlax, Beldum, Trapinch, Chimchar, Sneasel, Swinub, Ralts, Cleffa chains). Full 18-type chart with Dark type on server (was missing). Board size matched to 10x12 (was 6x8). Server now uses Dijkstra pathfinding (was Manhattan distance only). Fixed Tyranitar server type to Rock/Dark (was Rock/Dragon). Berry bush consumable healing implemented on server (10% HP + converts to grass). Cave concealment implemented on server (hidesUnit check, Manhattan ≤1 reveal). Terrain type ATK bonus (+25%) now applied in server damage calculation. Fixed wait action not sent after move in multiplayer (units stayed unmoved). Expanded server wild Pokemon pool (10 species including Dark/Fairy types). |
 | **0.40.0** | **Premium GBA-Style Capture UI/UX Overhaul**: Complete visual upgrade of CaptureMinigame and CaptureModal to match premium quality of StartScreen/BattleCinematic. Added: CRT scanlines + vignette overlays on all capture phases, 15 type-colored ambient floating particles, enhanced encounter intro (8 radial energy lines on alert with screen vibrate, 6 rising ground particles + glow bar on silhouette, 12-particle type-colored energy burst on reveal with screen flash), battle scene orbiting particles around wild Pokemon + ground glow + idle breathing animation, premium ring minigame (layered dark gradient + type-colored center glow + scanlines + vignette background, 10 ambient particles, 6 orbiting particles around target circle, breathing Pokemon animation, enhanced result feedback with white screen flash + 8 radial particle burst + bigger bounce text with multi-layer text-shadow, TAP instruction pulsing ring), 6 trailing energy particles behind pokeball during throw + bigger impact flash with 8 burst particles, energy ripple expanding ring on each shake + background tension pulse animation, premium success result (golden star SVG replacing emoji with scale+rotate entrance, 16 radial gold/amber burst particles, 40 enhanced confetti with type-colored + gold pieces and horizontal drift, rotating conic-gradient light rays, pulsing title glow), premium failure result (8 red energy burst lines replacing emoji, Pokemon escape-fly sprite animation, shake text effect), CaptureModal enhancements (30 type-colored sparkles up from 20, 3 large slow-floating blurred orbs, rotating conic-gradient light rays behind Pokemon, 10-particle energy burst on card appear, enhanced bounce with scale overshoot, segmented HP bars with 5-segment notch marks + stat color glow, count-up animation for stat values using requestAnimationFrame, confirm button idle pulse glow ring + 4 floating sparkles + hover glow burst). All CSS-only effects, no performance impact. |

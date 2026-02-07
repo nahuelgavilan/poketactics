@@ -95,6 +95,9 @@ export function createCapturedUnit(captureData: CaptureData): Unit {
     y: captureData.spawnPos.y,
     currentHp: captureData.pokemon.hp,
     hasMoved: true, // Enters fatigued
-    kills: 0
+    kills: 0,
+    pp: captureData.pokemon.moves.map(m => m.pp),
+    status: null,
+    statusTurns: 0
   };
 }
