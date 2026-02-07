@@ -4,6 +4,7 @@ import { VISION_RANGE } from '../constants/vision';
 import { TERRAIN_PROPS } from '../constants/terrain';
 import type { Unit, Player, VisibilityMap, GameMap } from '../types/game';
 
+
 /**
  * Calculate visibility map for fog of war
  */
@@ -14,14 +15,18 @@ export function useVision(
   map?: GameMap
 ): VisibilityMap {
   return useMemo(() => {
+    // Derive dimensions from map (dynamic) or fall back to constants
+    const rows = map ? map.length : BOARD_HEIGHT;
+    const cols = map && map[0] ? map[0].length : BOARD_WIDTH;
+
     // Initialize visibility arrays
-    const visible: boolean[][] = Array(BOARD_HEIGHT)
+    const visible: boolean[][] = Array(rows)
       .fill(null)
-      .map(() => Array(BOARD_WIDTH).fill(false));
+      .map(() => Array(cols).fill(false));
 
     const explored: boolean[][] = previousExplored.length > 0
       ? previousExplored.map(row => [...row])
-      : Array(BOARD_HEIGHT).fill(null).map(() => Array(BOARD_WIDTH).fill(false));
+      : Array(rows).fill(null).map(() => Array(cols).fill(false));
 
     // Get current player's units
     const playerUnits = units.filter(u => u.owner === currentPlayer);
@@ -38,8 +43,8 @@ export function useVision(
         }
       }
 
-      for (let y = 0; y < BOARD_HEIGHT; y++) {
-        for (let x = 0; x < BOARD_WIDTH; x++) {
+      for (let y = 0; y < rows; y++) {
+        for (let x = 0; x < cols; x++) {
           // Manhattan distance
           const distance = Math.abs(x - unit.x) + Math.abs(y - unit.y);
 
@@ -63,7 +68,9 @@ export function isPositionVisible(
   y: number,
   visibility: VisibilityMap
 ): boolean {
-  if (y < 0 || y >= BOARD_HEIGHT || x < 0 || x >= BOARD_WIDTH) {
+  const rows = visibility.visible.length;
+  const cols = rows > 0 ? visibility.visible[0].length : 0;
+  if (y < 0 || y >= rows || x < 0 || x >= cols) {
     return false;
   }
   return visibility.visible[y][x];

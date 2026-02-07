@@ -1,5 +1,4 @@
 import { TERRAIN } from '../constants/terrain';
-import { BOARD_WIDTH, BOARD_HEIGHT } from '../constants/board';
 import { getRandomWildPokemon } from '../constants/pokemon';
 import type { Unit, Position, GameMap, CaptureData } from '../types/game';
 
@@ -28,7 +27,7 @@ export function findSpawnPosition(
     const ny = capturer.y + dy;
 
     // Check bounds
-    if (nx < 0 || nx >= BOARD_WIDTH || ny < 0 || ny >= BOARD_HEIGHT) continue;
+    if (nx < 0 || nx >= map[0].length || ny < 0 || ny >= map.length) continue;
 
     // Check terrain passability
     if (!isPassableTerrain(map[ny][nx])) continue;

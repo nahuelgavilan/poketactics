@@ -8,7 +8,7 @@
 - **Platform**: Web (Mobile-first responsive)
 - **Players**: 2 (Hot-seat or Online multiplayer)
 - **Tech Stack**: React, TypeScript, Tailwind CSS, Vite, Socket.IO
-- **Current Version**: 0.32.0 (Alpha)
+- **Current Version**: 0.34.0 (Alpha)
 
 ---
 
@@ -120,8 +120,12 @@ Each Pokémon has base stats and typing:
 
 ### Board Dimensions
 
-- **Width**: 6 tiles
-- **Height**: 8 tiles
+- **Width**: 10 tiles (local), 6 tiles (multiplayer server)
+- **Height**: 12 tiles (local), 8 tiles (multiplayer server)
+- **Tile Size**: 48px minimum on mobile, 56px on desktop (touch-friendly)
+- **Camera**: Native browser scroll — board overflows viewport on mobile, user pans by scrolling
+- **Auto-Scroll**: Board scrolls to selected unit and to current player's units on turn start
+- **Pokémon Centers**: 2-3 per map (spaced 3+ tiles apart)
 
 ### Terrain Types
 
@@ -562,7 +566,7 @@ Celebration screen with GBA-style effects:
 │  │Unit Info │     ┌─────────────────────┐   │
 │  └──────────┘     │                     │   │
 │                   │    Game Board       │   │
-│                   │      (6×8 grid)     │   │
+│                   │    (10×12 grid)     │   │
 │                   │                     │   │
 │                   └─────────────────────┘   │
 └─────────────────────────────────────────────┘
@@ -1072,6 +1076,7 @@ Currently in alpha - major version stays at 0 until core features complete.
 
 | Version | Changes |
 |---------|---------|
+| **0.34.0** | **Larger Board with Scrollable Camera**: Expanded board from 6x8 to 10x12 tiles. Fixed tile sizes (48px mobile, 56px desktop) with native scroll for panning. All game systems (pathfinding, vision, capture, battle zoom) now derive dimensions from the map dynamically — multiplayer server still sends 6x8 and client renders it correctly. Auto-scroll to selected unit and on turn start. Pokémon Centers increased to 2-3 per map. Added `data-pos` attribute to tiles for scroll targeting. |
 | **0.33.0** | **Battle SFX & Victory Audio**: Added combat sound effects to BattleCinematic (attack_hit, critical_hit, super_effective, not_effective, unit_faint). Victory fanfare plays on win screen. Registered victory/defeat music tracks in audio preloader. Fixed package.json version mismatch (was 1.3.0, now synced). |
 | **0.32.0** | **Audio System Overhaul**: Implemented audio preloader with pooling architecture to fix production timing issues. All audio files now preload on game start (eliminates network delays during gameplay). New loading screen shows progress. Fixed battle desynchronization and slow audio playback in production. Audio pool system reuses instances for better performance. Re-generated `wild_encounter.mp3` (5.6 MB → 48 KB). |
 | **0.31.0** | Multiplayer game modes: Quick Battle (random teams) and Draft Mode selection, submenu in multiplayer lobby, server stores and uses game mode, prepared infrastructure for full draft implementation |

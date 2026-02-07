@@ -170,20 +170,19 @@ export function useGameState(): UseGameStateReturn {
     newMap[BOARD_HEIGHT - 1][BOARD_WIDTH - 2] = TERRAIN.GRASS as TerrainType;
     newMap[BOARD_HEIGHT - 2][BOARD_WIDTH - 1] = TERRAIN.GRASS as TerrainType;
 
-    // Add Pokémon Centers in the middle area (1-2 centers)
-    const centerCount = Math.random() < 0.5 ? 1 : 2;
+    // Add Pokémon Centers in the middle area (2-3 centers for larger board)
+    const centerCount = Math.random() < 0.5 ? 2 : 3;
     const placedCenters: { x: number; y: number }[] = [];
 
     for (let i = 0; i < centerCount; i++) {
       let attempts = 0;
       while (attempts < 20) {
-        // Middle area: rows 2-5, cols 1-4 (avoiding corners)
         const cx = 1 + Math.floor(Math.random() * (BOARD_WIDTH - 2));
         const cy = 2 + Math.floor(Math.random() * (BOARD_HEIGHT - 4));
 
-        // Check not too close to other centers
+        // Check not too close to other centers (min 3 tiles apart on larger board)
         const tooClose = placedCenters.some(
-          c => Math.abs(c.x - cx) < 2 && Math.abs(c.y - cy) < 2
+          c => Math.abs(c.x - cx) < 3 && Math.abs(c.y - cy) < 3
         );
 
         if (!tooClose) {
@@ -276,8 +275,8 @@ export function useGameState(): UseGameStateReturn {
     newMap[BOARD_HEIGHT - 1][BOARD_WIDTH - 2] = TERRAIN.GRASS as TerrainType;
     newMap[BOARD_HEIGHT - 2][BOARD_WIDTH - 1] = TERRAIN.GRASS as TerrainType;
 
-    // Add Pokémon Centers in the middle area (1-2 centers)
-    const centerCount = Math.random() < 0.5 ? 1 : 2;
+    // Add Pokémon Centers in the middle area (2-3 centers for larger board)
+    const centerCount = Math.random() < 0.5 ? 2 : 3;
     const placedCenters: { x: number; y: number }[] = [];
 
     for (let i = 0; i < centerCount; i++) {
@@ -286,7 +285,7 @@ export function useGameState(): UseGameStateReturn {
         const cx = 1 + Math.floor(Math.random() * (BOARD_WIDTH - 2));
         const cy = 2 + Math.floor(Math.random() * (BOARD_HEIGHT - 4));
         const tooClose = placedCenters.some(
-          c => Math.abs(c.x - cx) < 2 && Math.abs(c.y - cy) < 2
+          c => Math.abs(c.x - cx) < 3 && Math.abs(c.y - cy) < 3
         );
         if (!tooClose) {
           newMap[cy][cx] = TERRAIN.POKEMON_CENTER as TerrainType;

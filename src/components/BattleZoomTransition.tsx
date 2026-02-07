@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { getIconSprite } from '../utils/sprites';
 import { TERRAIN } from '../constants/terrain';
-import { BOARD_WIDTH, BOARD_HEIGHT } from '../constants/board';
 import type { Unit, GameMap, TerrainType } from '../types/game';
 
 interface BattleZoomTransitionProps {
@@ -184,9 +183,12 @@ export function BattleZoomTransition({ attacker, defender, map, onComplete }: Ba
   const [phase, setPhase] = useState<'board' | 'zoom' | 'vs' | 'spiral' | 'black' | 'done'>('board');
   const [spiralProgress, setSpiralProgress] = useState(0);
 
+  const boardWidth = map[0]?.length || 10;
+  const boardHeight = map.length || 12;
+
   // Calculate center point for zoom (clamped to avoid edge awkwardness)
-  const centerX = Math.max(BOARD_WIDTH * 0.15, Math.min(BOARD_WIDTH * 0.85, (attacker.x + defender.x) / 2 + 0.5));
-  const centerY = Math.max(BOARD_HEIGHT * 0.15, Math.min(BOARD_HEIGHT * 0.85, (attacker.y + defender.y) / 2 + 0.5));
+  const centerX = Math.max(boardWidth * 0.15, Math.min(boardWidth * 0.85, (attacker.x + defender.x) / 2 + 0.5));
+  const centerY = Math.max(boardHeight * 0.15, Math.min(boardHeight * 0.85, (attacker.y + defender.y) / 2 + 0.5));
 
   // Determine layout based on relative positions
   const dx = Math.abs(attacker.x - defender.x);
@@ -261,22 +263,22 @@ export function BattleZoomTransition({ attacker, defender, map, onComplete }: Ba
             ${phase === 'board' ? 'scale-100 opacity-100' : 'scale-[3] opacity-100'}
           `}
           style={{
-            transformOrigin: `${(centerX / BOARD_WIDTH) * 100}% ${(centerY / BOARD_HEIGHT) * 100}%`,
+            transformOrigin: `${(centerX / boardWidth) * 100}% ${(centerY / boardHeight) * 100}%`,
           }}
         >
           <div
             className="relative"
             style={{
               display: 'grid',
-              gridTemplateColumns: `repeat(${BOARD_WIDTH}, 1fr)`,
-              gridTemplateRows: `repeat(${BOARD_HEIGHT}, 1fr)`,
+              gridTemplateColumns: `repeat(${boardWidth}, 1fr)`,
+              gridTemplateRows: `repeat(${boardHeight}, 1fr)`,
               width: 'min(88vw, 400px)',
-              aspectRatio: `${BOARD_WIDTH} / ${BOARD_HEIGHT}`,
+              aspectRatio: `${boardWidth} / ${boardHeight}`,
               gap: '2px',
             }}
           >
-            {Array.from({ length: BOARD_HEIGHT }, (_, y) =>
-              Array.from({ length: BOARD_WIDTH }, (_, x) => {
+            {Array.from({ length: boardHeight }, (_, y) =>
+              Array.from({ length: boardWidth }, (_, x) => {
                 const terrain = (map[y]?.[x] ?? 0) as TerrainType;
                 const theme = TERRAIN_THEME[terrain] || TERRAIN_THEME[TERRAIN.GRASS];
                 const isAttacker = attacker.x === x && attacker.y === y;

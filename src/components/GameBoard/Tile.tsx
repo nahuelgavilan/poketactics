@@ -212,6 +212,7 @@ export function Tile({
 
   return (
     <div
+      data-pos={`${x}-${y}`}
       onClick={onClick}
       onMouseEnter={onHover}
       onMouseLeave={onHoverEnd}

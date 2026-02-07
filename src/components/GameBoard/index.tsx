@@ -1,7 +1,6 @@
 import { useState, useMemo, useCallback } from 'react';
 import { Tile } from './Tile';
 import { UnitActionMenu } from '../UnitActionMenu';
-import { BOARD_WIDTH } from '../../constants/board';
 import { isInRange, isInAttackRange, findPath } from '../../utils/pathfinding';
 import type { GameMap, Unit, Position, AttackTarget, Player, VisibilityMap } from '../../types/game';
 
@@ -41,9 +40,12 @@ export function GameBoard({
   onWait,
   onCancel
 }: GameBoardProps) {
-  // Styling based on device - larger gaps for 3D tiles
-  const gap = isMobile ? 'gap-1' : 'gap-2';
-  const padding = isMobile ? 'p-2' : 'p-4';
+  // Fixed tile sizes for touch-friendliness (min 48px on mobile)
+  const tileSize = isMobile ? 48 : 56;
+  const gapSize = isMobile ? 4 : 8;
+  const padSize = isMobile ? 8 : 16;
+  const cols = map[0]?.length || 10;
+  const rows = map.length || 12;
 
   // Hovered tile for path visualization
   const [hoveredTile, setHoveredTile] = useState<Position | null>(null);
@@ -97,32 +99,20 @@ export function GameBoard({
   };
 
 
-  // Desktop: constrain board to a reasonable size based on viewport height
-  // The board is 6 cols x 8 rows, so height > width. We size based on available height.
-  // Mobile: use viewport width (current approach)
-  // Desktop: use max height with aspect ratio, centered
-  const boardSizeClass = isMobile
-    ? 'w-[94vw]' // Mobile: width-based
-    : 'h-[min(80vh,600px)] w-auto aspect-[6/8]'; // Desktop: height-based with max
-
   return (
     <div
-      className={`
-        relative bg-slate-900 ${padding} rounded-3xl
-        shadow-2xl border border-slate-800
-        select-none touch-manipulation overflow-visible
-        ${boardSizeClass}
-      `}
+      className="relative bg-slate-900 rounded-3xl shadow-2xl border border-slate-800 select-none touch-manipulation overflow-visible w-fit"
+      style={{ padding: `${padSize}px` }}
     >
       {/* Subtle inner glow */}
       <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-blue-500/5 to-red-500/5 pointer-events-none" />
 
       <div
-        className={`grid ${gap} relative overflow-visible h-full`}
+        className="grid relative overflow-visible"
         style={{
-          // Equal columns and rows that fill the container
-          gridTemplateColumns: `repeat(${BOARD_WIDTH}, 1fr)`,
-          gridTemplateRows: `repeat(${map.length}, 1fr)`,
+          gridTemplateColumns: `repeat(${cols}, ${tileSize}px)`,
+          gridTemplateRows: `repeat(${rows}, ${tileSize}px)`,
+          gap: `${gapSize}px`,
         }}
       >
         {map.map((row, y) =>
@@ -169,6 +159,7 @@ export function GameBoard({
                     onCancel={onCancel}
                     gridX={x}
                     gridY={y}
+                    boardWidth={cols}
                   />
                 )}
               </div>

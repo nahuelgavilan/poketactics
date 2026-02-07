@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, type RefObject } from 'react';
 import { useGameState, useVision, useBattleStats, useSFX } from './hooks';
 import { useAudio } from './hooks/useAudio';
 import { useMultiplayer, ClientGameState, ActionResult } from './hooks/useMultiplayer';
@@ -95,6 +95,9 @@ export default function Game() {
 
   // Track if we're in a multiplayer game (started from lobby)
   const isInMultiplayerGame = useRef(false);
+
+  // Scroll container ref for auto-scroll
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   // Audio
   const { playMusic, stopMusic } = useAudio();
@@ -461,6 +464,28 @@ export default function Game() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
+  // Auto-scroll to selected unit
+  useEffect(() => {
+    if (selectedUnit && scrollRef.current) {
+      const tile = scrollRef.current.querySelector(
+        `[data-pos="${selectedUnit.x}-${selectedUnit.y}"]`
+      );
+      tile?.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+    }
+  }, [selectedUnit]);
+
+  // Auto-scroll on turn start (scroll to current player's first unmoved unit)
+  useEffect(() => {
+    if (gameState === 'playing' && scrollRef.current) {
+      const activePlayer = isMultiplayer && myPlayer ? myPlayer : currentPlayer;
+      const myUnit = units.find(u => u.owner === activePlayer && !u.hasMoved);
+      if (myUnit) {
+        const tile = scrollRef.current.querySelector(`[data-pos="${myUnit.x}-${myUnit.y}"]`);
+        tile?.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+      }
+    }
+  }, [currentPlayer, gameState]);
+
   // Wire up multiplayer callbacks - receives game state from server
   useEffect(() => {
     // When server says game started, use server state (not local initGame)
@@ -618,32 +643,36 @@ export default function Game() {
         gamePhase={gamePhase}
       />
 
-      {/* Main game area - fills remaining space, centers board, no scroll */}
+      {/* Main game area - scrollable container for larger boards */}
       {/* Hidden during transition to prevent flash (LOCAL GAME ONLY - multiplayer doesn't use transition screen) */}
-      <main className={`flex-1 min-h-0 relative flex items-center justify-center p-1 md:p-3 overflow-hidden ${gameState === 'transition' && !isInMultiplayerGame.current ? 'invisible' : ''}`}>
-        {/* Game Board */}
-        <GameBoard
-          map={map}
-          units={units}
-          selectedUnit={selectedUnit}
-          moveRange={moveRange}
-          attackRange={attackRange}
-          pendingPosition={pendingPosition}
-          onTileClick={handleTileClickWithTerrain}
-          isMobile={isMobile}
-          currentPlayer={fogPlayer}
-          visibility={visibility}
-          // Action menu (Fire Emblem style - appears next to tile)
-          showActionMenu={gamePhase === 'ACTION_MENU' && !!pendingPosition}
-          canAttack={attackRange.length > 0}
-          onAttack={handleSelectAttack}
-          onWait={handleSelectWait}
-          onCancel={cancelAction}
-        />
+      <main className={`flex-1 min-h-0 relative ${gameState === 'transition' && !isInMultiplayerGame.current ? 'invisible' : ''}`}>
+        {/* Scrollable board area */}
+        <div ref={scrollRef} className="absolute inset-0 overflow-auto">
+          <div className="min-w-full min-h-full w-max flex items-center justify-center p-2 md:p-4">
+            <GameBoard
+              map={map}
+              units={units}
+              selectedUnit={selectedUnit}
+              moveRange={moveRange}
+              attackRange={attackRange}
+              pendingPosition={pendingPosition}
+              onTileClick={handleTileClickWithTerrain}
+              isMobile={isMobile}
+              currentPlayer={fogPlayer}
+              visibility={visibility}
+              showActionMenu={gamePhase === 'ACTION_MENU' && !!pendingPosition}
+              canAttack={attackRange.length > 0}
+              onAttack={handleSelectAttack}
+              onWait={handleSelectWait}
+              onCancel={cancelAction}
+            />
+          </div>
+        </div>
 
+        {/* Fixed HUD overlay - positioned over scroll area */}
         {/* Phase indicator - floating top-right during MOVING/ATTACKING */}
         {gameState === 'playing' && (gamePhase === 'MOVING' || gamePhase === 'ATTACKING') && (
-          <div className="absolute top-1 right-1 md:top-3 md:right-3 z-20 animate-in">
+          <div className="absolute top-1 right-1 md:top-3 md:right-3 z-20 animate-in pointer-events-none">
             <div className={`
               px-3 py-1.5 md:px-4 md:py-2 rounded-lg
               text-[10px] md:text-xs font-bold uppercase tracking-wide
@@ -660,7 +689,7 @@ export default function Game() {
 
         {/* Multiplayer waiting indicator */}
         {gameState === 'playing' && isMultiplayer && !isMyTurn && gamePhase === 'SELECT' && (
-          <div className="absolute top-1 right-1 md:top-3 md:right-3 z-20">
+          <div className="absolute top-1 right-1 md:top-3 md:right-3 z-20 pointer-events-none">
             <div className="
               px-3 py-1.5 md:px-4 md:py-2 rounded-lg
               text-[10px] md:text-xs font-bold uppercase tracking-wide
@@ -687,7 +716,7 @@ export default function Game() {
 
         {/* Selected Unit Info - floating top-left on desktop */}
         {selectedUnit && !isMobile && (
-          <div className="absolute top-3 left-3 animate-scale-in">
+          <div className="absolute top-3 left-3 z-20 animate-scale-in pointer-events-none">
             <div className={`
               relative bg-slate-900/95 backdrop-blur-md rounded-xl p-3
               border shadow-2xl
@@ -745,7 +774,7 @@ export default function Game() {
 
         {/* Mobile: Selected unit stats panel - bottom of screen */}
         {selectedUnit && isMobile && (
-          <div className="absolute bottom-2 left-2 right-2 animate-slide-up z-30">
+          <div className="absolute bottom-2 left-2 right-2 animate-slide-up z-30 pointer-events-none">
             <div className={`
               flex items-center gap-3 px-3 py-2
               bg-slate-950/95 backdrop-blur-xl rounded-xl
@@ -818,7 +847,6 @@ export default function Game() {
             onClose={() => setSelectedTerrain(null)}
           />
         )}
-
       </main>
 
       {/* INSTANT blocking overlay for turn transition - LOCAL GAME ONLY */}

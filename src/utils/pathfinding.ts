@@ -1,6 +1,5 @@
 import { TERRAIN_PROPS } from '../constants/terrain';
 import { TYPES } from '../constants/types';
-import { BOARD_WIDTH, BOARD_HEIGHT } from '../constants/board';
 import type { Unit, Position, AttackTarget, GameMap } from '../types/game';
 
 /**
@@ -47,7 +46,7 @@ export function calculateMoveRange(
         const ny = curr.y + dy;
 
         // Check bounds
-        if (nx < 0 || nx >= BOARD_WIDTH || ny < 0 || ny >= BOARD_HEIGHT) continue;
+        if (nx < 0 || nx >= map[0].length || ny < 0 || ny >= map.length) continue;
 
         const terrain = map[ny][nx];
         const props = TERRAIN_PROPS[terrain];
@@ -138,7 +137,7 @@ export function findPath(
       const ny = curr.y + dy;
 
       // Check bounds
-      if (nx < 0 || nx >= BOARD_WIDTH || ny < 0 || ny >= BOARD_HEIGHT) continue;
+      if (nx < 0 || nx >= map[0].length || ny < 0 || ny >= map.length) continue;
 
       const key = `${nx},${ny}`;
       if (visited.has(key)) continue;

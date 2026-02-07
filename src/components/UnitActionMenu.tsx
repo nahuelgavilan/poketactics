@@ -1,5 +1,4 @@
 import { Swords, Hand, Undo2 } from 'lucide-react';
-import { BOARD_WIDTH } from '../constants/board';
 
 interface UnitActionMenuProps {
   canAttack: boolean;
@@ -9,6 +8,8 @@ interface UnitActionMenuProps {
   /** Grid position where menu should appear (pendingPosition) */
   gridX: number;
   gridY: number;
+  /** Number of columns in the board (dynamic) */
+  boardWidth: number;
 }
 
 /**
@@ -24,11 +25,12 @@ export function UnitActionMenu({
   onWait,
   onCancel,
   gridX,
-  gridY
+  gridY,
+  boardWidth
 }: UnitActionMenuProps) {
   // Determine menu position relative to tile
   // If unit is on right half of board, menu goes LEFT; otherwise RIGHT
-  const menuOnLeft = gridX >= BOARD_WIDTH / 2;
+  const menuOnLeft = gridX >= boardWidth / 2;
 
   // If unit is near bottom, we might need to adjust vertical position
   // For now, menu appears centered vertically on the tile

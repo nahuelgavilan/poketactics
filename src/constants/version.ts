@@ -15,9 +15,10 @@
  * don't trigger version bumps unless they include breaking changes.
  */
 
-export const VERSION = '0.33.0';
+export const VERSION = '0.34.0';
 
 // Version history (Alpha - v0.x.x):
+// 0.34.0 - Larger board (10x12): scrollable camera with native scroll, fixed 48px+ tile sizes for touch, dynamic map dimensions throughout (pathfinding, vision, capture, battle zoom), auto-scroll to selected unit, 2-3 Pokemon Centers
 // 0.33.0 - Battle SFX & Victory Audio: combat sound effects (attack_hit, critical_hit, super_effective, not_effective, unit_faint), victory fanfare, version sync
 // 0.32.0 - Audio system overhaul: preloader with pooling architecture fixes production timing issues, loading screen, eliminates network delays, audio pool reuses instances
 // 0.31.0 - Multiplayer game modes: Quick Battle (random teams) and Draft Mode selection, submenu in multiplayer lobby, server stores game mode
