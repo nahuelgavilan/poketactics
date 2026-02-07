@@ -8,7 +8,7 @@
 - **Platform**: Web (Mobile-first responsive)
 - **Players**: 2 (Hot-seat or Online multiplayer)
 - **Tech Stack**: React, TypeScript, Tailwind CSS, Vite, Socket.IO
-- **Current Version**: 0.34.0 (Alpha)
+- **Current Version**: 0.36.0 (Alpha)
 
 ---
 
@@ -120,12 +120,29 @@ Each Pokémon has base stats and typing:
 
 ### Board Dimensions
 
-- **Width**: 10 tiles (local), 6 tiles (multiplayer server)
-- **Height**: 12 tiles (local), 8 tiles (multiplayer server)
+- **Size Presets**: Selectable before each local game
+  - **Small (Pequeño)**: 8x8 tiles
+  - **Medium (Mediano)**: 10x12 tiles (default)
+  - **Large (Grande)**: 14x16 tiles
+- **Multiplayer**: Server sends its own map (typically 6x8)
 - **Tile Size**: 48px minimum on mobile, 56px on desktop (touch-friendly)
 - **Camera**: Native browser scroll — board overflows viewport on mobile, user pans by scrolling
 - **Auto-Scroll**: Board scrolls to selected unit and to current player's units on turn start
-- **Pokémon Centers**: 2-3 per map (spaced 3+ tiles apart)
+- **Feature Scaling**: Berry bushes and Pokemon Centers scale with map area
+  - Berries: `max(2, floor(area / 30))` + random 0-1
+  - Centers: `max(1, floor(area / 50))` + random 0-1
+  - Center min-distance: `max(2, floor(min(w, h) / 4))`
+
+### Map Editor
+
+Accessible from StartScreen via the **Editor** button. Full-screen paint tool for creating custom maps.
+
+- **Layout**: Top bar (back, title, randomize/clear), size strip (S/M/L toggle), scrollable grid, bottom terrain palette, floating Jugar button
+- **Paint mechanics**: Select terrain from palette, tap to paint single tiles, drag-paint with pointer events (desktop) and touch move (mobile)
+- **Size toggle**: Changing size regenerates a random map of that size
+- **Randomize**: Generates a new random map at current size
+- **Clear**: Fills entire map with grass
+- **Play**: Starts game with the custom map (random units)
 
 ### Terrain Types
 
@@ -1079,6 +1096,7 @@ Currently in alpha - major version stays at 0 until core features complete.
 
 | Version | Changes |
 |---------|---------|
+| **0.36.0** | **Map Size Selector + Map Editor**: Pre-game size picker (Small 8x8, Medium 10x12, Large 14x16) shown before Quick Battle and after Draft. Map Editor accessible from StartScreen — full-screen paint tool with terrain palette, drag-paint on desktop/mobile, size toggle, randomize/clear buttons. Map generation extracted to `mapGenerator.ts` utility with area-based feature scaling. Game flow: Quick Battle → Size Selector → Game, Draft → Size Selector → Game, Editor → Paint → Game. |
 | **0.35.0** | **New Terrain Types**: Added 3 new terrains — Sand (Arena) with fire/ground type bonus, Bridge (Puente) that allows crossing water tiles, and Berry Bush (Arbusto de Bayas) that heals 10% HP on step and converts to grass after use. CSS-only terrain decorations for all new tiles. Map generation places sand zones, bridges over water adjacent to land, and 3-5 berry bushes. |
 | **0.34.0** | **Larger Board with Scrollable Camera**: Expanded board from 6x8 to 10x12 tiles. Fixed tile sizes (48px mobile, 56px desktop) with native scroll for panning. All game systems (pathfinding, vision, capture, battle zoom) now derive dimensions from the map dynamically — multiplayer server still sends 6x8 and client renders it correctly. Auto-scroll to selected unit and on turn start. Pokémon Centers increased to 2-3 per map. Added `data-pos` attribute to tiles for scroll targeting. |
 | **0.33.0** | **Battle SFX & Victory Audio**: Added combat sound effects to BattleCinematic (attack_hit, critical_hit, super_effective, not_effective, unit_faint). Victory fanfare plays on win screen. Registered victory/defeat music tracks in audio preloader. Fixed package.json version mismatch (was 1.3.0, now synced). |

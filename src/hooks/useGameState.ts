@@ -1,11 +1,11 @@
 import { useState, useCallback } from 'react';
-import { BOARD_WIDTH, BOARD_HEIGHT } from '../constants/board';
 import { TERRAIN } from '../constants/terrain';
 import { getRandomPokemon } from '../constants/pokemon';
 import { getNextEvolution } from '../constants/evolution';
 import { calculateMoveRange, calculateAttackRange } from '../utils/pathfinding';
 import { createBattleData } from '../utils/combat';
 import { triggerWildEncounter, createCapturedUnit } from '../utils/capture';
+import { generateRandomMap, DEFAULT_MAP_SIZE } from '../utils/mapGenerator';
 import type {
   GameState,
   GamePhase,
@@ -47,8 +47,9 @@ interface UseGameStateReturn {
   isMyTurn: boolean;
 
   // Actions
-  initGame: () => void;
-  initGameWithTeams: (p1Team: PokemonTemplate[], p2Team: PokemonTemplate[]) => void;
+  initGame: (width?: number, height?: number) => void;
+  initGameWithTeams: (p1Team: PokemonTemplate[], p2Team: PokemonTemplate[], width?: number, height?: number) => void;
+  initGameWithMap: (customMap: GameMap) => void;
   initMultiplayerGame: (player: Player) => void;
   handleTileClick: (x: number, y: number) => void;
   endBattle: () => void;
@@ -146,123 +147,49 @@ export function useGameState(): UseGameStateReturn {
     setUnitHasMoved(false);
   }, []);
 
-  const initGame = useCallback(() => {
-    // Generate map with tall grass
-    const newMap: GameMap = Array(BOARD_HEIGHT).fill(0).map(() =>
-      Array(BOARD_WIDTH).fill(TERRAIN.GRASS as TerrainType)
-    );
+  const initGame = useCallback((width?: number, height?: number) => {
+    const w = width ?? DEFAULT_MAP_SIZE.width;
+    const h = height ?? DEFAULT_MAP_SIZE.height;
 
-    for (let y = 0; y < BOARD_HEIGHT; y++) {
-      for (let x = 0; x < BOARD_WIDTH; x++) {
-        const r = Math.random();
-        if (r > 0.88) newMap[y][x] = TERRAIN.MOUNTAIN as TerrainType;
-        else if (r > 0.82) newMap[y][x] = TERRAIN.WATER as TerrainType;
-        else if (r > 0.75) newMap[y][x] = TERRAIN.SAND as TerrainType;
-        else if (r > 0.62) newMap[y][x] = TERRAIN.FOREST as TerrainType;
-        else if (r > 0.42) newMap[y][x] = TERRAIN.TALL_GRASS as TerrainType;
-      }
-    }
-
-    // Ensure bases are passable
-    newMap[0][0] = TERRAIN.BASE as TerrainType;
-    newMap[0][1] = TERRAIN.GRASS as TerrainType;
-    newMap[1][0] = TERRAIN.GRASS as TerrainType;
-    newMap[BOARD_HEIGHT - 1][BOARD_WIDTH - 1] = TERRAIN.BASE as TerrainType;
-    newMap[BOARD_HEIGHT - 1][BOARD_WIDTH - 2] = TERRAIN.GRASS as TerrainType;
-    newMap[BOARD_HEIGHT - 2][BOARD_WIDTH - 1] = TERRAIN.GRASS as TerrainType;
-
-    // Add bridges over water tiles (place bridge on water adjacent to land)
-    for (let y = 1; y < BOARD_HEIGHT - 1; y++) {
-      for (let x = 0; x < BOARD_WIDTH; x++) {
-        if (newMap[y][x] === TERRAIN.WATER && Math.random() < 0.3) {
-          // Only bridge if land on both sides (vertical crossing)
-          const above = y > 0 ? newMap[y - 1][x] : TERRAIN.WATER;
-          const below = y < BOARD_HEIGHT - 1 ? newMap[y + 1][x] : TERRAIN.WATER;
-          if (above !== TERRAIN.WATER && below !== TERRAIN.WATER) {
-            newMap[y][x] = TERRAIN.BRIDGE as TerrainType;
-          }
-        }
-      }
-    }
-
-    // Add berry bushes (3-5, scattered, not on special tiles)
-    const berryCount = 3 + Math.floor(Math.random() * 3);
-    for (let i = 0; i < berryCount; i++) {
-      let attempts = 0;
-      while (attempts < 20) {
-        const bx = 1 + Math.floor(Math.random() * (BOARD_WIDTH - 2));
-        const by = 2 + Math.floor(Math.random() * (BOARD_HEIGHT - 4));
-        if (newMap[by][bx] === TERRAIN.GRASS || newMap[by][bx] === TERRAIN.TALL_GRASS) {
-          newMap[by][bx] = TERRAIN.BERRY_BUSH as TerrainType;
-          break;
-        }
-        attempts++;
-      }
-    }
-
-    // Add Pokémon Centers in the middle area (2-3 centers for larger board)
-    const centerCount = Math.random() < 0.5 ? 2 : 3;
-    const placedCenters: { x: number; y: number }[] = [];
-
-    for (let i = 0; i < centerCount; i++) {
-      let attempts = 0;
-      while (attempts < 20) {
-        const cx = 1 + Math.floor(Math.random() * (BOARD_WIDTH - 2));
-        const cy = 2 + Math.floor(Math.random() * (BOARD_HEIGHT - 4));
-
-        // Check not too close to other centers (min 3 tiles apart on larger board)
-        const tooClose = placedCenters.some(
-          c => Math.abs(c.x - cx) < 3 && Math.abs(c.y - cy) < 3
-        );
-
-        if (!tooClose) {
-          newMap[cy][cx] = TERRAIN.POKEMON_CENTER as TerrainType;
-          placedCenters.push({ x: cx, y: cy });
-          break;
-        }
-        attempts++;
-      }
-    }
-
+    const newMap = generateRandomMap(w, h);
     setMap(newMap);
 
-    // Create teams
-    const createTeam = (owner: Player, startY: number): Unit[] => {
-      const team: Unit[] = [];
-      const usedIds = new Set<number>();
+    // Create teams with positions based on map dimensions
+    const p1Units: Unit[] = [];
+    const p2Units: Unit[] = [];
+    const usedIds = new Set<number>();
 
-      for (let i = 0; i < 3; i++) {
-        const temp = getRandomPokemon(usedIds);
-        usedIds.add(temp.id);
+    for (let i = 0; i < 3; i++) {
+      const temp = getRandomPokemon(usedIds);
+      usedIds.add(temp.id);
+      p1Units.push({
+        uid: Math.random().toString(36).substring(7),
+        owner: 'P1',
+        template: temp,
+        x: i % w,
+        y: h - 1 - Math.floor(i / w),
+        currentHp: temp.hp,
+        hasMoved: false,
+        kills: 0
+      });
+    }
 
-        team.push({
-          uid: Math.random().toString(36).substring(7),
-          owner,
-          template: temp,
-          x: i % BOARD_WIDTH,
-          y: startY + (Math.floor(i / BOARD_WIDTH) * (owner === 'P2' ? 1 : -1)),
-          currentHp: temp.hp,
-          hasMoved: false,
-          kills: 0
-        });
-      }
-      return team;
-    };
+    for (let i = 0; i < 3; i++) {
+      const temp = getRandomPokemon(usedIds);
+      usedIds.add(temp.id);
+      p2Units.push({
+        uid: Math.random().toString(36).substring(7),
+        owner: 'P2',
+        template: temp,
+        x: w - 1 - (i % w),
+        y: 0 + Math.floor(i / w),
+        currentHp: temp.hp,
+        hasMoved: false,
+        kills: 0
+      });
+    }
 
-    const p1 = createTeam('P1', BOARD_HEIGHT - 1);
-    const p2 = createTeam('P2', 0);
-
-    // Position teams
-    p1.forEach((u, i) => {
-      u.y = BOARD_HEIGHT - 1 - Math.floor(i / BOARD_WIDTH);
-      u.x = i % BOARD_WIDTH;
-    });
-    p2.forEach((u, i) => {
-      u.y = 0 + Math.floor(i / BOARD_WIDTH);
-      u.x = BOARD_WIDTH - 1 - (i % BOARD_WIDTH);
-    });
-
-    setUnits([...p1, ...p2]);
+    setUnits([...p1Units, ...p2Units]);
     setTurn(1);
     setCurrentPlayer('P1');
     setGameState('playing');
@@ -270,10 +197,10 @@ export function useGameState(): UseGameStateReturn {
     setLogs(['¡Empieza el combate!', '¡Usa la Hierba Alta para capturar!']);
     setWinner(null);
 
-    // Initialize fog of war - empty explored arrays (will be populated by useVision)
-    const emptyExplored = Array(BOARD_HEIGHT)
+    // Initialize fog of war
+    const emptyExplored = Array(h)
       .fill(null)
-      .map(() => Array(BOARD_WIDTH).fill(false));
+      .map(() => Array(w).fill(false));
     setExploredP1([...emptyExplored.map(row => [...row])]);
     setExploredP2([...emptyExplored.map(row => [...row])]);
 
@@ -281,80 +208,11 @@ export function useGameState(): UseGameStateReturn {
   }, [resetSelection]);
 
   // Initialize game with pre-selected teams (from draft)
-  const initGameWithTeams = useCallback((p1Team: PokemonTemplate[], p2Team: PokemonTemplate[]) => {
-    // Generate map with tall grass
-    const newMap: GameMap = Array(BOARD_HEIGHT).fill(0).map(() =>
-      Array(BOARD_WIDTH).fill(TERRAIN.GRASS as TerrainType)
-    );
+  const initGameWithTeams = useCallback((p1Team: PokemonTemplate[], p2Team: PokemonTemplate[], width?: number, height?: number) => {
+    const w = width ?? DEFAULT_MAP_SIZE.width;
+    const h = height ?? DEFAULT_MAP_SIZE.height;
 
-    for (let y = 0; y < BOARD_HEIGHT; y++) {
-      for (let x = 0; x < BOARD_WIDTH; x++) {
-        const r = Math.random();
-        if (r > 0.88) newMap[y][x] = TERRAIN.MOUNTAIN as TerrainType;
-        else if (r > 0.82) newMap[y][x] = TERRAIN.WATER as TerrainType;
-        else if (r > 0.75) newMap[y][x] = TERRAIN.SAND as TerrainType;
-        else if (r > 0.62) newMap[y][x] = TERRAIN.FOREST as TerrainType;
-        else if (r > 0.42) newMap[y][x] = TERRAIN.TALL_GRASS as TerrainType;
-      }
-    }
-
-    // Ensure bases are passable
-    newMap[0][0] = TERRAIN.BASE as TerrainType;
-    newMap[0][1] = TERRAIN.GRASS as TerrainType;
-    newMap[1][0] = TERRAIN.GRASS as TerrainType;
-    newMap[BOARD_HEIGHT - 1][BOARD_WIDTH - 1] = TERRAIN.BASE as TerrainType;
-    newMap[BOARD_HEIGHT - 1][BOARD_WIDTH - 2] = TERRAIN.GRASS as TerrainType;
-    newMap[BOARD_HEIGHT - 2][BOARD_WIDTH - 1] = TERRAIN.GRASS as TerrainType;
-
-    // Add bridges over water tiles
-    for (let y = 1; y < BOARD_HEIGHT - 1; y++) {
-      for (let x = 0; x < BOARD_WIDTH; x++) {
-        if (newMap[y][x] === TERRAIN.WATER && Math.random() < 0.3) {
-          const above = y > 0 ? newMap[y - 1][x] : TERRAIN.WATER;
-          const below = y < BOARD_HEIGHT - 1 ? newMap[y + 1][x] : TERRAIN.WATER;
-          if (above !== TERRAIN.WATER && below !== TERRAIN.WATER) {
-            newMap[y][x] = TERRAIN.BRIDGE as TerrainType;
-          }
-        }
-      }
-    }
-
-    // Add berry bushes (3-5)
-    const berryCount = 3 + Math.floor(Math.random() * 3);
-    for (let i = 0; i < berryCount; i++) {
-      let attempts = 0;
-      while (attempts < 20) {
-        const bx = 1 + Math.floor(Math.random() * (BOARD_WIDTH - 2));
-        const by = 2 + Math.floor(Math.random() * (BOARD_HEIGHT - 4));
-        if (newMap[by][bx] === TERRAIN.GRASS || newMap[by][bx] === TERRAIN.TALL_GRASS) {
-          newMap[by][bx] = TERRAIN.BERRY_BUSH as TerrainType;
-          break;
-        }
-        attempts++;
-      }
-    }
-
-    // Add Pokémon Centers in the middle area (2-3 centers for larger board)
-    const centerCount = Math.random() < 0.5 ? 2 : 3;
-    const placedCenters: { x: number; y: number }[] = [];
-
-    for (let i = 0; i < centerCount; i++) {
-      let attempts = 0;
-      while (attempts < 20) {
-        const cx = 1 + Math.floor(Math.random() * (BOARD_WIDTH - 2));
-        const cy = 2 + Math.floor(Math.random() * (BOARD_HEIGHT - 4));
-        const tooClose = placedCenters.some(
-          c => Math.abs(c.x - cx) < 3 && Math.abs(c.y - cy) < 3
-        );
-        if (!tooClose) {
-          newMap[cy][cx] = TERRAIN.POKEMON_CENTER as TerrainType;
-          placedCenters.push({ x: cx, y: cy });
-          break;
-        }
-        attempts++;
-      }
-    }
-
+    const newMap = generateRandomMap(w, h);
     setMap(newMap);
 
     // Create units from provided teams
@@ -362,8 +220,8 @@ export function useGameState(): UseGameStateReturn {
       uid: Math.random().toString(36).substring(7),
       owner: 'P1' as Player,
       template: temp,
-      x: i % BOARD_WIDTH,
-      y: BOARD_HEIGHT - 1 - Math.floor(i / BOARD_WIDTH),
+      x: i % w,
+      y: h - 1 - Math.floor(i / w),
       currentHp: temp.hp,
       hasMoved: false,
       kills: 0
@@ -373,8 +231,8 @@ export function useGameState(): UseGameStateReturn {
       uid: Math.random().toString(36).substring(7),
       owner: 'P2' as Player,
       template: temp,
-      x: BOARD_WIDTH - 1 - (i % BOARD_WIDTH),
-      y: 0 + Math.floor(i / BOARD_WIDTH),
+      x: w - 1 - (i % w),
+      y: 0 + Math.floor(i / w),
       currentHp: temp.hp,
       hasMoved: false,
       kills: 0
@@ -389,9 +247,69 @@ export function useGameState(): UseGameStateReturn {
     setWinner(null);
 
     // Initialize fog of war
-    const emptyExplored = Array(BOARD_HEIGHT)
+    const emptyExplored = Array(h)
       .fill(null)
-      .map(() => Array(BOARD_WIDTH).fill(false));
+      .map(() => Array(w).fill(false));
+    setExploredP1([...emptyExplored.map(row => [...row])]);
+    setExploredP2([...emptyExplored.map(row => [...row])]);
+
+    resetSelection();
+  }, [resetSelection]);
+
+  // Initialize game with a custom map (from map editor)
+  const initGameWithMap = useCallback((customMap: GameMap) => {
+    const h = customMap.length;
+    const w = customMap[0]?.length ?? 0;
+
+    setMap(customMap);
+
+    // Create random teams
+    const p1Units: Unit[] = [];
+    const p2Units: Unit[] = [];
+    const usedIds = new Set<number>();
+
+    for (let i = 0; i < 3; i++) {
+      const temp = getRandomPokemon(usedIds);
+      usedIds.add(temp.id);
+      p1Units.push({
+        uid: Math.random().toString(36).substring(7),
+        owner: 'P1',
+        template: temp,
+        x: i % w,
+        y: h - 1 - Math.floor(i / w),
+        currentHp: temp.hp,
+        hasMoved: false,
+        kills: 0
+      });
+    }
+
+    for (let i = 0; i < 3; i++) {
+      const temp = getRandomPokemon(usedIds);
+      usedIds.add(temp.id);
+      p2Units.push({
+        uid: Math.random().toString(36).substring(7),
+        owner: 'P2',
+        template: temp,
+        x: w - 1 - (i % w),
+        y: 0 + Math.floor(i / w),
+        currentHp: temp.hp,
+        hasMoved: false,
+        kills: 0
+      });
+    }
+
+    setUnits([...p1Units, ...p2Units]);
+    setTurn(1);
+    setCurrentPlayer('P1');
+    setGameState('playing');
+    setGamePhase('SELECT');
+    setLogs(['¡Empieza el combate!', '¡Mapa personalizado!']);
+    setWinner(null);
+
+    // Initialize fog of war
+    const emptyExplored = Array(h)
+      .fill(null)
+      .map(() => Array(w).fill(false));
     setExploredP1([...emptyExplored.map(row => [...row])]);
     setExploredP2([...emptyExplored.map(row => [...row])]);
 
@@ -1135,6 +1053,7 @@ export function useGameState(): UseGameStateReturn {
     // Actions
     initGame,
     initGameWithTeams,
+    initGameWithMap,
     initMultiplayerGame,
     handleTileClick,
     endBattle,

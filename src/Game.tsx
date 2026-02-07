@@ -21,6 +21,8 @@ import { CaptureMinigame } from './components/CaptureMinigame';
 import { StartScreen } from './components/StartScreen';
 import { HowToPlay } from './components/HowToPlay';
 import { AudioLoadingScreen } from './components/AudioLoadingScreen';
+import { MapSizeSelector } from './components/MapSizeSelector';
+import { MapEditor } from './components/MapEditor';
 import { audioPreloader, AUDIO_CONFIGS } from './utils/audioPreloader';
 import type { Position, TerrainType, Unit, GameMap, PokemonTemplate, EvolutionData } from './types/game';
 
@@ -49,6 +51,7 @@ export default function Game() {
     // Actions
     initGame,
     initGameWithTeams,
+    initGameWithMap,
     handleTileClick,
     endBattle,
     confirmBattleZoom,
@@ -332,6 +335,9 @@ export default function Game() {
   const [showMultiplayer, setShowMultiplayer] = useState(false);
   const [multiplayerMode, setMultiplayerMode] = useState<'quick' | 'draft'>('quick');
   const [showDraft, setShowDraft] = useState(false);
+  const [showMapSizeSelector, setShowMapSizeSelector] = useState(false);
+  const [showMapEditor, setShowMapEditor] = useState(false);
+  const [pendingDraftTeams, setPendingDraftTeams] = useState<{ p1: PokemonTemplate[]; p2: PokemonTemplate[] } | null>(null);
   const [isMobile, setIsMobile] = useState(false);
   const [selectedTerrain, setSelectedTerrain] = useState<{ x: number; y: number; terrain: TerrainType } | null>(null);
 
@@ -390,13 +396,34 @@ export default function Game() {
     }
   }, [gameState, gamePhase, isMultiplayer, autoWaitAllUnits]);
 
-  // Handle draft completion - start game with selected teams
+  // Handle draft completion - store teams and show size selector
   const handleDraftComplete = useCallback((p1Team: PokemonTemplate[], p2Team: PokemonTemplate[]) => {
     setShowDraft(false);
+    setPendingDraftTeams({ p1: p1Team, p2: p2Team });
+    setShowMapSizeSelector(true);
+  }, []);
+
+  // Handle size selection - start game with selected size
+  const handleSizeSelected = useCallback((width: number, height: number) => {
+    setShowMapSizeSelector(false);
     battleStats.resetStats();
     statsInitializedRef.current = false;
-    initGameWithTeams(p1Team, p2Team);
-  }, [initGameWithTeams, battleStats]);
+
+    if (pendingDraftTeams) {
+      initGameWithTeams(pendingDraftTeams.p1, pendingDraftTeams.p2, width, height);
+      setPendingDraftTeams(null);
+    } else {
+      initGame(width, height);
+    }
+  }, [battleStats, pendingDraftTeams, initGameWithTeams, initGame]);
+
+  // Handle map editor play
+  const handleEditorPlay = useCallback((customMap: GameMap) => {
+    setShowMapEditor(false);
+    battleStats.resetStats();
+    statsInitializedRef.current = false;
+    initGameWithMap(customMap);
+  }, [battleStats, initGameWithMap]);
 
   // Wrapper for tile click that also handles terrain info
   const handleTileClickWithTerrain = useCallback((x: number, y: number) => {
@@ -579,6 +606,27 @@ export default function Game() {
 
   // Show start screen
   if (gameState === 'menu') {
+    if (showMapSizeSelector) {
+      return (
+        <MapSizeSelector
+          onSelect={handleSizeSelected}
+          onBack={() => {
+            setShowMapSizeSelector(false);
+            setPendingDraftTeams(null);
+          }}
+        />
+      );
+    }
+
+    if (showMapEditor) {
+      return (
+        <MapEditor
+          onPlay={handleEditorPlay}
+          onBack={() => setShowMapEditor(false)}
+        />
+      );
+    }
+
     if (showDraft) {
       return (
         <DraftScreen
@@ -609,13 +657,14 @@ export default function Game() {
     return (
       <>
         <StartScreen
-          onStartGame={initGame}
+          onStartGame={() => setShowMapSizeSelector(true)}
           onHowToPlay={() => setShowHowToPlay(true)}
           onMultiplayer={(mode) => {
             setMultiplayerMode(mode);
             setShowMultiplayer(true);
           }}
           onDraft={() => setShowDraft(true)}
+          onMapEditor={() => setShowMapEditor(true)}
         />
         {showHowToPlay && <HowToPlay onClose={() => setShowHowToPlay(false)} />}
       </>

@@ -34,7 +34,7 @@ interface TileProps {
 
 // Terrain theme configuration - Tailwind classes for 3D tiles
 // Each terrain has a unique visual identity through color + texture + decorations
-const TERRAIN_THEME: Record<number, {
+export const TERRAIN_THEME: Record<number, {
   gradient: string;
   border: string;
   texture?: 'plains' | 'tallgrass' | 'forest' | 'water' | 'mountain' | 'pokecenter' | 'base' | 'sand' | 'bridge' | 'berry';
@@ -92,7 +92,7 @@ const TERRAIN_THEME: Record<number, {
 };
 
 // Terrain-specific decorative elements (CSS only, no icons)
-function TerrainDecoration({ texture }: { texture?: string }) {
+export function TerrainDecoration({ texture }: { texture?: string }) {
   switch (texture) {
     // Plains: subtle horizontal lines like mowed grass
     case 'plains':

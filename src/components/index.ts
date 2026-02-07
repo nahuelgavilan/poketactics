@@ -21,3 +21,5 @@ export { UnitActionMenu } from './UnitActionMenu';
 export { TerrainInfoPanel } from './TerrainInfoPanel';
 export { DraftScreen } from './DraftScreen';
 export { TurnTimer, TURN_TIMER_DURATION } from './TurnTimer';
+export { MapSizeSelector } from './MapSizeSelector';
+export { MapEditor } from './MapEditor';

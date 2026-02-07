@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { Swords, BookOpen, Wifi } from 'lucide-react';
+import { Swords, BookOpen, Wifi, Map } from 'lucide-react';
 import { useSFX } from '../hooks/useSFX';
 import { VERSION } from '../constants/version';
 
@@ -8,6 +8,7 @@ interface StartScreenProps {
   onHowToPlay: () => void;
   onMultiplayer?: (mode: 'quick' | 'draft') => void;
   onDraft?: () => void;
+  onMapEditor?: () => void;
 }
 
 // Pokemon VS pairs that rotate
@@ -45,7 +46,7 @@ function generateOrbitParticles(count: number) {
   }));
 }
 
-export function StartScreen({ onStartGame, onHowToPlay, onMultiplayer, onDraft }: StartScreenProps) {
+export function StartScreen({ onStartGame, onHowToPlay, onMultiplayer, onDraft, onMapEditor }: StartScreenProps) {
   const [phase, setPhase] = useState<'boot' | 'ready'>('boot');
   const [activePair, setActivePair] = useState(0);
   const [onlineMode, setOnlineMode] = useState<'quick' | 'draft'>('quick');
@@ -69,6 +70,11 @@ export function StartScreen({ onStartGame, onHowToPlay, onMultiplayer, onDraft }
     playSFX('button_click', 0.5);
     onDraft?.();
   }, [playSFX, onDraft]);
+
+  const handleMapEditorWithSFX = useCallback(() => {
+    playSFX('button_click', 0.5);
+    onMapEditor?.();
+  }, [playSFX, onMapEditor]);
 
   const handleOnlineWithSFX = useCallback(() => {
     playSFX('button_click', 0.5);
@@ -355,8 +361,8 @@ export function StartScreen({ onStartGame, onHowToPlay, onMultiplayer, onDraft }
               </div>
             </button>
 
-            {/* Secondary row: Draft + Online */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {/* Secondary row: Draft + Editor + Online */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               {/* Draft Mode */}
               {onDraft && (
                 <button
@@ -369,6 +375,24 @@ export function StartScreen({ onStartGame, onHowToPlay, onMultiplayer, onDraft }
                       style={{ fontFamily: '"Press Start 2P", monospace', fontSize: '10px' }}
                     >
                       Draft Mode
+                    </span>
+                  </div>
+                </button>
+              )}
+
+              {/* Map Editor */}
+              {onMapEditor && (
+                <button
+                  onClick={handleMapEditorWithSFX}
+                  className="group relative w-full transition-all duration-200 hover:shadow-[0_0_25px_rgba(245,158,11,0.3)] active:scale-[0.98]"
+                >
+                  <div className="flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 rounded-xl border border-amber-400/40 transition-all duration-150">
+                    <Map className="w-4 h-4 text-white" />
+                    <span
+                      className="text-xs font-bold text-white"
+                      style={{ fontFamily: '"Press Start 2P", monospace', fontSize: '10px' }}
+                    >
+                      Editor
                     </span>
                   </div>
                 </button>
