@@ -13,7 +13,12 @@ export const TERRAIN: Record<string, TerrainType> = {
   POKEMON_CENTER: 6,
   SAND: 7,
   BRIDGE: 8,
-  BERRY_BUSH: 9
+  BERRY_BUSH: 9,
+  ICE: 10,
+  LAVA: 11,
+  SWAMP: 12,
+  ROAD: 13,
+  RUINS: 14
 };
 
 /**
@@ -98,6 +103,41 @@ export const TERRAIN_PROPS = {
     bg: 'from-fuchsia-800 to-green-950',
     consumable: true,
     typeBonus: ['grass', 'bug'] as PokemonType[]
+  },
+  [TERRAIN.ICE]: {
+    def: 0,
+    moveCost: 1,
+    name: 'Hielo',
+    bg: 'from-sky-300 to-blue-400',
+    typeBonus: ['ice', 'water'] as PokemonType[]
+  },
+  [TERRAIN.LAVA]: {
+    def: 0,
+    moveCost: 99,
+    name: 'Lava',
+    bg: 'from-red-800 to-orange-900',
+    typeBonus: ['fire', 'dragon'] as PokemonType[]
+  },
+  [TERRAIN.SWAMP]: {
+    def: 10,
+    moveCost: 2,
+    name: 'Pantano',
+    bg: 'from-emerald-950 to-lime-950',
+    typeBonus: ['poison', 'water'] as PokemonType[]
+  },
+  [TERRAIN.ROAD]: {
+    def: 0,
+    moveCost: 1,
+    name: 'Camino',
+    bg: 'from-stone-600 to-stone-800',
+    typeBonus: [] as PokemonType[]
+  },
+  [TERRAIN.RUINS]: {
+    def: 25,
+    moveCost: 2,
+    name: 'Ruinas',
+    bg: 'from-violet-900 to-slate-900',
+    typeBonus: ['ghost', 'psychic', 'dragon'] as PokemonType[]
   }
 } as Record<TerrainType, TerrainProps>;
 
@@ -138,6 +178,16 @@ export function getTileColor(terrain: TerrainType): string {
       return 'bg-amber-400 border-amber-500';
     case TERRAIN.BERRY_BUSH:
       return 'bg-fuchsia-300 border-fuchsia-400';
+    case TERRAIN.ICE:
+      return 'bg-sky-200 border-sky-300';
+    case TERRAIN.LAVA:
+      return 'bg-red-600 border-red-700';
+    case TERRAIN.SWAMP:
+      return 'bg-lime-900 border-lime-950';
+    case TERRAIN.ROAD:
+      return 'bg-stone-400 border-stone-500';
+    case TERRAIN.RUINS:
+      return 'bg-violet-400 border-violet-500';
     default:
       return 'bg-gray-300';
   }

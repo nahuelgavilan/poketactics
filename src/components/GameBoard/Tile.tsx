@@ -39,7 +39,7 @@ interface TileProps {
 export const TERRAIN_THEME: Record<number, {
   gradient: string;
   border: string;
-  texture?: 'plains' | 'tallgrass' | 'forest' | 'water' | 'mountain' | 'pokecenter' | 'base' | 'sand' | 'bridge' | 'berry';
+  texture?: 'plains' | 'tallgrass' | 'forest' | 'water' | 'mountain' | 'pokecenter' | 'base' | 'sand' | 'bridge' | 'berry' | 'ice' | 'lava' | 'swamp' | 'road' | 'ruins';
 }> = {
   [TERRAIN.GRASS]: {
     gradient: 'from-lime-400 to-green-500',
@@ -90,6 +90,31 @@ export const TERRAIN_THEME: Record<number, {
     gradient: 'from-lime-400 to-green-500',
     border: 'border-green-700',
     texture: 'berry',
+  },
+  [TERRAIN.ICE]: {
+    gradient: 'from-sky-200 to-cyan-300',
+    border: 'border-cyan-500',
+    texture: 'ice',
+  },
+  [TERRAIN.LAVA]: {
+    gradient: 'from-red-500 to-orange-600',
+    border: 'border-red-800',
+    texture: 'lava',
+  },
+  [TERRAIN.SWAMP]: {
+    gradient: 'from-lime-800 to-emerald-900',
+    border: 'border-emerald-950',
+    texture: 'swamp',
+  },
+  [TERRAIN.ROAD]: {
+    gradient: 'from-stone-400 to-stone-500',
+    border: 'border-stone-600',
+    texture: 'road',
+  },
+  [TERRAIN.RUINS]: {
+    gradient: 'from-violet-500 to-indigo-700',
+    border: 'border-indigo-900',
+    texture: 'ruins',
   },
 };
 
@@ -283,6 +308,103 @@ export function TerrainDecoration({ texture, bridgeDir }: { texture?: string; br
           <div className="absolute inset-0 opacity-40">
             <div className="absolute w-[22%] h-[10%] rounded-full bg-green-700 top-[8%] left-[25%] rotate-[-20deg]" />
             <div className="absolute w-[20%] h-[9%] rounded-full bg-green-700 bottom-[18%] right-[30%] rotate-[15deg]" />
+          </div>
+        </div>
+      );
+
+    // Ice: frozen surface with cracks and shimmer
+    case 'ice':
+      return (
+        <div className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none">
+          {/* Glossy surface */}
+          <div className="absolute inset-0 opacity-40 bg-[radial-gradient(ellipse_at_30%_30%,rgba(255,255,255,0.8)_0%,transparent_50%)]" />
+          {/* Ice cracks */}
+          <div className="absolute inset-0 opacity-25">
+            <div className="absolute top-[20%] left-[15%] w-[45%] h-[1px] bg-white/80 rotate-[25deg]" />
+            <div className="absolute top-[22%] left-[35%] w-[30%] h-[1px] bg-white/60 rotate-[-15deg]" />
+            <div className="absolute bottom-[30%] right-[20%] w-[35%] h-[1px] bg-white/70 rotate-[40deg]" />
+            <div className="absolute bottom-[32%] right-[25%] w-[20%] h-[1px] bg-white/50 rotate-[-30deg]" />
+          </div>
+          {/* Frost sparkles */}
+          <div className="absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_20%_60%,rgba(255,255,255,0.6)_0%,transparent_6%),radial-gradient(circle_at_70%_30%,rgba(255,255,255,0.5)_0%,transparent_5%),radial-gradient(circle_at_50%_80%,rgba(255,255,255,0.4)_0%,transparent_4%)]" />
+        </div>
+      );
+
+    // Lava: molten rock with animated glow
+    case 'lava':
+      return (
+        <div className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none">
+          {/* Magma flow pattern */}
+          <div className="absolute inset-0 opacity-40 animate-wave bg-[repeating-linear-gradient(120deg,transparent,transparent_8px,rgba(255,200,0,0.5)_8px,rgba(255,200,0,0.5)_12px,transparent_12px,transparent_20px)]" />
+          {/* Hot spots */}
+          <div className="absolute inset-0 opacity-50">
+            <div className="absolute w-[35%] h-[35%] rounded-full bg-yellow-400/50 top-[15%] left-[25%] blur-sm animate-pulse" />
+            <div className="absolute w-[25%] h-[25%] rounded-full bg-orange-300/40 bottom-[20%] right-[20%] blur-sm animate-pulse" style={{ animationDelay: '1s' }} />
+          </div>
+          {/* Dark rock patches */}
+          <div className="absolute inset-0 opacity-30">
+            <div className="absolute w-[20%] h-[15%] rounded-full bg-stone-900 top-[45%] left-[10%]" />
+            <div className="absolute w-[15%] h-[20%] rounded-full bg-stone-900 bottom-[10%] right-[35%]" />
+          </div>
+          {/* Heat shimmer */}
+          <div className="absolute inset-0 opacity-20 bg-[radial-gradient(ellipse_at_50%_50%,rgba(255,255,0,0.4)_0%,transparent_70%)]" />
+        </div>
+      );
+
+    // Swamp: murky water with vegetation
+    case 'swamp':
+      return (
+        <div className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none">
+          {/* Murky water base */}
+          <div className="absolute inset-0 opacity-30 bg-[radial-gradient(ellipse_at_40%_60%,rgba(0,50,0,0.5)_0%,transparent_60%)]" />
+          {/* Lily pad circles */}
+          <div className="absolute inset-0 opacity-40">
+            <div className="absolute w-[25%] h-[20%] rounded-full bg-green-600/60 top-[20%] left-[15%] border border-green-700/40" />
+            <div className="absolute w-[20%] h-[16%] rounded-full bg-green-600/50 bottom-[25%] right-[20%] border border-green-700/40" />
+            <div className="absolute w-[15%] h-[12%] rounded-full bg-green-700/40 top-[55%] left-[50%] border border-green-800/30" />
+          </div>
+          {/* Bubbles */}
+          <div className="absolute inset-0 opacity-25">
+            <div className="absolute w-[6%] h-[6%] rounded-full bg-lime-300/60 top-[40%] left-[60%]" />
+            <div className="absolute w-[4%] h-[4%] rounded-full bg-lime-300/50 top-[65%] left-[30%]" />
+            <div className="absolute w-[5%] h-[5%] rounded-full bg-lime-300/40 top-[30%] right-[30%]" />
+          </div>
+          {/* Dark depth */}
+          <div className="absolute inset-0 bg-black/15" />
+        </div>
+      );
+
+    // Road: cobblestone path pattern
+    case 'road':
+      return (
+        <div className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none">
+          {/* Cobblestone grid */}
+          <div className="absolute inset-0 opacity-25 bg-[repeating-linear-gradient(0deg,transparent,transparent_7px,rgba(0,0,0,0.3)_7px,rgba(0,0,0,0.3)_8px),repeating-linear-gradient(90deg,transparent,transparent_10px,rgba(0,0,0,0.2)_10px,rgba(0,0,0,0.2)_11px)]" />
+          {/* Offset rows for brick pattern */}
+          <div className="absolute inset-0 opacity-15 bg-[repeating-linear-gradient(90deg,transparent,transparent_5px,rgba(0,0,0,0.2)_5px,rgba(0,0,0,0.2)_6px)]" style={{ backgroundPositionY: '4px' }} />
+          {/* Worn path highlight */}
+          <div className="absolute inset-[15%] rounded-lg opacity-20 bg-gradient-to-b from-white/30 to-transparent" />
+        </div>
+      );
+
+    // Ruins: ancient stone blocks with mystic glow
+    case 'ruins':
+      return (
+        <div className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none">
+          {/* Stone block pattern */}
+          <div className="absolute inset-0 opacity-20 bg-[repeating-linear-gradient(0deg,transparent,transparent_10px,rgba(0,0,0,0.4)_10px,rgba(0,0,0,0.4)_11px),repeating-linear-gradient(90deg,transparent,transparent_14px,rgba(0,0,0,0.3)_14px,rgba(0,0,0,0.3)_15px)]" />
+          {/* Mystic glow */}
+          <div className="absolute inset-0 animate-heal-pulse opacity-25 bg-[radial-gradient(circle_at_50%_50%,rgba(167,139,250,0.6)_0%,transparent_60%)]" />
+          {/* Broken pillar shapes */}
+          <div className="absolute inset-0 opacity-30">
+            <div className="absolute bottom-0 left-[20%] w-[15%] h-[45%] bg-slate-600/50 rounded-t-sm" />
+            <div className="absolute bottom-0 right-[25%] w-[12%] h-[30%] bg-slate-600/40 rounded-t-sm" />
+          </div>
+          {/* Ancient rune marks */}
+          <div className="absolute inset-0 opacity-20">
+            <div className="absolute top-[15%] left-[50%] w-[20%] h-[1px] bg-violet-300" />
+            <div className="absolute top-[15%] left-[60%] w-[1px] h-[15%] bg-violet-300" />
+            <div className="absolute top-[25%] left-[50%] w-[10%] h-[1px] bg-violet-300" />
           </div>
         </div>
       );

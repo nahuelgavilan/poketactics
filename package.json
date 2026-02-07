@@ -1,6 +1,6 @@
 {
   "name": "poketactics",
-  "version": "0.36.0",
+  "version": "0.37.0",
   "description": "PokéTactics - A tactical turn-based Pokémon strategy game",
   "private": true,
   "type": "module",

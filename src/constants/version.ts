@@ -15,9 +15,10 @@
  * don't trigger version bumps unless they include breaking changes.
  */
 
-export const VERSION = '0.36.0';
+export const VERSION = '0.37.0';
 
 // Version history (Alpha - v0.x.x):
+// 0.37.0 - 5 new terrain types: Ice (ice/water bonus, slippery surface), Lava (impassable, fire/dragon bonus), Swamp (poison/water bonus, move cost 2), Road (stone path, fast travel), Ruins (ghost/psychic/dragon bonus, +25% def). Map editor palette updated. Random generation distributes all 15 terrain types.
 // 0.36.0 - Map Size Selector + Map Editor: pre-game size picker (Small 8x8, Medium 10x12, Large 14x16), terrain paint editor with drag-paint, size toggle, randomize/clear, scales features with map area
 // 0.35.0 - New terrains: Sand (fire/ground bonus), Bridge (crossable water), Berry Bush (consumable: +10% HP, one-time use, converts to grass)
 // 0.34.0 - Larger board (10x12): scrollable camera with native scroll, fixed 48px+ tile sizes for touch, dynamic map dimensions throughout (pathfinding, vision, capture, battle zoom), auto-scroll to selected unit, 2-3 Pokemon Centers

@@ -8,7 +8,7 @@
 - **Platform**: Web (Mobile-first responsive)
 - **Players**: 2 (Hot-seat or Online multiplayer)
 - **Tech Stack**: React, TypeScript, Tailwind CSS, Vite, Socket.IO
-- **Current Version**: 0.36.0 (Alpha)
+- **Current Version**: 0.37.0 (Alpha)
 
 ---
 
@@ -158,6 +158,11 @@ Accessible from StartScreen via the **Editor** button. Full-screen paint tool fo
 | Sand (Arena) | 0% | 1 | Fire, Ground | Desert terrain |
 | Bridge (Puente) | 0% | 1 | None | Crosses water tiles |
 | Berry Bush (Arbusto de Bayas) | +5% | 1 | Grass, Bug | Consumable: heals 10% HP, one-time use, converts to grass |
+| Ice (Hielo) | 0% | 1 | Ice, Water | Slippery frozen surface |
+| Lava (Lava) | 0% | 99 | Fire, Dragon | Impassable molten rock |
+| Swamp (Pantano) | +10% | 2 | Poison, Water | Murky terrain, slows movement |
+| Road (Camino) | 0% | 1 | None | Stone path, quick travel |
+| Ruins (Ruinas) | +25% | 2 | Ghost, Psychic, Dragon | Ancient defensive position |
 
 ### Terrain Info Panel
 
@@ -1096,6 +1101,7 @@ Currently in alpha - major version stays at 0 until core features complete.
 
 | Version | Changes |
 |---------|---------|
+| **0.37.0** | **5 New Terrain Types**: Ice (Hielo) — slippery surface with ice/water type bonus, frozen cracks decoration. Lava (Lava) — impassable molten rock with fire/dragon bonus, animated hot spots. Swamp (Pantano) — murky terrain with poison/water bonus, +10% def, move cost 2, lily pads and bubbles. Road (Camino) — cobblestone path, no bonuses, fast travel. Ruins (Ruinas) — ancient defensive position with ghost/psychic/dragon bonus, +25% def, move cost 2, mystic glow and broken pillars. All 15 terrains appear in random generation and map editor palette. |
 | **0.36.0** | **Map Size Selector + Map Editor**: Pre-game size picker (Small 8x8, Medium 10x12, Large 14x16) shown before Quick Battle and after Draft. Map Editor accessible from StartScreen — full-screen paint tool with terrain palette, drag-paint on desktop/mobile, size toggle, randomize/clear buttons. Map generation extracted to `mapGenerator.ts` utility with area-based feature scaling. Game flow: Quick Battle → Size Selector → Game, Draft → Size Selector → Game, Editor → Paint → Game. |
 | **0.35.0** | **New Terrain Types**: Added 3 new terrains — Sand (Arena) with fire/ground type bonus, Bridge (Puente) that allows crossing water tiles, and Berry Bush (Arbusto de Bayas) that heals 10% HP on step and converts to grass after use. CSS-only terrain decorations for all new tiles. Map generation places sand zones, bridges over water adjacent to land, and 3-5 berry bushes. |
 | **0.34.0** | **Larger Board with Scrollable Camera**: Expanded board from 6x8 to 10x12 tiles. Fixed tile sizes (48px mobile, 56px desktop) with native scroll for panning. All game systems (pathfinding, vision, capture, battle zoom) now derive dimensions from the map dynamically — multiplayer server still sends 6x8 and client renders it correctly. Auto-scroll to selected unit and on turn start. Pokémon Centers increased to 2-3 per map. Added `data-pos` attribute to tiles for scroll targeting. |
