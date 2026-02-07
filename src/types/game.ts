@@ -2,13 +2,10 @@
  * Type definitions for PokéWar: Capture Edition
  */
 
-export type PokemonType =
-  | 'normal' | 'fire' | 'water' | 'grass'
-  | 'electric' | 'ice' | 'fighting' | 'poison'
-  | 'ground' | 'flying' | 'psychic' | 'bug'
-  | 'rock' | 'ghost' | 'dragon' | 'dark' | 'steel' | 'fairy';
+// Shared types re-exported from @poketactics/shared
+export type { PokemonType, Player, TerrainType, PokemonTemplate, Position, GameMap } from '@poketactics/shared';
 
-export type Player = 'P1' | 'P2';
+import type { PokemonTemplate, PokemonType, Player, Position, TerrainType } from '@poketactics/shared';
 
 export type GameState =
   | 'menu'
@@ -43,24 +40,6 @@ export interface ActionMenuState {
   canWait: boolean;
 }
 
-export type TerrainType = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15;
-
-export interface PokemonTemplate {
-  id: number;
-  name: string;
-  types: PokemonType[];
-  hp: number;
-  atk: number;
-  def: number;
-  mov: number;
-  rng: number;
-  moveName: string;
-  moveType: PokemonType;
-  // Evolution fields
-  evolutionChainId?: number;  // Reference to evolution chain
-  evolutionStage?: number;    // 0=base, 1=stage1, 2=final
-}
-
 export interface Unit {
   uid: string;
   owner: Player;
@@ -70,11 +49,6 @@ export interface Unit {
   currentHp: number;
   hasMoved: boolean;
   kills: number;  // Track kills for evolution
-}
-
-export interface Position {
-  x: number;
-  y: number;
 }
 
 export interface AttackTarget extends Position {
@@ -140,8 +114,6 @@ export interface CaptureData {
   player: Player;
   spawnPos: Position;
 }
-
-export type GameMap = TerrainType[][];
 
 /**
  * Hovered unit info for tooltip

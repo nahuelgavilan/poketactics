@@ -8,14 +8,8 @@
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "resolveJsonModule": true,
     "declaration": true,
-    "baseUrl": ".",
-    "paths": {
-      "@poketactics/shared": ["../shared/dist/index"]
-    }
+    "declarationMap": true
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist"]
+  "include": ["src/**/*"]
 }

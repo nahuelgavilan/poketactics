@@ -1,5 +1,13 @@
-import { TYPE_CHART } from '../constants/types';
-import { TERRAIN_PROPS, TERRAIN_TYPE_BONUS, hasTerrainTypeBonus } from '../constants/terrain';
+import {
+  getEffectiveness as sharedGetEffectiveness,
+  getFullEffectiveness as sharedGetFullEffectiveness,
+  calculateBaseDamage as sharedCalculateBaseDamage,
+  CRIT_CHANCE as SHARED_CRIT_CHANCE,
+  CRIT_MULTIPLIER as SHARED_CRIT_MULTIPLIER,
+  DAMAGE_VARIANCE as SHARED_DAMAGE_VARIANCE,
+  COUNTER_DAMAGE_PENALTY as SHARED_COUNTER_DAMAGE_PENALTY
+} from '@poketactics/shared';
+import { hasTerrainTypeBonus } from '../constants/terrain';
 import type {
   PokemonType,
   Unit,
@@ -10,6 +18,14 @@ import type {
   TerrainType
 } from '../types/game';
 
+// Re-export shared combat constants and functions
+export const CRIT_CHANCE = SHARED_CRIT_CHANCE;
+export const CRIT_MULTIPLIER = SHARED_CRIT_MULTIPLIER;
+export const DAMAGE_VARIANCE = SHARED_DAMAGE_VARIANCE;
+export const COUNTER_DAMAGE_PENALTY = SHARED_COUNTER_DAMAGE_PENALTY;
+export const getEffectiveness = sharedGetEffectiveness;
+export const getFullEffectiveness = sharedGetFullEffectiveness;
+
 /**
  * Calculate Manhattan distance between two positions
  */
@@ -18,36 +34,7 @@ export function getDistance(p1: { x: number; y: number }, p2: { x: number; y: nu
 }
 
 /**
- * Combat constants
- */
-export const CRIT_CHANCE = 0.10; // 10% critical hit chance
-export const CRIT_MULTIPLIER = 1.5; // 50% extra damage on crit
-export const DAMAGE_VARIANCE = 0.1; // +/- 10% damage variance
-export const COUNTER_DAMAGE_PENALTY = 0.75; // Counter-attacks deal 75% damage
-
-/**
- * Calculate type effectiveness multiplier
- * @returns 2 (super effective), 1 (normal), 0.5 (not very effective), 0 (immune)
- */
-export function getEffectiveness(moveType: PokemonType, defenderType: PokemonType): number {
-  const chart = TYPE_CHART[moveType];
-  if (!chart) return 1;
-  return chart[defenderType] !== undefined ? chart[defenderType]! : 1;
-}
-
-/**
- * Calculate full effectiveness against a Pokemon with multiple types
- */
-export function getFullEffectiveness(moveType: PokemonType, defenderTypes: PokemonType[]): number {
-  let effectiveness = 1;
-  for (const defType of defenderTypes) {
-    effectiveness *= getEffectiveness(moveType, defType);
-  }
-  return effectiveness;
-}
-
-/**
- * Calculate base damage without variance
+ * Calculate base damage without variance (client wrapper over shared)
  */
 function calculateBaseDamage(
   attacker: Unit,
@@ -56,31 +43,16 @@ function calculateBaseDamage(
   defenderTerrain: TerrainType,
   isCounter: boolean = false
 ): { base: number; effectiveness: number; typeTerrainBonus: boolean; terrainBonus: number } {
-  const effectiveness = getFullEffectiveness(
+  return sharedCalculateBaseDamage(
+    attacker.template.atk,
+    attacker.template.types,
     attacker.template.moveType,
-    defender.template.types
+    defender.template.def,
+    defender.template.types,
+    attackerTerrain,
+    defenderTerrain,
+    isCounter
   );
-
-  // Check terrain type bonus for attacker
-  const typeTerrainBonus = hasTerrainTypeBonus(attacker.template.types, attackerTerrain);
-  const attackMultiplier = typeTerrainBonus ? TERRAIN_TYPE_BONUS : 1;
-
-  // Counter-attack penalty
-  const counterPenalty = isCounter ? COUNTER_DAMAGE_PENALTY : 1;
-
-  // Terrain defense bonus for defender
-  const terrainDef = TERRAIN_PROPS[defenderTerrain]?.def || 0;
-  const defenseMultiplier = 1 + terrainDef / 100;
-
-  const rawDmg = (attacker.template.atk * effectiveness * attackMultiplier * counterPenalty) -
-                 (defender.template.def * defenseMultiplier);
-
-  return {
-    base: Math.max(1, rawDmg),
-    effectiveness,
-    typeTerrainBonus,
-    terrainBonus: terrainDef
-  };
 }
 
 /**

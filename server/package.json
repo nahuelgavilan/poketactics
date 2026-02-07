@@ -6,7 +6,7 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
-    "dev": "ts-node src/index.ts"
+    "dev": "ts-node --project tsconfig.dev.json -r tsconfig-paths/register src/index.ts"
   },
   "dependencies": {
     "@types/cors": "^2.8.17",
@@ -19,6 +19,7 @@
     "typescript": "^5.3.3"
   },
   "devDependencies": {
-    "ts-node": "^10.9.2"
+    "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0"
   }
 }

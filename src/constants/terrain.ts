@@ -1,148 +1,117 @@
 import type { TerrainType, TerrainProps, PokemonType } from '../types/game';
+import {
+  TERRAIN as SHARED_TERRAIN,
+  TERRAIN_GAME_PROPS,
+  TERRAIN_TYPE_BONUS as SHARED_TERRAIN_TYPE_BONUS,
+  hasTerrainTypeBonus as sharedHasTerrainTypeBonus,
+  getTerrainDefense as sharedGetTerrainDefense
+} from '@poketactics/shared';
+
+// Re-export shared terrain constants
+export const TERRAIN = SHARED_TERRAIN;
+export const TERRAIN_TYPE_BONUS = SHARED_TERRAIN_TYPE_BONUS;
+export const hasTerrainTypeBonus = sharedHasTerrainTypeBonus;
+export const getTerrainDefense = sharedGetTerrainDefense;
 
 /**
- * Terrain type constants
- */
-export const TERRAIN: Record<string, TerrainType> = {
-  GRASS: 0,
-  FOREST: 1,
-  WATER: 2,
-  MOUNTAIN: 3,
-  BASE: 4,
-  TALL_GRASS: 5,
-  POKEMON_CENTER: 6,
-  SAND: 7,
-  BRIDGE: 8,
-  BERRY_BUSH: 9,
-  ICE: 10,
-  LAVA: 11,
-  SWAMP: 12,
-  ROAD: 13,
-  RUINS: 14,
-  CAVE: 15
-};
-
-/**
- * Terrain properties configuration
- * - def: Defense bonus percentage
- * - moveCost: Movement cost (99 = impassable for ground units)
- * - name: Display name
- * - bg: Tailwind gradient classes for battle background
- * - capture: Whether this terrain can trigger wild encounters
- * - typeBonus: Pokemon types that get +25% ATK bonus on this terrain
+ * Terrain properties with client-specific fields (name, bg)
  */
 export const TERRAIN_PROPS = {
   [TERRAIN.GRASS]: {
-    def: 0,
-    moveCost: 1,
+    ...TERRAIN_GAME_PROPS[TERRAIN.GRASS as TerrainType],
     name: 'Llanura',
     bg: 'from-green-800 to-green-950',
     typeBonus: ['normal', 'fighting'] as PokemonType[]
   },
   [TERRAIN.FOREST]: {
-    def: 20,
-    moveCost: 2,
+    ...TERRAIN_GAME_PROPS[TERRAIN.FOREST as TerrainType],
     name: 'Bosque',
     bg: 'from-emerald-900 to-black',
     typeBonus: ['grass', 'bug', 'poison'] as PokemonType[]
   },
   [TERRAIN.WATER]: {
-    def: 0,
-    moveCost: 99,
+    ...TERRAIN_GAME_PROPS[TERRAIN.WATER as TerrainType],
     name: 'Agua',
     bg: 'from-blue-900 to-slate-900',
     typeBonus: ['water', 'ice'] as PokemonType[]
   },
   [TERRAIN.MOUNTAIN]: {
-    def: 40,
-    moveCost: 3,
+    ...TERRAIN_GAME_PROPS[TERRAIN.MOUNTAIN as TerrainType],
     name: 'Montaña',
     bg: 'from-stone-800 to-black',
     typeBonus: ['rock', 'ground', 'steel'] as PokemonType[],
-    visionBonus: 2 // Extra vision range when standing on mountain
+    visionBonus: 2
   },
   [TERRAIN.BASE]: {
-    def: 10,
-    moveCost: 1,
+    ...TERRAIN_GAME_PROPS[TERRAIN.BASE as TerrainType],
     name: 'Base',
     bg: 'from-gray-800 to-gray-950'
   },
   [TERRAIN.TALL_GRASS]: {
-    def: 5,
-    moveCost: 1,
+    ...TERRAIN_GAME_PROPS[TERRAIN.TALL_GRASS as TerrainType],
     name: 'Hierba Alta',
     bg: 'from-teal-900 to-black',
     capture: true,
     typeBonus: ['grass', 'bug'] as PokemonType[]
   },
   [TERRAIN.POKEMON_CENTER]: {
-    def: 15,
-    moveCost: 1,
+    ...TERRAIN_GAME_PROPS[TERRAIN.POKEMON_CENTER as TerrainType],
     name: 'Centro Pokémon',
     bg: 'from-pink-800 to-red-950',
     heals: true,
     typeBonus: [] as PokemonType[]
   },
   [TERRAIN.SAND]: {
-    def: 0,
-    moveCost: 1,
+    ...TERRAIN_GAME_PROPS[TERRAIN.SAND as TerrainType],
     name: 'Arena',
     bg: 'from-yellow-700 to-amber-900',
     typeBonus: ['fire', 'ground'] as PokemonType[]
   },
   [TERRAIN.BRIDGE]: {
-    def: 0,
-    moveCost: 1,
+    ...TERRAIN_GAME_PROPS[TERRAIN.BRIDGE as TerrainType],
     name: 'Puente',
     bg: 'from-amber-800 to-stone-900',
     typeBonus: [] as PokemonType[]
   },
   [TERRAIN.BERRY_BUSH]: {
-    def: 5,
-    moveCost: 1,
+    ...TERRAIN_GAME_PROPS[TERRAIN.BERRY_BUSH as TerrainType],
     name: 'Arbusto de Bayas',
     bg: 'from-fuchsia-800 to-green-950',
     consumable: true,
     typeBonus: ['grass', 'bug'] as PokemonType[]
   },
   [TERRAIN.ICE]: {
-    def: 0,
-    moveCost: 1,
+    ...TERRAIN_GAME_PROPS[TERRAIN.ICE as TerrainType],
     name: 'Hielo',
     bg: 'from-sky-300 to-blue-400',
     typeBonus: ['ice', 'water'] as PokemonType[]
   },
   [TERRAIN.LAVA]: {
-    def: 0,
-    moveCost: 99,
+    ...TERRAIN_GAME_PROPS[TERRAIN.LAVA as TerrainType],
     name: 'Lava',
     bg: 'from-red-800 to-orange-900',
     typeBonus: ['fire', 'dragon'] as PokemonType[]
   },
   [TERRAIN.SWAMP]: {
-    def: 10,
-    moveCost: 2,
+    ...TERRAIN_GAME_PROPS[TERRAIN.SWAMP as TerrainType],
     name: 'Pantano',
     bg: 'from-emerald-950 to-lime-950',
     typeBonus: ['poison', 'water'] as PokemonType[]
   },
   [TERRAIN.ROAD]: {
-    def: 0,
-    moveCost: 1,
+    ...TERRAIN_GAME_PROPS[TERRAIN.ROAD as TerrainType],
     name: 'Camino',
     bg: 'from-stone-600 to-stone-800',
     typeBonus: [] as PokemonType[]
   },
   [TERRAIN.RUINS]: {
-    def: 25,
-    moveCost: 2,
+    ...TERRAIN_GAME_PROPS[TERRAIN.RUINS as TerrainType],
     name: 'Ruinas',
     bg: 'from-violet-900 to-slate-900',
     typeBonus: ['ghost', 'psychic', 'dragon'] as PokemonType[]
   },
   [TERRAIN.CAVE]: {
-    def: 15,
-    moveCost: 1,
+    ...TERRAIN_GAME_PROPS[TERRAIN.CAVE as TerrainType],
     name: 'Cueva',
     bg: 'from-stone-800 to-slate-950',
     typeBonus: ['rock', 'ground', 'dark'] as PokemonType[],
@@ -151,21 +120,7 @@ export const TERRAIN_PROPS = {
 } as Record<TerrainType, TerrainProps>;
 
 /**
- * Type terrain bonus multiplier (+25% ATK)
- */
-export const TERRAIN_TYPE_BONUS = 1.25;
-
-/**
- * Check if a unit gets terrain type bonus
- */
-export function hasTerrainTypeBonus(unitTypes: PokemonType[], terrain: TerrainType): boolean {
-  const terrainProps = TERRAIN_PROPS[terrain];
-  if (!terrainProps.typeBonus) return false;
-  return unitTypes.some(type => terrainProps.typeBonus!.includes(type));
-}
-
-/**
- * Get Tailwind classes for tile background color
+ * Get Tailwind classes for tile background color (client-only)
  */
 export function getTileColor(terrain: TerrainType): string {
   switch (terrain) {
@@ -205,15 +160,8 @@ export function getTileColor(terrain: TerrainType): string {
 }
 
 /**
- * Get terrain name for display
+ * Get terrain name for display (client-only)
  */
 export function getTerrainName(terrain: TerrainType): string {
   return TERRAIN_PROPS[terrain]?.name || 'Desconocido';
-}
-
-/**
- * Get terrain defense bonus
- */
-export function getTerrainDefense(terrain: TerrainType): number {
-  return TERRAIN_PROPS[terrain]?.def || 0;
 }

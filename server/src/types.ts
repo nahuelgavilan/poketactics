@@ -2,8 +2,10 @@
  * Server types for multiplayer - Server Authoritative Model
  */
 
-export type Player = 'P1' | 'P2';
-export type PokemonType = 'normal' | 'fire' | 'water' | 'grass' | 'electric' | 'ice' | 'fighting' | 'poison' | 'ground' | 'flying' | 'psychic' | 'bug' | 'rock' | 'ghost' | 'dragon' | 'steel' | 'fairy';
+// Re-export shared types
+export type { Player, PokemonType, PokemonTemplate, Position } from '@poketactics/shared';
+
+import type { Player, PokemonType, PokemonTemplate, Position } from '@poketactics/shared';
 
 export interface Room {
   id: string;
@@ -53,22 +55,6 @@ export interface ServerUnit {
   currentHp: number;
   hasMoved: boolean;
   kills: number;
-}
-
-// Pokemon template
-export interface PokemonTemplate {
-  id: number;
-  name: string;
-  types: PokemonType[];
-  hp: number;
-  atk: number;
-  def: number;
-  mov: number;
-  rng: number;
-  moveName: string;
-  moveType: PokemonType;
-  evolutionChainId?: number;
-  evolutionStage?: number;
 }
 
 // What client receives (filtered by fog of war)
@@ -139,12 +125,6 @@ export interface ClientToServerEvents {
   'action-capture': (data: { unitId: string; success?: boolean }) => void;
   'action-end-turn': () => void;
   'request-state': () => void;
-}
-
-// Position interface for encounter spawn
-export interface Position {
-  x: number;
-  y: number;
 }
 
 // Action results sent to clients

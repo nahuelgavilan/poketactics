@@ -1,6 +1,1 @@
-/**
- * Board configuration constants
- */
-
-export const BOARD_WIDTH = 10;
-export const BOARD_HEIGHT = 12;
+export { BOARD_WIDTH, BOARD_HEIGHT } from '@poketactics/shared';

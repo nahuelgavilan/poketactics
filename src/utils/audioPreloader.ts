@@ -33,6 +33,56 @@ class AudioPreloader {
     isComplete: false,
   };
   private listeners: Set<(state: AudioLoadingState) => void> = new Set();
+  private audioUnlocked = false;
+  private pendingPlaybacks: Array<() => void> = [];
+
+  constructor() {
+    this.setupAutoUnlock();
+  }
+
+  /**
+   * Listen for first user interaction to unlock audio playback.
+   * Browsers block audio until a user gesture (click/touch/keydown).
+   */
+  private setupAutoUnlock(): void {
+    const unlock = () => {
+      if (this.audioUnlocked) return;
+      this.audioUnlocked = true;
+
+      // Touch all cached audio elements to unlock them
+      this.musicCache.forEach((audio) => {
+        audio.play().then(() => {
+          audio.pause();
+          audio.currentTime = 0;
+        }).catch(() => { /* ignore */ });
+      });
+      this.sfxPools.forEach((pool) => {
+        pool.forEach((audio) => {
+          audio.play().then(() => {
+            audio.pause();
+            audio.currentTime = 0;
+          }).catch(() => { /* ignore */ });
+        });
+      });
+
+      // Execute any pending playbacks that were blocked
+      const pending = [...this.pendingPlaybacks];
+      this.pendingPlaybacks = [];
+      // Small delay to let unlock propagate
+      setTimeout(() => {
+        pending.forEach((fn) => fn());
+      }, 50);
+
+      // Remove listeners
+      ['click', 'touchstart', 'keydown', 'pointerdown'].forEach((evt) => {
+        document.removeEventListener(evt, unlock, true);
+      });
+    };
+
+    ['click', 'touchstart', 'keydown', 'pointerdown'].forEach((evt) => {
+      document.addEventListener(evt, unlock, { capture: true, once: false, passive: true });
+    });
+  }
 
   /**
    * Preload all audio files
@@ -155,6 +205,12 @@ class AudioPreloader {
       return;
     }
 
+    // If audio isn't unlocked yet, queue this playback
+    if (!this.audioUnlocked) {
+      this.pendingPlaybacks.push(() => this.playSFX(key, volume));
+      return;
+    }
+
     // Find first available (paused or ended) audio instance
     let audio = pool.find(a => a.paused || a.ended);
 
@@ -202,6 +258,13 @@ class AudioPreloader {
    */
   getLoadingState(): AudioLoadingState {
     return { ...this.loadingState };
+  }
+
+  /**
+   * Check if audio has been unlocked by user interaction
+   */
+  get isUnlocked(): boolean {
+    return this.audioUnlocked;
   }
 
   /**

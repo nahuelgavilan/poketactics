@@ -1,9 +1,10 @@
 {
   "name": "poketactics",
-  "version": "0.40.0",
+  "version": "0.42.0",
   "description": "PokéTactics - A tactical turn-based Pokémon strategy game",
   "private": true,
   "type": "module",
+  "workspaces": ["shared", "server"],
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",

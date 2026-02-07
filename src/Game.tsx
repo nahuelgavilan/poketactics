@@ -197,13 +197,9 @@ export default function Game() {
       // Optimistic update: show movement immediately
       updateUnitsOptimistic(selectedUnit.uid, pendingPosition.x, pendingPosition.y);
 
-      // Send move to server
+      // Send move to server — track that we need to send wait after move confirms
+      pendingWaitUnitRef.current = selectedUnit.uid;
       sendMove(selectedUnit.uid, pendingPosition.x, pendingPosition.y);
-
-      // Server will respond with:
-      // - action-result type='move' with optional encounter
-      // - If no encounter: will also send action-wait
-      // The onActionResult handler will deal with encounters
 
       // Mark as completing action to suppress unit_deselect sound
       isCompletingActionRef.current = true;
@@ -260,6 +256,9 @@ export default function Game() {
       triggerTurnTransition();
     }
   }, [sendEndTurn, triggerTurnTransition]);
+
+  // Track unit that needs a wait action sent after move confirmation (no encounter)
+  const pendingWaitUnitRef = useRef<string | null>(null);
 
   // Track unit for multiplayer capture (need to send capture result after minigame)
   const pendingCaptureUnitRef = useRef<string | null>(null);
@@ -556,19 +555,30 @@ export default function Game() {
     onActionResult.current = (result: ActionResult) => {
       console.log('[Multiplayer] Action result from server:', result);
 
-      // Handle move with encounter - server detected wild pokemon
-      if (result.type === 'move' && result.encounter) {
-        console.log('[Multiplayer] Server detected encounter!', result.encounter.pokemon.name);
+      // Handle move results
+      if (result.type === 'move') {
+        if (result.encounter) {
+          // Move with encounter - server detected wild pokemon
+          console.log('[Multiplayer] Server detected encounter!', result.encounter.pokemon.name);
 
-        // Store unit ID for when capture completes
-        pendingCaptureUnitRef.current = result.unitId;
+          // Clear pending wait since encounter takes over
+          pendingWaitUnitRef.current = null;
 
-        // Show capture minigame using helper function
-        triggerServerEncounter(
-          result.encounter.pokemon,
-          result.encounter.spawnPos,
-          myPlayer!
-        );
+          // Store unit ID for when capture completes
+          pendingCaptureUnitRef.current = result.unitId;
+
+          // Show capture minigame using helper function
+          triggerServerEncounter(
+            result.encounter.pokemon,
+            result.encounter.spawnPos,
+            myPlayer!
+          );
+        } else if (pendingWaitUnitRef.current) {
+          // Move succeeded with no encounter — send wait to complete the turn action
+          console.log('[Multiplayer] Move confirmed, sending wait:', pendingWaitUnitRef.current);
+          sendWait(pendingWaitUnitRef.current);
+          pendingWaitUnitRef.current = null;
+        }
         return;
       }
 
@@ -597,7 +607,7 @@ export default function Game() {
         pendingBattleRef.current = null;
       }
     };
-  }, [onGameStarted, onStateUpdate, onActionResult, setMultiplayerState, triggerServerEncounter, triggerServerBattleWithZoom, myPlayer, units]);
+  }, [onGameStarted, onStateUpdate, onActionResult, setMultiplayerState, triggerServerEncounter, triggerServerBattleWithZoom, myPlayer, units, sendWait]);
 
   // Show audio loading screen first (critical for production performance)
   if (!audioLoaded) {
