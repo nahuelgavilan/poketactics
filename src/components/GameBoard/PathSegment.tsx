@@ -12,11 +12,16 @@ type Direction = 'up' | 'down' | 'left' | 'right' | null;
  * PathSegment - Draws continuous path arrows with gap bridging
  * Based on Fire Emblem / Advance Wars path visualization
  *
- * Features:
+ * SVG coordinate space: viewBox="0 0 100 100"
+ *   Center: (50, 50)
+ *   Line strokeWidth: 18 (half-width = 9)
+ *   Arrow base: 32 wide (proportional to line)
+ *   Gap bridge extension: 25 units beyond tile edges
+ *
+ * Segment types:
  * - START: Circle at origin + line toward next tile
  * - MIDDLE: Straight lines or smooth curves at corners
- * - END: Arrow pointing in travel direction
- * - Gap bridging: Lines extend beyond tile boundaries for seamless connections
+ * - END: Clean triangular arrow pointing in travel direction
  */
 
 // Helper to get extended path for start point
@@ -26,6 +31,27 @@ const getExtendedPath = (dir: Direction, ext: number): string => {
   if (dir === 'left') return `M 50 50 L ${-ext} 50`;
   if (dir === 'right') return `M 50 50 L ${100 + ext} 50`;
   return '';
+};
+
+// Direction-aware animation style for arrow tip
+const getArrowAnimation = (dir: Direction): React.CSSProperties => {
+  const base: React.CSSProperties = { animationDuration: '1.2s', animationIterationCount: 'infinite', animationTimingFunction: 'ease-in-out' };
+  switch (dir) {
+    case 'up': return { ...base, animationName: 'arrow-nudge-up' };
+    case 'down': return { ...base, animationName: 'arrow-nudge-down' };
+    case 'left': return { ...base, animationName: 'arrow-nudge-left' };
+    case 'right': return { ...base, animationName: 'arrow-nudge-right' };
+    default: return { ...base, animationName: 'arrow-nudge-down' };
+  }
+};
+
+// Get the travel direction (opposite of 'from')
+const getTravelDir = (from: Direction): Direction => {
+  if (from === 'up') return 'down';
+  if (from === 'down') return 'up';
+  if (from === 'left') return 'right';
+  if (from === 'right') return 'left';
+  return 'down';
 };
 
 export function PathSegment({ x, y, path }: PathSegmentProps) {
@@ -49,14 +75,19 @@ export function PathSegment({ x, y, path }: PathSegmentProps) {
   const from = getRel(prev);
   const to = getRel(next);
 
-  // Visual style - RED like the showcase
+  // Visual style
   const stroke = 'rgba(239, 68, 68, 0.9)';
   const strokeWidth = '18';
   const glow = 'drop-shadow(0 0 4px rgba(239, 68, 68, 0.6))';
 
-  // Extension to bridge gaps between tiles (100 -> 125, 0 -> -25)
+  // Extension to bridge gaps between tiles
   const EXT = 25;
   const R = 25; // Curve radius
+
+  // Arrow dimensions — proportional to line width
+  // Line is 18 wide, arrow base is 32 wide (clean visual step-up)
+  const AW = 16; // arrow half-width (total = 32)
+  const AL = 34; // arrow length from base to tip
 
   // 1. START POINT (Circle)
   if (!prev && next) {
@@ -70,41 +101,52 @@ export function PathSegment({ x, y, path }: PathSegmentProps) {
     );
   }
 
-  // 2. END POINT (Arrow) - Points in travel direction
+  // 2. END POINT (Arrow) - Clean triangle pointing in travel direction
   if (prev && !next) {
-    // Draw arrow directly in the correct direction (no CSS rotation needed)
-    // 'from' tells us where we came from, arrow points opposite direction
     let linePath = '';
     let arrowPath = '';
+    const travelDir = getTravelDir(from);
 
+    // Line connects from previous tile edge to arrow base.
+    // Arrow base overlaps line end by a few units for seamless join.
     if (from === 'up') {
-      // Came from above → traveling DOWN → arrow points down
-      linePath = `M 50 ${-EXT} L 50 35`;
-      arrowPath = 'M 25 35 L 50 75 L 75 35 L 50 45 Z';
+      // Traveling DOWN
+      const arrowBase = 40;
+      const arrowTip = arrowBase + AL;
+      linePath = `M 50 ${-EXT} L 50 ${arrowBase}`;
+      arrowPath = `M ${50 - AW} ${arrowBase - 4} L 50 ${arrowTip} L ${50 + AW} ${arrowBase - 4} Z`;
     } else if (from === 'down') {
-      // Came from below → traveling UP → arrow points up
-      linePath = `M 50 ${100 + EXT} L 50 65`;
-      arrowPath = 'M 25 65 L 50 25 L 75 65 L 50 55 Z';
+      // Traveling UP
+      const arrowBase = 60;
+      const arrowTip = arrowBase - AL;
+      linePath = `M 50 ${100 + EXT} L 50 ${arrowBase}`;
+      arrowPath = `M ${50 - AW} ${arrowBase + 4} L 50 ${arrowTip} L ${50 + AW} ${arrowBase + 4} Z`;
     } else if (from === 'left') {
-      // Came from left → traveling RIGHT → arrow points right
-      linePath = `M ${-EXT} 50 L 35 50`;
-      arrowPath = 'M 35 25 L 75 50 L 35 75 L 45 50 Z';
+      // Traveling RIGHT
+      const arrowBase = 40;
+      const arrowTip = arrowBase + AL;
+      linePath = `M ${-EXT} 50 L ${arrowBase} 50`;
+      arrowPath = `M ${arrowBase - 4} ${50 - AW} L ${arrowTip} 50 L ${arrowBase - 4} ${50 + AW} Z`;
     } else if (from === 'right') {
-      // Came from right → traveling LEFT → arrow points left
-      linePath = `M ${100 + EXT} 50 L 65 50`;
-      arrowPath = 'M 65 25 L 25 50 L 65 75 L 55 50 Z';
+      // Traveling LEFT
+      const arrowBase = 60;
+      const arrowTip = arrowBase - AL;
+      linePath = `M ${100 + EXT} 50 L ${arrowBase} 50`;
+      arrowPath = `M ${arrowBase + 4} ${50 - AW} L ${arrowTip} 50 L ${arrowBase + 4} ${50 + AW} Z`;
     } else {
       // Fallback: arrow points down
-      linePath = `M 50 ${-EXT} L 50 35`;
-      arrowPath = 'M 25 35 L 50 75 L 75 35 L 50 45 Z';
+      const arrowBase = 40;
+      const arrowTip = arrowBase + AL;
+      linePath = `M 50 ${-EXT} L 50 ${arrowBase}`;
+      arrowPath = `M ${50 - AW} ${arrowBase - 4} L 50 ${arrowTip} L ${50 + AW} ${arrowBase - 4} Z`;
     }
 
     return (
       <div className="absolute inset-0 z-20 pointer-events-none overflow-visible">
         <svg
           viewBox="0 0 100 100"
-          className="w-full h-full overflow-visible animate-bounce-subtle"
-          style={{ filter: glow }}
+          className="w-full h-full overflow-visible"
+          style={{ filter: glow, ...getArrowAnimation(travelDir) }}
         >
           <path d={linePath} stroke={stroke} strokeWidth={strokeWidth} strokeLinecap="round" fill="none" />
           <path d={arrowPath} fill={stroke} />

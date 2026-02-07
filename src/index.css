@@ -161,6 +161,24 @@ body {
   }
 }
 
+/* Direction-aware arrow nudge animations */
+@keyframes arrow-nudge-up {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+@keyframes arrow-nudge-down {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(3px); }
+}
+@keyframes arrow-nudge-left {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(-3px); }
+}
+@keyframes arrow-nudge-right {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(3px); }
+}
+
 @keyframes move-pulse {
   0%, 100% {
     opacity: 0.7;
