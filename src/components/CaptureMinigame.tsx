@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { getAnimatedFrontSprite } from '../utils/sprites';
 import { useSFX } from '../hooks/useSFX';
 import type { PokemonTemplate, Player, PokemonType } from '../types/game';
@@ -152,6 +152,30 @@ export function CaptureMinigame({
   // For UI display: show approximate total chance (assuming all "good" rings)
   const estimatedTotalChance = Math.min(95, Math.max(5, baseRate + hpBonus));
 
+  // Ambient floating particles (type-colored)
+  const ambientParticles = useMemo(() =>
+    Array.from({ length: 15 }, (_, i) => ({
+      id: i,
+      x: Math.random() * 100,
+      size: 2 + Math.random() * 4,
+      delay: Math.random() * 8,
+      duration: 6 + Math.random() * 6,
+      opacity: 0.3 + Math.random() * 0.3,
+    })), []);
+
+  // Confetti particles for success (useMemo to avoid re-render randomness)
+  const confettiParticles = useMemo(() =>
+    Array.from({ length: 40 }, (_, i) => ({
+      id: i,
+      x: Math.random() * 100,
+      delay: Math.random() * 0.8,
+      color: [typeColor.primary, typeColor.secondary, '#FFD700', '#FCD34D', '#22c55e', '#3b82f6', '#f59e0b', '#ec4899', '#a855f7'][Math.floor(Math.random() * 9)],
+      rotation: Math.random() * 360,
+      shape: Math.random() > 0.6 ? 'circle' : Math.random() > 0.3 ? 'square' : 'diamond',
+      size: 3 + Math.random() * 5,
+      drift: -30 + Math.random() * 60,
+    })), [typeColor.primary, typeColor.secondary]);
+
   // Intro sequence
   useEffect(() => {
     const timers: ReturnType<typeof setTimeout>[] = [];
@@ -171,24 +195,24 @@ export function CaptureMinigame({
     setHasAttacked(true);
     setPhase('attack_intro');
 
-    // Intro → Execute
+    // Intro -> Execute
     setTimeout(() => {
       const damage = calculateDamage(activePlayerPokemon, pokemon);
       setDamageDealt(damage);
       setWildHp(hp => Math.max(1, hp - damage));
       setPhase('attack_execute');
 
-      // Execute → Counter
+      // Execute -> Counter
       setTimeout(() => {
         const counter = calculateDamage(pokemon, activePlayerPokemon);
         setDamageTaken(counter);
         setPhase('attack_counter');
 
-        // Counter → Outro
+        // Counter -> Outro
         setTimeout(() => {
           setPhase('attack_outro');
 
-          // Outro → Battle
+          // Outro -> Battle
           setTimeout(() => {
             setDamageDealt(0);
             setDamageTaken(0);
@@ -294,8 +318,6 @@ export function CaptureMinigame({
   }, [phase, currentRingSize, completeRing]);
 
   // Shake sequence - 3 individual checks, one per shake
-  // Each check determines if that shake happens
-  // Only if ALL 3 shakes happen = capture success
   useEffect(() => {
     if (phase !== 'shaking') return;
 
@@ -323,7 +345,6 @@ export function CaptureMinigame({
     const PAUSE_AFTER_LAST = 700; // Pause after last shake before result
 
     // Schedule shakes based on how many were earned
-    // Shake 1 (at 700ms)
     if (shakesCount >= 1) {
       shakeTimers.push(setTimeout(() => {
         playSFX('pokeball_shake', 0.5);
@@ -331,7 +352,6 @@ export function CaptureMinigame({
       }, SHAKE_INTERVAL));
     }
 
-    // Shake 2 (at 1400ms)
     if (shakesCount >= 2) {
       shakeTimers.push(setTimeout(() => {
         playSFX('pokeball_shake', 0.5);
@@ -339,7 +359,6 @@ export function CaptureMinigame({
       }, SHAKE_INTERVAL * 2));
     }
 
-    // Shake 3 (at 2100ms)
     if (shakesCount >= 3) {
       shakeTimers.push(setTimeout(() => {
         playSFX('pokeball_shake', 0.5);
@@ -348,7 +367,6 @@ export function CaptureMinigame({
     }
 
     // Go to result after appropriate time
-    // Time = (shakes earned * interval) + pause, minimum 1 interval for "no shakes" case
     const resultTime = Math.max(1, shakesCount) * SHAKE_INTERVAL + PAUSE_AFTER_LAST;
     shakeTimers.push(setTimeout(() => setPhase('result'), resultTime));
 
@@ -384,7 +402,7 @@ export function CaptureMinigame({
   const handleFlee = useCallback(() => {
     if (phase !== 'battle') return;
     playSFX('flee_success', 0.6);
-    onFlee(damageTaken); // Pass damage taken (usually 0 if fleeing without attacking)
+    onFlee(damageTaken);
   }, [phase, damageTaken, onFlee, playSFX]);
 
   const hpPercentage = (wildHp / pokemon.hp) * 100;
@@ -407,22 +425,65 @@ export function CaptureMinigame({
           style={{ background: `radial-gradient(ellipse at 50% 30%, ${typeColor.glow} 0%, transparent 60%)` }}
         />
         <div className="absolute bottom-0 left-0 right-0 h-2/5 bg-gradient-to-t from-emerald-950/50 via-emerald-900/20 to-transparent" />
+        {/* Vignette */}
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_40%,rgba(0,0,0,0.7)_100%)]" />
+        {/* CRT Scanlines */}
+        <div
+          className="absolute inset-0 pointer-events-none opacity-40"
+          style={{ background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.15) 2px, rgba(0,0,0,0.15) 4px)' }}
+        />
       </div>
+
+      {/* === AMBIENT FLOATING PARTICLES === */}
+      {phase !== 'flash' && (
+        <div className="absolute inset-0 pointer-events-none overflow-hidden z-[1]">
+          {ambientParticles.map(p => (
+            <div
+              key={p.id}
+              className="absolute rounded-full animate-[float-up-ambient_var(--dur)_linear_infinite]"
+              style={{
+                left: `${p.x}%`,
+                bottom: '-5%',
+                width: p.size,
+                height: p.size,
+                background: typeColor.primary,
+                boxShadow: `0 0 ${p.size * 2}px ${typeColor.glow}`,
+                opacity: 0,
+                ['--dur' as string]: `${p.duration}s`,
+                animationDelay: `${p.delay}s`,
+              }}
+            />
+          ))}
+        </div>
+      )}
 
       {/* === ALERT (!) === */}
       {phase === 'alert' && (
-        <div className="absolute inset-0 flex items-center justify-center z-20">
+        <div className="absolute inset-0 flex items-center justify-center z-20 animate-[screen-vibrate_0.3s_ease-in-out]">
           <div className="animate-[alert-pop_0.4s_cubic-bezier(0.34,1.56,0.64,1)_forwards]">
-            <div
-              className="text-[120px] md:text-[160px] font-black text-red-500 animate-[alert-shake_0.12s_ease-in-out_infinite]"
-              style={{
-                fontFamily: '"Press Start 2P", monospace',
-                textShadow: '0 0 80px rgba(239,68,68,1), 0 0 160px rgba(239,68,68,0.6), 6px 6px 0 #450a0a',
-                filter: 'drop-shadow(0 0 40px rgba(239,68,68,0.9))',
-              }}
-            >
-              !
+            <div className="relative">
+              {/* Radial energy lines */}
+              {[...Array(8)].map((_, i) => (
+                <div
+                  key={i}
+                  className="absolute left-1/2 top-1/2 w-1 h-16 md:h-20 rounded-full animate-[energy-line-burst_0.6s_ease-out_forwards]"
+                  style={{
+                    transform: `translate(-50%, -50%) rotate(${i * 45}deg) translateY(-80px)`,
+                    background: 'linear-gradient(to bottom, rgba(239,68,68,0.9), transparent)',
+                    animationDelay: `${i * 0.04}s`,
+                  }}
+                />
+              ))}
+              <div
+                className="text-[120px] md:text-[160px] font-black text-red-500 animate-[alert-shake_0.12s_ease-in-out_infinite]"
+                style={{
+                  fontFamily: '"Press Start 2P", monospace',
+                  textShadow: '0 0 80px rgba(239,68,68,1), 0 0 160px rgba(239,68,68,0.6), 6px 6px 0 #450a0a',
+                  filter: 'drop-shadow(0 0 40px rgba(239,68,68,0.9))',
+                }}
+              >
+                !
+              </div>
             </div>
           </div>
         </div>
@@ -439,6 +500,26 @@ export function CaptureMinigame({
               className="w-48 h-48 md:w-64 md:h-64 object-contain"
               style={{ imageRendering: 'pixelated', filter: 'brightness(0) drop-shadow(0 0 30px rgba(255,255,255,0.4))' }}
             />
+            {/* Rising energy particles from ground */}
+            {[...Array(6)].map((_, i) => (
+              <div
+                key={i}
+                className="absolute bottom-0 rounded-full animate-[rising-particle_1s_ease-out_forwards]"
+                style={{
+                  left: `${15 + i * 14}%`,
+                  width: 4 + Math.random() * 4,
+                  height: 4 + Math.random() * 4,
+                  background: typeColor.primary,
+                  boxShadow: `0 0 8px ${typeColor.glow}`,
+                  animationDelay: `${i * 0.1}s`,
+                }}
+              />
+            ))}
+            {/* Ground glow bar */}
+            <div
+              className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-48 h-3 rounded-full blur-md"
+              style={{ background: typeColor.glow }}
+            />
           </div>
           <span
             className="mt-4 text-2xl text-slate-500 animate-pulse"
@@ -452,8 +533,22 @@ export function CaptureMinigame({
       {/* === REVEAL === */}
       {phase === 'reveal' && (
         <div className="absolute inset-0 flex flex-col items-center justify-center z-20">
+          {/* Brief screen flash */}
+          <div className="absolute inset-0 bg-white/30 animate-[flash-out_0.3s_ease-out_forwards]" />
           <div className="relative animate-[reveal-pokemon_0.8s_ease-out_forwards]">
             <div className="absolute inset-0 blur-[60px] scale-150 animate-pulse" style={{ background: typeColor.glow }} />
+            {/* Radial energy explosion */}
+            {[...Array(12)].map((_, i) => (
+              <div
+                key={i}
+                className="absolute left-1/2 top-1/2 w-2 h-8 rounded-full animate-[particle-burst-reveal_0.8s_ease-out_forwards]"
+                style={{
+                  transform: `translate(-50%, -50%) rotate(${i * 30}deg)`,
+                  background: `linear-gradient(to bottom, ${typeColor.primary}, transparent)`,
+                  animationDelay: `${i * 0.03}s`,
+                }}
+              />
+            ))}
             <img
               src={getAnimatedFrontSprite(pokemon.id)}
               alt={pokemon.name}
@@ -554,24 +649,49 @@ export function CaptureMinigame({
 
             {/* Wild Pokemon Sprite */}
             <div className={`relative ${phase === 'attack_execute' ? 'animate-[wild-hit_0.5s_ease-out]' : ''}`}>
+              {/* Ground glow under wild Pokemon */}
+              <div
+                className="absolute -bottom-6 left-1/2 -translate-x-1/2 w-40 h-6 rounded-full blur-lg"
+                style={{ background: typeColor.glow, opacity: 0.3 }}
+              />
               <div className="absolute inset-0 blur-[60px] scale-150" style={{ background: typeColor.glow, opacity: 0.5 }} />
+              {/* Orbiting particles around wild Pokemon */}
+              {!isAttackPhase && phase === 'battle' && [...Array(8)].map((_, i) => (
+                <div
+                  key={i}
+                  className="absolute left-1/2 top-1/2 w-2 h-2 rounded-full animate-[orbit-pokemon_6s_linear_infinite]"
+                  style={{
+                    background: typeColor.primary,
+                    boxShadow: `0 0 6px ${typeColor.glow}`,
+                    animationDelay: `${i * -0.75}s`,
+                    ['--orbit-radius' as string]: `${70 + (i % 3) * 15}px`,
+                  }}
+                />
+              ))}
               <img
                 src={getAnimatedFrontSprite(pokemon.id)}
                 alt={pokemon.name}
                 className={`relative w-40 h-40 md:w-52 md:h-52 object-contain drop-shadow-2xl transition-all duration-200 ${phase === 'attack_execute' ? 'brightness-[3]' : ''
-                  }`}
+                  } ${phase === 'battle' ? 'animate-[pokemon-idle-battle_3s_ease-in-out_infinite]' : ''}`}
                 style={{ imageRendering: 'pixelated' }}
               />
 
-              {/* Damage Number */}
+              {/* Damage Number with impact flash */}
               {phase === 'attack_execute' && damageDealt > 0 && (
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 animate-[damage-fly_0.8s_ease-out_forwards]">
-                  <span
-                    className="text-4xl font-black text-red-400"
-                    style={{ fontFamily: '"Press Start 2P", monospace', textShadow: '3px 3px 0 #000, 0 0 20px rgba(239,68,68,0.8)' }}
-                  >
-                    -{damageDealt}
-                  </span>
+                <div className="absolute top-0 left-1/2 -translate-x-1/2">
+                  {/* Impact flash circle */}
+                  <div
+                    className="absolute top-4 left-1/2 -translate-x-1/2 w-16 h-16 rounded-full animate-[impact-circle_0.4s_ease-out_forwards]"
+                    style={{ background: 'radial-gradient(circle, rgba(255,255,255,0.8) 0%, transparent 70%)' }}
+                  />
+                  <div className="animate-[damage-fly_0.8s_ease-out_forwards]">
+                    <span
+                      className="text-4xl font-black text-red-400"
+                      style={{ fontFamily: '"Press Start 2P", monospace', textShadow: '3px 3px 0 #000, 0 0 20px rgba(239,68,68,0.8)' }}
+                    >
+                      -{damageDealt}
+                    </span>
+                  </div>
                 </div>
               )}
             </div>
@@ -769,8 +889,39 @@ export function CaptureMinigame({
             <div
               className="absolute inset-0 flex items-center justify-center z-30 cursor-pointer"
               onClick={isRingPhase ? handleRingTap : undefined}
-              style={{ background: '#0a0a0f' }}
             >
+              {/* Premium ring background */}
+              <div className="absolute inset-0" style={{
+                background: `radial-gradient(ellipse at 50% 50%, ${typeColor.dark}40 0%, #0a0a0f 60%)`,
+              }} />
+              {/* Scanlines for ring phase */}
+              <div
+                className="absolute inset-0 pointer-events-none opacity-30"
+                style={{ background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.15) 2px, rgba(0,0,0,0.15) 4px)' }}
+              />
+              {/* Vignette */}
+              <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_30%,rgba(0,0,0,0.8)_100%)]" />
+              {/* Ambient particles for ring phase */}
+              <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                {[...Array(10)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="absolute rounded-full animate-[float-up-ambient_var(--dur)_linear_infinite]"
+                    style={{
+                      left: `${10 + i * 8}%`,
+                      bottom: '-5%',
+                      width: 2 + (i % 3),
+                      height: 2 + (i % 3),
+                      background: typeColor.primary,
+                      boxShadow: `0 0 4px ${typeColor.glow}`,
+                      opacity: 0,
+                      ['--dur' as string]: `${5 + i * 0.8}s`,
+                      animationDelay: `${i * 0.6}s`,
+                    }}
+                  />
+                ))}
+              </div>
+
               {/* Progress dots - top */}
               <div className="absolute top-8 left-1/2 -translate-x-1/2 flex gap-3">
                 {[0, 1, 2].map(i => (
@@ -797,6 +948,19 @@ export function CaptureMinigame({
 
               {/* Main capture area */}
               <div className="relative">
+                {/* Orbiting particles around target circle */}
+                {[...Array(6)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="absolute left-1/2 top-1/2 w-2 h-2 rounded-full animate-[orbit-ring_8s_linear_infinite]"
+                    style={{
+                      background: typeColor.primary,
+                      boxShadow: `0 0 6px ${typeColor.glow}`,
+                      animationDelay: `${i * -1.33}s`,
+                    }}
+                  />
+                ))}
+
                 {/* Target circle with VISIBLE ZONES */}
                 <div
                   className="w-64 h-64 md:w-80 md:h-80 rounded-full relative overflow-hidden"
@@ -886,8 +1050,8 @@ export function CaptureMinigame({
                     />
                   )}
 
-                  {/* Pokemon in center - BIG and clear */}
-                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
+                  {/* Pokemon in center - BIG and clear with breathing */}
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 animate-[pokemon-idle_3s_ease-in-out_infinite]" style={{ transformOrigin: 'center center' }}>
                     <img
                       src={getAnimatedFrontSprite(pokemon.id)}
                       alt={pokemon.name}
@@ -905,17 +1069,43 @@ export function CaptureMinigame({
                   )}
                 </div>
 
-                {/* Result display - BIG and clear */}
+                {/* Result display with enhanced feedback */}
                 {phase === 'ring_result' && lastRingResult && (
                   <div className="absolute inset-0 flex items-center justify-center">
+                    {/* White screen flash burst */}
+                    <div className="absolute inset-[-50%] rounded-full bg-white/40 animate-[flash-out_0.3s_ease-out_forwards]" />
+                    {/* Radial particle burst from center */}
+                    {[...Array(8)].map((_, i) => (
+                      <div
+                        key={i}
+                        className="absolute left-1/2 top-1/2 w-2 h-6 rounded-full animate-[ring-result-burst_0.5s_ease-out_forwards]"
+                        style={{
+                          transform: `translate(-50%, -50%) rotate(${i * 45}deg)`,
+                          background: lastRingResult === 'perfect' ? '#22c55e' :
+                            lastRingResult === 'great' ? '#3b82f6' :
+                              lastRingResult === 'good' ? '#facc15' : '#ef4444',
+                          animationDelay: `${i * 0.03}s`,
+                        }}
+                      />
+                    ))}
                     <div
-                      className="text-center animate-[pop-in_0.3s_ease-out]"
+                      className="text-center animate-[result-text-bounce_0.4s_cubic-bezier(0.34,1.56,0.64,1)]"
                       style={{ fontFamily: '"Press Start 2P", monospace' }}
                     >
-                      <div className={`text-4xl md:text-5xl font-black ${lastRingResult === 'perfect' ? 'text-green-400' :
+                      <div className={`text-5xl md:text-6xl font-black ${lastRingResult === 'perfect' ? 'text-green-400' :
                         lastRingResult === 'great' ? 'text-blue-400' :
                           lastRingResult === 'good' ? 'text-yellow-400' : 'text-red-400'
-                        }`}>
+                        }`}
+                        style={{
+                          textShadow: `0 0 30px ${lastRingResult === 'perfect' ? 'rgba(34,197,94,0.8)' :
+                            lastRingResult === 'great' ? 'rgba(59,130,246,0.8)' :
+                              lastRingResult === 'good' ? 'rgba(250,204,21,0.8)' : 'rgba(239,68,68,0.8)'
+                            }, 0 0 60px ${lastRingResult === 'perfect' ? 'rgba(34,197,94,0.4)' :
+                              lastRingResult === 'great' ? 'rgba(59,130,246,0.4)' :
+                                lastRingResult === 'good' ? 'rgba(250,204,21,0.4)' : 'rgba(239,68,68,0.4)'
+                            }, 3px 3px 0 #000`,
+                        }}
+                      >
                         {lastRingResult === 'perfect' ? 'PERFECT!' :
                           lastRingResult === 'great' ? 'GREAT!' :
                             lastRingResult === 'good' ? 'GOOD!' : 'MISS!'}
@@ -936,13 +1126,23 @@ export function CaptureMinigame({
               {/* Instruction - only during ring phase */}
               {isRingPhase && (
                 <div className="absolute bottom-16 left-1/2 -translate-x-1/2 text-center">
-                  <div
-                    className="text-white text-lg font-bold animate-pulse"
-                    style={{ fontFamily: '"Press Start 2P", monospace' }}
-                  >
-                    TAP!
+                  {/* Pulsing ring below TAP */}
+                  <div className="relative inline-block">
+                    <div
+                      className="absolute -inset-4 rounded-full animate-[tap-ring-pulse_1.5s_ease-in-out_infinite]"
+                      style={{ border: `2px solid ${typeColor.primary}40` }}
+                    />
+                    <div
+                      className="text-white text-lg font-bold animate-pulse"
+                      style={{
+                        fontFamily: '"Press Start 2P", monospace',
+                        textShadow: `0 0 20px ${typeColor.glow}`,
+                      }}
+                    >
+                      TAP!
+                    </div>
                   </div>
-                  <div className="text-white/50 text-xs mt-2">
+                  <div className="text-white/50 text-xs mt-4">
                     Tap when the ring is smallest
                   </div>
                 </div>
@@ -964,6 +1164,20 @@ export function CaptureMinigame({
                     />
                   </div>
 
+                  {/* Trailing energy particles */}
+                  {[...Array(6)].map((_, i) => (
+                    <div
+                      key={i}
+                      className="absolute left-1/2 top-1/2 w-2 h-2 rounded-full animate-[throw-trail_0.4s_ease-out_forwards]"
+                      style={{
+                        background: i % 2 === 0 ? '#ef4444' : '#facc15',
+                        boxShadow: `0 0 6px ${i % 2 === 0 ? 'rgba(239,68,68,0.8)' : 'rgba(250,204,21,0.8)'}`,
+                        animationDelay: `${0.1 + i * 0.08}s`,
+                        transform: `translate(-50%, -50%) translate(${-10 - i * 5}px, ${5 + i * 3}px)`,
+                      }}
+                    />
+                  ))}
+
                   {/* Showdown Pokeball Sprite - spinning */}
                   <div className="relative animate-[throw-spin_0.25s_linear_infinite]">
                     <img
@@ -980,9 +1194,20 @@ export function CaptureMinigame({
                 </div>
               </div>
 
-              {/* Impact flash at end */}
+              {/* Bigger impact flash at landing with burst particles */}
               <div className="absolute inset-0 flex items-center justify-center animate-[impact-flash_1s_ease-out_forwards] opacity-0">
-                <div className="w-64 h-64 rounded-full bg-white/40 blur-3xl" />
+                <div className="w-64 h-64 rounded-full bg-white/50 blur-3xl" />
+                {/* Radial burst particles at impact */}
+                {[...Array(8)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="absolute w-3 h-3 rounded-full bg-white animate-[impact-burst-particle_0.5s_ease-out_forwards]"
+                    style={{
+                      transform: `rotate(${i * 45}deg) translateY(-60px)`,
+                      animationDelay: '0.9s',
+                    }}
+                  />
+                ))}
               </div>
             </div>
           )}
@@ -990,9 +1215,9 @@ export function CaptureMinigame({
           {/* === POKEBALL CAPTURE ANIMATION WITH SHOWDOWN SPRITE === */}
           {phase === 'shaking' && (
             <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-[#080810] to-slate-950 z-30 overflow-hidden">
-              {/* Subtle ambient glow */}
+              {/* Subtle ambient glow with tension pulse */}
               <div
-                className="absolute inset-0 opacity-30"
+                className="absolute inset-0 animate-[tension-pulse_0.7s_ease-in-out_infinite]"
                 style={{ background: 'radial-gradient(ellipse at 50% 60%, rgba(239,68,68,0.15) 0%, transparent 50%)' }}
               />
 
@@ -1050,6 +1275,18 @@ export function CaptureMinigame({
 
                 {/* Main Pokeball Container */}
                 <div className="relative">
+                  {/* Energy ripple on each shake */}
+                  {shakeIndex >= 1 && shakeIndex <= 3 && (
+                    <div
+                      key={`ripple-${shakeIndex}`}
+                      className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24 rounded-full pointer-events-none z-20 animate-[ripple-expand_0.6s_ease-out_forwards]"
+                      style={{
+                        border: `2px solid ${typeColor.primary}`,
+                        boxShadow: `0 0 10px ${typeColor.glow}`,
+                      }}
+                    />
+                  )}
+
                   {/* Star emerging from pokeball center and flying up */}
                   {shakeIndex >= 1 && shakeIndex <= 3 && (
                     <div
@@ -1086,18 +1323,15 @@ export function CaptureMinigame({
                     </div>
                   )}
 
-                  {/* Pokeball with single wobble per shake - use fragment with key to force remount */}
+                  {/* Pokeball with single wobble per shake - micro-shake container */}
                   {shakeIndex === 0 ? (
                     <div
                       className="relative"
                       style={{ transformOrigin: 'center bottom' }}
                     >
-                      {/* Center button glow overlay - hidden when no shake */}
                       <div
                         className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 md:w-5 md:h-5 rounded-full z-10 pointer-events-none opacity-0"
                       />
-
-                      {/* Pokemon Showdown Pokeball Sprite - smaller size */}
                       <img
                         src="https://play.pokemonshowdown.com/sprites/itemicons/poke-ball.png"
                         alt="Pokeball"
@@ -1124,8 +1358,6 @@ export function CaptureMinigame({
                           background: 'radial-gradient(circle, rgba(255,255,255,1) 0%, rgba(250,204,21,0.8) 40%, rgba(250,204,21,0) 70%)',
                         }}
                       />
-
-                      {/* Pokemon Showdown Pokeball Sprite - smaller size */}
                       <img
                         src="https://play.pokemonshowdown.com/sprites/itemicons/poke-ball.png"
                         alt="Pokeball"
@@ -1173,36 +1405,71 @@ export function CaptureMinigame({
               <div className="text-center animate-[result-pop_0.6s_cubic-bezier(0.34,1.56,0.64,1)_forwards]">
                 {captureSuccess ? (
                   <>
-                    {/* Confetti */}
-                    <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                      {[...Array(30)].map((_, i) => (
+                    {/* Screen flash */}
+                    <div className="fixed inset-0 bg-white/40 animate-[flash-out_0.3s_ease-out_forwards] pointer-events-none" />
+
+                    {/* Golden energy explosion - 16 radial particles */}
+                    <div className="absolute inset-0 pointer-events-none">
+                      {[...Array(16)].map((_, i) => (
                         <div
-                          key={i}
-                          className="absolute animate-[confetti-fall_2.5s_ease-out_forwards]"
+                          key={`energy-${i}`}
+                          className="absolute left-1/2 top-1/2 w-2 h-8 rounded-full animate-[golden-burst_0.8s_ease-out_forwards]"
                           style={{
-                            left: `${Math.random() * 100}%`,
+                            transform: `translate(-50%, -50%) rotate(${i * 22.5}deg)`,
+                            background: `linear-gradient(to bottom, ${i % 2 === 0 ? '#FFD700' : '#F59E0B'}, transparent)`,
+                            animationDelay: `${i * 0.03}s`,
+                          }}
+                        />
+                      ))}
+                    </div>
+
+                    {/* Enhanced confetti - 40 pieces with varied shapes */}
+                    <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                      {confettiParticles.map(p => (
+                        <div
+                          key={p.id}
+                          className="absolute animate-[confetti-fall-v2_2.5s_ease-out_forwards]"
+                          style={{
+                            left: `${p.x}%`,
                             top: '-5%',
-                            animationDelay: `${Math.random() * 0.8}s`,
+                            animationDelay: `${p.delay}s`,
+                            ['--drift' as string]: `${p.drift}px`,
                           }}
                         >
                           <div
-                            className="w-3 h-3"
                             style={{
-                              background: ['#22c55e', '#3b82f6', '#f59e0b', '#ec4899', '#a855f7'][Math.floor(Math.random() * 5)],
-                              transform: `rotate(${Math.random() * 360}deg)`,
-                              borderRadius: Math.random() > 0.5 ? '50%' : '2px',
+                              width: p.size,
+                              height: p.size,
+                              background: p.color,
+                              transform: `rotate(${p.rotation}deg)`,
+                              borderRadius: p.shape === 'circle' ? '50%' : p.shape === 'diamond' ? '2px' : '2px',
+                              ...(p.shape === 'diamond' ? { transform: `rotate(45deg)` } : {}),
                             }}
                           />
                         </div>
                       ))}
                     </div>
 
-                    <div className="text-7xl mb-6 animate-[bounce_0.6s_ease-out]">🎉</div>
+                    {/* Radial light rays behind text */}
+                    <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] animate-[radial-rays_8s_linear_infinite] opacity-30 pointer-events-none"
+                      style={{
+                        background: 'conic-gradient(from 0deg, transparent 0deg, rgba(255,215,0,0.4) 10deg, transparent 20deg, transparent 45deg, rgba(255,215,0,0.4) 55deg, transparent 65deg, transparent 90deg, rgba(255,215,0,0.4) 100deg, transparent 110deg, transparent 135deg, rgba(255,215,0,0.4) 145deg, transparent 155deg, transparent 180deg, rgba(255,215,0,0.4) 190deg, transparent 200deg, transparent 225deg, rgba(255,215,0,0.4) 235deg, transparent 245deg, transparent 270deg, rgba(255,215,0,0.4) 280deg, transparent 290deg, transparent 315deg, rgba(255,215,0,0.4) 325deg, transparent 335deg, transparent 360deg)',
+                      }}
+                    />
+
+                    {/* Golden star SVG */}
+                    <div className="mb-6 animate-[star-entrance_0.6s_cubic-bezier(0.34,1.56,0.64,1)_forwards]">
+                      <svg className="w-20 h-20 mx-auto text-yellow-400" viewBox="0 0 24 24" fill="currentColor"
+                        style={{ filter: 'drop-shadow(0 0 20px rgba(255,215,0,0.9)) drop-shadow(0 0 40px rgba(255,215,0,0.5))' }}
+                      >
+                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                      </svg>
+                    </div>
                     <h2
-                      className="text-3xl md:text-4xl font-black text-emerald-400 mb-4"
+                      className="text-3xl md:text-4xl font-black text-emerald-400 mb-4 animate-[title-pulse-glow_2s_ease-in-out_infinite]"
                       style={{
                         fontFamily: '"Press Start 2P", monospace',
-                        textShadow: '0 0 40px rgba(34,197,94,0.8), 4px 4px 0 #065f46',
+                        textShadow: '0 0 40px rgba(34,197,94,0.8), 0 0 80px rgba(34,197,94,0.4), 4px 4px 0 #065f46',
                       }}
                     >
                       ¡CAPTURADO!
@@ -1216,9 +1483,38 @@ export function CaptureMinigame({
                   </>
                 ) : (
                   <>
-                    <div className="text-7xl mb-6 animate-[shake_0.5s_ease-out]">💨</div>
+                    {/* Red screen flash */}
+                    <div className="fixed inset-0 bg-red-500/20 animate-[flash-out_0.4s_ease-out_forwards] pointer-events-none" />
+
+                    {/* Pokeball burst-open effect - 8 red energy lines */}
+                    <div className="absolute inset-0 pointer-events-none">
+                      {[...Array(8)].map((_, i) => (
+                        <div
+                          key={i}
+                          className="absolute left-1/2 top-1/2 w-1.5 h-10 rounded-full animate-[escape-burst_0.6s_ease-out_forwards]"
+                          style={{
+                            transform: `translate(-50%, -50%) rotate(${i * 45}deg)`,
+                            background: 'linear-gradient(to bottom, #ef4444, transparent)',
+                            animationDelay: `${i * 0.04}s`,
+                          }}
+                        />
+                      ))}
+                    </div>
+
+                    {/* Pokemon escape sprite - scales up and fades */}
+                    <div className="mb-6 animate-[escape-fly_1s_ease-out_forwards]">
+                      <img
+                        src={getAnimatedFrontSprite(pokemon.id)}
+                        alt={pokemon.name}
+                        className="w-20 h-20 mx-auto"
+                        style={{
+                          imageRendering: 'pixelated',
+                          filter: `drop-shadow(0 0 15px ${typeColor.glow})`,
+                        }}
+                      />
+                    </div>
                     <h2
-                      className="text-3xl md:text-4xl font-black text-red-400 mb-4"
+                      className="text-3xl md:text-4xl font-black text-red-400 mb-4 animate-[shake-text_0.5s_ease-out]"
                       style={{
                         fontFamily: '"Press Start 2P", monospace',
                         textShadow: '0 0 30px rgba(239,68,68,0.6), 4px 4px 0 #7f1d1d',
@@ -1257,14 +1553,44 @@ export function CaptureMinigame({
           75% { transform: translateX(8px) rotate(8deg); }
         }
 
+        @keyframes screen-vibrate {
+          0%, 100% { transform: translate(0, 0); }
+          10% { transform: translate(-2px, 1px); }
+          20% { transform: translate(2px, -1px); }
+          30% { transform: translate(-1px, 2px); }
+          40% { transform: translate(1px, -2px); }
+          50% { transform: translate(-2px, -1px); }
+          60% { transform: translate(2px, 1px); }
+          70% { transform: translate(-1px, -2px); }
+          80% { transform: translate(1px, 2px); }
+          90% { transform: translate(-2px, 1px); }
+        }
+
+        @keyframes energy-line-burst {
+          0% { opacity: 0; transform: translate(-50%, -50%) rotate(var(--r, 0deg)) translateY(-40px) scaleY(0); }
+          30% { opacity: 1; transform: translate(-50%, -50%) rotate(var(--r, 0deg)) translateY(-60px) scaleY(1); }
+          100% { opacity: 0; transform: translate(-50%, -50%) rotate(var(--r, 0deg)) translateY(-100px) scaleY(0.5); }
+        }
+
         @keyframes silhouette-appear {
           0% { transform: scale(0.3) translateY(80px); opacity: 0; }
           100% { transform: scale(1) translateY(0); opacity: 1; }
         }
 
+        @keyframes rising-particle {
+          0% { transform: translateY(0) scale(0); opacity: 0; }
+          20% { opacity: 0.8; transform: translateY(-20px) scale(1); }
+          100% { transform: translateY(-120px) scale(0.3); opacity: 0; }
+        }
+
         @keyframes reveal-pokemon {
           0% { transform: scale(1.3); filter: brightness(4); }
           100% { transform: scale(1); filter: brightness(1); }
+        }
+
+        @keyframes particle-burst-reveal {
+          0% { opacity: 1; transform: translate(-50%, -50%) rotate(var(--r, 0deg)) translateY(0) scaleY(1); }
+          100% { opacity: 0; transform: translate(-50%, -50%) rotate(var(--r, 0deg)) translateY(-100px) scaleY(0.3); }
         }
 
         @keyframes fade-in {
@@ -1309,20 +1635,48 @@ export function CaptureMinigame({
           100% { transform: translateX(-50%) translateY(-60px) scale(1); opacity: 0; }
         }
 
-        @keyframes orbit {
-          0% { transform: rotate(0deg) translateX(90px) rotate(0deg); }
-          100% { transform: rotate(360deg) translateX(90px) rotate(-360deg); }
+        @keyframes impact-circle {
+          0% { opacity: 0.8; transform: translate(-50%, 0) scale(0.5); }
+          100% { opacity: 0; transform: translate(-50%, 0) scale(2); }
         }
 
-        @keyframes burst {
-          0% { transform: rotate(var(--r, 0deg)) translateY(0) scale(1); opacity: 1; }
-          100% { transform: rotate(var(--r, 0deg)) translateY(-80px) scale(0); opacity: 0; }
+        @keyframes pokemon-idle-battle {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-4px); }
         }
 
-        @keyframes result-bounce {
-          0% { transform: translateX(-50%) scale(0) translateY(20px); }
-          60% { transform: translateX(-50%) scale(1.2) translateY(-5px); }
-          100% { transform: translateX(-50%) scale(1) translateY(0); }
+        @keyframes orbit-pokemon {
+          0% { transform: translate(-50%, -50%) rotate(0deg) translateX(var(--orbit-radius, 70px)) rotate(0deg); }
+          100% { transform: translate(-50%, -50%) rotate(360deg) translateX(var(--orbit-radius, 70px)) rotate(-360deg); }
+        }
+
+        @keyframes orbit-ring {
+          0% { transform: translate(-50%, -50%) rotate(0deg) translateX(160px) rotate(0deg); }
+          100% { transform: translate(-50%, -50%) rotate(360deg) translateX(160px) rotate(-360deg); }
+        }
+
+        @keyframes float-up-ambient {
+          0% { transform: translateY(0) scale(0); opacity: 0; }
+          10% { opacity: 0.5; transform: translateY(-10vh) scale(1); }
+          90% { opacity: 0.3; }
+          100% { transform: translateY(-110vh) scale(0.5); opacity: 0; }
+        }
+
+        @keyframes ring-result-burst {
+          0% { opacity: 1; transform: translate(-50%, -50%) rotate(var(--r, 0deg)) translateY(0) scaleY(1); }
+          100% { opacity: 0; transform: translate(-50%, -50%) rotate(var(--r, 0deg)) translateY(-80px) scaleY(0.3); }
+        }
+
+        @keyframes result-text-bounce {
+          0% { transform: scale(0); opacity: 0; }
+          60% { transform: scale(1.15); }
+          80% { transform: scale(0.95); }
+          100% { transform: scale(1); opacity: 1; }
+        }
+
+        @keyframes tap-ring-pulse {
+          0%, 100% { transform: scale(1); opacity: 0.4; }
+          50% { transform: scale(1.4); opacity: 0; }
         }
 
         /* === PREMIUM THROW ANIMATIONS === */
@@ -1358,32 +1712,14 @@ export function CaptureMinigame({
           100% { transform: rotate(1080deg); }
         }
 
+        @keyframes throw-trail {
+          0% { opacity: 0.8; transform: translate(-50%, -50%) scale(1); }
+          100% { opacity: 0; transform: translate(-50%, -50%) translate(-30px, 15px) scale(0); }
+        }
+
         @keyframes motion-blur {
           0%, 60% { opacity: 0.6; transform: scale(1.5) translateX(-20px); }
           100% { opacity: 0; transform: scale(1) translateX(0); }
-        }
-
-        @keyframes trail-particle {
-          0% {
-            transform: translate(0, 0) scale(1);
-            opacity: 0;
-          }
-          20% {
-            opacity: 0.8;
-          }
-          100% {
-            transform: translate(
-              calc(var(--random-x, 0) * 30px),
-              calc(-80vh + var(--random-y, 0) * 20px)
-            ) scale(0);
-            opacity: 0;
-          }
-        }
-
-        @keyframes energy-pulse {
-          0% { transform: scale(0); opacity: 0; }
-          50% { transform: scale(1.5); opacity: 0.6; }
-          100% { transform: scale(2.5); opacity: 0; }
         }
 
         @keyframes impact-flash {
@@ -1392,8 +1728,13 @@ export function CaptureMinigame({
           100% { opacity: 0; }
         }
 
+        @keyframes impact-burst-particle {
+          0% { opacity: 0; transform: rotate(var(--r, 0deg)) translateY(0) scale(1); }
+          30% { opacity: 1; }
+          100% { opacity: 0; transform: rotate(var(--r, 0deg)) translateY(-80px) scale(0); }
+        }
+
         /* === POKEBALL SINGLE WOBBLE ANIMATION === */
-        /* One wobble per shake - tilts left then right then settles */
         @keyframes pokeball-single-wobble {
           0% { transform: rotate(0deg); }
           20% { transform: rotate(-20deg); }
@@ -1403,7 +1744,6 @@ export function CaptureMinigame({
           100% { transform: rotate(0deg); }
         }
 
-        /* Shadow follows the single wobble */
         @keyframes shadow-single-wobble {
           0% { transform: translateX(-50%) scaleX(1); }
           20% { transform: translateX(-60%) scaleX(0.85); }
@@ -1413,8 +1753,18 @@ export function CaptureMinigame({
           100% { transform: translateX(-50%) scaleX(1); }
         }
 
+        /* === SHAKE PHASE EFFECTS === */
+        @keyframes ripple-expand {
+          0% { opacity: 0.8; transform: translate(-50%, -50%) scale(1); }
+          100% { opacity: 0; transform: translate(-50%, -50%) scale(2.5); }
+        }
+
+        @keyframes tension-pulse {
+          0%, 100% { opacity: 0.25; }
+          50% { opacity: 0.4; }
+        }
+
         /* === STAR FLIGHT FROM CENTER TO TOP === */
-        /* Star emerges from pokeball center, flies to first indicator (left) */
         @keyframes star-emerge-fly-1 {
           0% {
             transform: translateY(0) scale(0);
@@ -1430,7 +1780,6 @@ export function CaptureMinigame({
           }
         }
 
-        /* Star flies to second indicator (center) */
         @keyframes star-emerge-fly-2 {
           0% {
             transform: translateY(0) scale(0);
@@ -1446,7 +1795,6 @@ export function CaptureMinigame({
           }
         }
 
-        /* Star flies to third indicator (right) */
         @keyframes star-emerge-fly-3 {
           0% {
             transform: translateY(0) scale(0);
@@ -1462,13 +1810,11 @@ export function CaptureMinigame({
           }
         }
 
-        /* Star spinning while flying */
         @keyframes star-spin-fly {
           0% { transform: rotate(0deg); }
           100% { transform: rotate(360deg); }
         }
 
-        /* Trail fading behind flying star */
         @keyframes trail-fade {
           0% { opacity: 0; transform: scaleY(0); }
           20% { opacity: 0.8; transform: scaleY(1); }
@@ -1476,14 +1822,12 @@ export function CaptureMinigame({
         }
 
         /* === STAR ARRIVAL EFFECTS === */
-        /* Flash burst when star arrives at indicator */
         @keyframes star-flash-burst {
           0% { opacity: 0; transform: scale(0.3); }
           30% { opacity: 1; transform: scale(1); }
           100% { opacity: 0; transform: scale(1.8); }
         }
 
-        /* Sparkles exploding from star arrival */
         @keyframes sparkle-explode {
           0% {
             opacity: 1;
@@ -1495,7 +1839,6 @@ export function CaptureMinigame({
           }
         }
 
-        /* Star popping into place */
         @keyframes star-pop-in {
           0% { transform: scale(0) rotate(-180deg); }
           60% { transform: scale(1.3) rotate(10deg); }
@@ -1503,147 +1846,76 @@ export function CaptureMinigame({
           100% { transform: scale(1.1) rotate(0deg); }
         }
 
-        /* === CENTER BUTTON EFFECTS === */
-        /* Center button flash when star emerges */
         @keyframes center-button-flash {
           0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
           30% { opacity: 1; transform: translate(-50%, -50%) scale(1.5); }
           100% { opacity: 0; transform: translate(-50%, -50%) scale(2); }
         }
 
-        /* Dots pulsing animation */
         @keyframes dots-pulse {
           0%, 100% { opacity: 0.5; letter-spacing: 0.3em; }
           50% { opacity: 1; letter-spacing: 0.5em; }
         }
 
-        @keyframes confetti-fall {
-          0% { transform: translateY(0) rotate(0deg); opacity: 1; }
-          100% { transform: translateY(500px) rotate(720deg); opacity: 0; }
-        }
-
+        /* === RESULT ANIMATIONS === */
         @keyframes result-pop {
           0% { transform: scale(0.3); opacity: 0; }
           50% { transform: scale(1.1); }
           100% { transform: scale(1); opacity: 1; }
         }
 
-        @keyframes shake {
+        @keyframes golden-burst {
+          0% { opacity: 1; transform: translate(-50%, -50%) rotate(var(--r, 0deg)) translateY(0) scaleY(1); }
+          100% { opacity: 0; transform: translate(-50%, -50%) rotate(var(--r, 0deg)) translateY(-120px) scaleY(0.3); }
+        }
+
+        @keyframes confetti-fall-v2 {
+          0% { transform: translateY(0) translateX(0) rotate(0deg); opacity: 1; }
+          100% { transform: translateY(500px) translateX(var(--drift, 0px)) rotate(720deg); opacity: 0; }
+        }
+
+        @keyframes radial-rays {
+          0% { transform: translate(-50%, -50%) rotate(0deg); }
+          100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        @keyframes star-entrance {
+          0% { transform: scale(0) rotate(-180deg); opacity: 0; }
+          60% { transform: scale(1.2) rotate(10deg); opacity: 1; }
+          80% { transform: scale(0.9) rotate(-5deg); }
+          100% { transform: scale(1) rotate(0deg); }
+        }
+
+        @keyframes title-pulse-glow {
+          0%, 100% { text-shadow: 0 0 40px rgba(34,197,94,0.8), 4px 4px 0 #065f46; }
+          50% { text-shadow: 0 0 60px rgba(34,197,94,1), 0 0 100px rgba(34,197,94,0.5), 4px 4px 0 #065f46; }
+        }
+
+        @keyframes escape-burst {
+          0% { opacity: 1; transform: translate(-50%, -50%) rotate(var(--r, 0deg)) translateY(0) scaleY(1); }
+          100% { opacity: 0; transform: translate(-50%, -50%) rotate(var(--r, 0deg)) translateY(-80px) scaleY(0.3); }
+        }
+
+        @keyframes escape-fly {
+          0% { transform: scale(1); opacity: 1; }
+          50% { transform: scale(1.3) translateY(-10px); opacity: 0.8; }
+          100% { transform: scale(1.8) translateY(-40px); opacity: 0; }
+        }
+
+        @keyframes shake-text {
           0%, 100% { transform: translateX(0); }
-          25% { transform: translateX(-10px); }
-          75% { transform: translateX(10px); }
+          15% { transform: translateX(-6px); }
+          30% { transform: translateX(6px); }
+          45% { transform: translateX(-4px); }
+          60% { transform: translateX(4px); }
+          75% { transform: translateX(-2px); }
+          90% { transform: translateX(2px); }
         }
 
-        @keyframes bounce {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-20px); }
-        }
-
-        /* === PREMIUM RING MINIGAME ANIMATIONS === */
-        
-        /* Floating background particles */
-        @keyframes float-up {
-          0% { transform: translateY(0) scale(0); opacity: 0; }
-          10% { opacity: 0.6; transform: translateY(-10vh) scale(1); }
-          90% { opacity: 0.4; }
-          100% { transform: translateY(-110vh) scale(0.5); opacity: 0; }
-        }
-
-        /* Ring pulsing glow */
-        @keyframes ring-pulse {
-          0%, 100% { transform: scale(1); opacity: 0.3; }
-          50% { transform: scale(1.1); opacity: 0.5; }
-        }
-
-        /* Zone glow animation */
-        @keyframes zone-glow {
-          0%, 100% { opacity: 0.7; box-shadow: inset 0 0 25px rgba(52,211,153,0.4), 0 0 15px rgba(52,211,153,0.3); }
-          50% { opacity: 1; box-shadow: inset 0 0 35px rgba(52,211,153,0.6), 0 0 25px rgba(52,211,153,0.5); }
-        }
-
-        /* Pokemon idle breathing */
+        /* === RING MINIGAME KEPT ANIMATIONS === */
         @keyframes pokemon-idle {
           0%, 100% { transform: translate(-50%, -50%) scale(1); }
           50% { transform: translate(-50%, -50%) scale(1.03) translateY(-2px); }
-        }
-
-        /* Pokemon struggling - medium intensity */
-        @keyframes pokemon-struggle {
-          0%, 100% { transform: translate(-50%, -50%) scale(1) rotate(0deg); }
-          25% { transform: translate(-50%, -50%) scale(1.05) rotate(-3deg) translateX(-3px); }
-          50% { transform: translate(-50%, -50%) scale(0.98) rotate(0deg); }
-          75% { transform: translate(-50%, -50%) scale(1.05) rotate(3deg) translateX(3px); }
-        }
-
-        /* Pokemon fierce struggle - high intensity */
-        @keyframes pokemon-fierce {
-          0%, 100% { transform: translate(-50%, -50%) scale(1) rotate(0deg); }
-          10% { transform: translate(-50%, -50%) scale(1.08) rotate(-5deg) translateX(-5px); }
-          30% { transform: translate(-50%, -50%) scale(0.95) rotate(3deg) translateX(3px); }
-          50% { transform: translate(-50%, -50%) scale(1.1) rotate(-3deg) translateY(-5px); }
-          70% { transform: translate(-50%, -50%) scale(0.97) rotate(5deg) translateX(-3px); }
-          90% { transform: translate(-50%, -50%) scale(1.05) rotate(-2deg) translateX(5px); }
-        }
-
-        /* Flash burst on tap */
-        @keyframes flash-burst {
-          0% { opacity: 0.8; transform: scale(1); }
-          100% { opacity: 0; transform: scale(2); }
-        }
-
-        /* Particle burst outward */
-        @keyframes particle-burst {
-          0% { opacity: 1; transform: rotate(var(--r)) translateY(0) scaleY(1); }
-          100% { opacity: 0; transform: rotate(var(--r)) translateY(-120px) scaleY(0.3); }
-        }
-
-        /* Ring expanding outward */
-        @keyframes ring-expand {
-          0% { opacity: 1; transform: scale(1); }
-          100% { opacity: 0; transform: scale(2); border-width: 1px; }
-        }
-
-        /* Result flash background */
-        @keyframes result-flash {
-          0% { opacity: 1; transform: scale(1); }
-          100% { opacity: 0; transform: scale(1.5); }
-        }
-
-        /* Result text pop in */
-        @keyframes result-text-pop {
-          0% { transform: translate(-50%, -50%) scale(0) rotate(-10deg); opacity: 0; }
-          50% { transform: translate(-50%, -50%) scale(1.2) rotate(3deg); }
-          70% { transform: translate(-50%, -50%) scale(0.9) rotate(-2deg); }
-          100% { transform: translate(-50%, -50%) scale(1) rotate(0deg); opacity: 1; }
-        }
-
-        /* Pokeball animations for ring minigame */
-        @keyframes pokeball-idle {
-          0%, 100% { transform: scale(1); }
-          50% { transform: scale(1.05); }
-        }
-
-        @keyframes pokeball-shake {
-          0%, 100% { transform: rotate(0deg); }
-          20% { transform: rotate(-8deg); }
-          40% { transform: rotate(8deg); }
-          60% { transform: rotate(-5deg); }
-          80% { transform: rotate(5deg); }
-        }
-
-        @keyframes pokeball-intense {
-          0%, 100% { transform: rotate(0deg) scale(1); }
-          10% { transform: rotate(-12deg) scale(1.1); }
-          30% { transform: rotate(12deg) scale(0.95); }
-          50% { transform: rotate(-10deg) scale(1.08); }
-          70% { transform: rotate(10deg) scale(0.97); }
-          90% { transform: rotate(-8deg) scale(1.05); }
-        }
-
-        @keyframes bounce-in {
-          0% { transform: scale(0.5); opacity: 0; }
-          60% { transform: scale(1.1); opacity: 1; }
-          100% { transform: scale(1); }
         }
 
         @keyframes pop-in {

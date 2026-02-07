@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { getAnimatedFrontSprite } from '../utils/sprites';
 import type { CaptureData, PokemonType } from '../types/game';
 
@@ -28,27 +28,71 @@ const TYPE_COLORS: Record<PokemonType, { primary: string; secondary: string; glo
   dark: { primary: '#705848', secondary: '#49392D', glow: 'rgba(112,88,72,0.6)' },
 };
 
-// Generate sparkle particles
-function generateSparkles(count: number) {
+// Generate sparkle particles — now type-colored
+function generateSparkles(count: number, typeColor: string) {
   return Array.from({ length: count }, (_, i) => ({
     id: i,
     x: Math.random() * 100,
     y: Math.random() * 100,
-    size: 4 + Math.random() * 8,
-    delay: Math.random() * 2,
-    duration: 1 + Math.random() * 2,
+    size: 3 + Math.random() * 7,
+    delay: Math.random() * 3,
+    duration: 1.5 + Math.random() * 2.5,
+    color: Math.random() > 0.5 ? '#FFD700' : typeColor,
   }));
 }
 
-// Stat bar component
+// Generate large floating orbs
+function generateOrbs(typeColor: string, typeGlow: string) {
+  return Array.from({ length: 3 }, (_, i) => ({
+    id: i,
+    x: 15 + Math.random() * 70,
+    y: 20 + Math.random() * 60,
+    size: 20 + Math.random() * 15,
+    delay: i * 2,
+    duration: 6 + Math.random() * 4,
+    color: typeColor,
+    glow: typeGlow,
+  }));
+}
+
+// Stat bar component with count-up animation
 function StatBar({ label, value, maxValue, color }: { label: string; value: number; maxValue: number; color: string }) {
   const [width, setWidth] = useState(0);
+  const [displayValue, setDisplayValue] = useState(0);
   const percentage = Math.min(100, (value / maxValue) * 100);
+  const rafRef = useRef<number>(0);
 
   useEffect(() => {
     const timer = setTimeout(() => setWidth(percentage), 100);
     return () => clearTimeout(timer);
   }, [percentage]);
+
+  // Count-up animation for stat values
+  useEffect(() => {
+    const startTime = Date.now();
+    const duration = 800; // ms
+
+    const animate = () => {
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min(1, elapsed / duration);
+      // Ease-out curve
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setDisplayValue(Math.round(eased * value));
+
+      if (progress < 1) {
+        rafRef.current = requestAnimationFrame(animate);
+      }
+    };
+
+    const delay = setTimeout(() => {
+      rafRef.current = requestAnimationFrame(animate);
+    }, 200);
+
+    return () => {
+      clearTimeout(delay);
+      cancelAnimationFrame(rafRef.current);
+    };
+  }, [value]);
 
   return (
     <div className="flex items-center gap-2">
@@ -58,21 +102,37 @@ function StatBar({ label, value, maxValue, color }: { label: string; value: numb
       >
         {label}
       </span>
-      <div className="flex-1 h-3 bg-slate-800 rounded-sm overflow-hidden border border-slate-700">
+      <div className="flex-1 h-3 bg-slate-800 rounded-sm overflow-hidden border border-slate-700 relative">
         <div
-          className="h-full transition-all duration-1000 ease-out"
+          className="h-full transition-all duration-1000 ease-out relative"
           style={{
             width: `${width}%`,
             background: `linear-gradient(to right, ${color}, ${color}dd)`,
             boxShadow: `0 0 10px ${color}60`,
           }}
-        />
+        >
+          {/* Glow effect matching stat color */}
+          <div
+            className="absolute inset-0"
+            style={{ boxShadow: `inset 0 0 8px ${color}40` }}
+          />
+        </div>
+        {/* Segmented notch marks — 5 segments */}
+        <div className="absolute inset-0 flex pointer-events-none">
+          {[1, 2, 3, 4].map(i => (
+            <div
+              key={i}
+              className="h-full border-r border-slate-700/60"
+              style={{ left: `${i * 20}%`, position: 'absolute', width: '1px' }}
+            />
+          ))}
+        </div>
       </div>
       <span
         className="w-8 text-[10px] font-bold text-white text-right"
         style={{ fontFamily: "'Press Start 2P', monospace" }}
       >
-        {value}
+        {displayValue}
       </span>
     </div>
   );
@@ -83,7 +143,8 @@ export function CaptureModal({ pokemon, player, onComplete }: CaptureModalProps)
   const [showButton, setShowButton] = useState(false);
 
   const typeColors = TYPE_COLORS[pokemon.types[0]] || TYPE_COLORS.normal;
-  const sparkles = useMemo(() => generateSparkles(20), []);
+  const sparkles = useMemo(() => generateSparkles(30, typeColors.primary), [typeColors.primary]);
+  const orbs = useMemo(() => generateOrbs(typeColors.primary, typeColors.glow), [typeColors.primary, typeColors.glow]);
 
   // Phase progression
   useEffect(() => {
@@ -113,7 +174,16 @@ export function CaptureModal({ pokemon, player, onComplete }: CaptureModalProps)
         }}
       />
 
-      {/* Floating sparkles */}
+      {/* Vignette overlay */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_40%,rgba(0,0,0,0.7)_100%)]" />
+
+      {/* CRT Scanlines */}
+      <div
+        className="absolute inset-0 pointer-events-none opacity-40"
+        style={{ background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.15) 2px, rgba(0,0,0,0.15) 4px)' }}
+      />
+
+      {/* Floating sparkles — type-colored */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         {sparkles.map(s => (
           <div
@@ -124,11 +194,33 @@ export function CaptureModal({ pokemon, player, onComplete }: CaptureModalProps)
               top: `${s.y}%`,
               width: s.size,
               height: s.size,
-              background: '#FFD700',
+              background: s.color,
               borderRadius: '50%',
-              boxShadow: '0 0 10px #FFD700, 0 0 20px #FFD700',
+              boxShadow: `0 0 10px ${s.color}, 0 0 20px ${s.color}`,
               animationDelay: `${s.delay}s`,
               animationDuration: `${s.duration}s`,
+            }}
+          />
+        ))}
+      </div>
+
+      {/* Large slow-floating orbs */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        {orbs.map(o => (
+          <div
+            key={o.id}
+            className="absolute rounded-full animate-orb-float"
+            style={{
+              left: `${o.x}%`,
+              top: `${o.y}%`,
+              width: o.size,
+              height: o.size,
+              background: o.color,
+              boxShadow: `0 0 30px ${o.glow}, 0 0 60px ${o.glow}`,
+              opacity: 0.15,
+              filter: 'blur(8px)',
+              animationDelay: `${o.delay}s`,
+              animationDuration: `${o.duration}s`,
             }}
           />
         ))}
@@ -138,6 +230,23 @@ export function CaptureModal({ pokemon, player, onComplete }: CaptureModalProps)
       <div className={`relative max-w-md w-full mx-4 transition-all duration-500 ${
         phase === 'intro' ? 'scale-0 opacity-0' : 'scale-100 opacity-100'
       }`}>
+        {/* Energy burst on card appear */}
+        {phase === 'reveal' && (
+          <div className="absolute inset-0 pointer-events-none z-20">
+            {[...Array(10)].map((_, i) => (
+              <div
+                key={i}
+                className="absolute left-1/2 top-1/2 w-2 h-6 rounded-full animate-card-burst"
+                style={{
+                  transform: `translate(-50%, -50%) rotate(${i * 36}deg)`,
+                  background: `linear-gradient(to bottom, ${typeColors.primary}, transparent)`,
+                  animationDelay: `${i * 0.03}s`,
+                }}
+              />
+            ))}
+          </div>
+        )}
+
         {/* GBA-style frame */}
         <div
           className="relative bg-gradient-to-b from-slate-800 via-slate-850 to-slate-900 rounded-xl overflow-hidden"
@@ -170,6 +279,15 @@ export function CaptureModal({ pokemon, player, onComplete }: CaptureModalProps)
 
           {/* Pokemon showcase */}
           <div className="relative flex justify-center py-6">
+            {/* Radial light rays behind Pokemon — rotating */}
+            <div
+              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-56 h-56 animate-light-rays-rotate opacity-20 pointer-events-none"
+              style={{
+                background: `conic-gradient(from 0deg, transparent 0deg, ${typeColors.glow} 10deg, transparent 20deg, transparent 45deg, ${typeColors.glow} 55deg, transparent 65deg, transparent 90deg, ${typeColors.glow} 100deg, transparent 110deg, transparent 135deg, ${typeColors.glow} 145deg, transparent 155deg, transparent 180deg, ${typeColors.glow} 190deg, transparent 200deg, transparent 225deg, ${typeColors.glow} 235deg, transparent 245deg, transparent 270deg, ${typeColors.glow} 280deg, transparent 290deg, transparent 315deg, ${typeColors.glow} 325deg, transparent 335deg, transparent 360deg)`,
+                borderRadius: '50%',
+              }}
+            />
+
             {/* Glow effect */}
             <div
               className="absolute w-40 h-40 rounded-full blur-3xl animate-pulse"
@@ -186,9 +304,9 @@ export function CaptureModal({ pokemon, player, onComplete }: CaptureModalProps)
               </div>
             </div>
 
-            {/* Pokemon sprite */}
+            {/* Pokemon sprite with enhanced bounce */}
             <div className={`relative transition-all duration-500 ${
-              phase === 'reveal' || phase === 'stats' || phase === 'ready' ? 'animate-pokemon-bounce' : ''
+              phase === 'reveal' || phase === 'stats' || phase === 'ready' ? 'animate-pokemon-bounce-enhanced' : ''
             }`}>
               <img
                 src={getAnimatedFrontSprite(pokemon.id)}
@@ -288,23 +406,47 @@ export function CaptureModal({ pokemon, player, onComplete }: CaptureModalProps)
             </div>
           </div>
 
-          {/* Confirm button */}
+          {/* Confirm button with pulse glow ring */}
           <div className={`px-6 pb-6 transition-all duration-300 ${
             showButton ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
           }`}>
-            <button
-              onClick={onComplete}
-              className="w-full py-4 rounded-lg font-bold text-black uppercase tracking-wider transition-all hover:scale-105 active:scale-95"
-              style={{
-                fontFamily: "'Press Start 2P', monospace",
-                fontSize: '0.875rem',
-                background: 'linear-gradient(to bottom, #FFD700, #F59E0B)',
-                boxShadow: '0 4px 0 #B45309, 0 6px 20px rgba(245, 158, 11, 0.4)',
-                border: '3px solid #FCD34D',
-              }}
-            >
-              ¡A LUCHAR!
-            </button>
+            <div className="relative">
+              {/* Pulsing glow ring around button */}
+              {showButton && (
+                <div
+                  className="absolute -inset-2 rounded-xl animate-button-ring-pulse pointer-events-none"
+                  style={{ border: `2px solid ${typeColors.primary}40` }}
+                />
+              )}
+              {/* Floating sparkles near button */}
+              {showButton && [...Array(4)].map((_, i) => (
+                <div
+                  key={i}
+                  className="absolute w-1.5 h-1.5 rounded-full animate-sparkle-float pointer-events-none"
+                  style={{
+                    left: `${15 + i * 25}%`,
+                    top: '-8px',
+                    background: '#FFD700',
+                    boxShadow: '0 0 6px #FFD700',
+                    animationDelay: `${i * 0.5}s`,
+                    animationDuration: '2s',
+                  }}
+                />
+              ))}
+              <button
+                onClick={onComplete}
+                className="w-full py-4 rounded-lg font-bold text-black uppercase tracking-wider transition-all hover:scale-105 active:scale-95 hover:shadow-[0_0_30px_rgba(245,158,11,0.6)]"
+                style={{
+                  fontFamily: "'Press Start 2P', monospace",
+                  fontSize: '0.875rem',
+                  background: 'linear-gradient(to bottom, #FFD700, #F59E0B)',
+                  boxShadow: '0 4px 0 #B45309, 0 6px 20px rgba(245, 158, 11, 0.4)',
+                  border: '3px solid #FCD34D',
+                }}
+              >
+                ¡A LUCHAR!
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -339,6 +481,21 @@ export function CaptureModal({ pokemon, player, onComplete }: CaptureModalProps)
           animation: sparkle-float ease-in-out infinite;
         }
 
+        @keyframes orb-float {
+          0%, 100% {
+            transform: translateY(0) translateX(0) scale(1);
+          }
+          33% {
+            transform: translateY(-20px) translateX(10px) scale(1.1);
+          }
+          66% {
+            transform: translateY(10px) translateX(-15px) scale(0.95);
+          }
+        }
+        .animate-orb-float {
+          animation: orb-float ease-in-out infinite;
+        }
+
         @keyframes title-glow {
           0%, 100% { text-shadow: 0 0 20px #FFD700, 2px 2px 0 #000; }
           50% { text-shadow: 0 0 40px #FFD700, 0 0 60px #FFD700, 2px 2px 0 #000; }
@@ -347,12 +504,37 @@ export function CaptureModal({ pokemon, player, onComplete }: CaptureModalProps)
           animation: title-glow 2s ease-in-out infinite;
         }
 
-        @keyframes pokemon-bounce {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-10px); }
+        @keyframes pokemon-bounce-enhanced {
+          0%, 100% { transform: translateY(0) scale(1); }
+          30% { transform: translateY(-12px) scale(1.05); }
+          60% { transform: translateY(-8px) scale(1.02); }
         }
-        .animate-pokemon-bounce {
-          animation: pokemon-bounce 2s ease-in-out infinite;
+        .animate-pokemon-bounce-enhanced {
+          animation: pokemon-bounce-enhanced 2s ease-in-out infinite;
+        }
+
+        @keyframes light-rays-rotate {
+          0% { transform: translate(-50%, -50%) rotate(0deg); }
+          100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+        .animate-light-rays-rotate {
+          animation: light-rays-rotate 12s linear infinite;
+        }
+
+        @keyframes card-burst {
+          0% { opacity: 1; transform: translate(-50%, -50%) rotate(var(--r, 0deg)) translateY(0) scaleY(1); }
+          100% { opacity: 0; transform: translate(-50%, -50%) rotate(var(--r, 0deg)) translateY(-100px) scaleY(0.3); }
+        }
+        .animate-card-burst {
+          animation: card-burst 0.6s ease-out forwards;
+        }
+
+        @keyframes button-ring-pulse {
+          0%, 100% { transform: scale(1); opacity: 0.5; }
+          50% { transform: scale(1.05); opacity: 0; }
+        }
+        .animate-button-ring-pulse {
+          animation: button-ring-pulse 2s ease-in-out infinite;
         }
       `}</style>
     </div>

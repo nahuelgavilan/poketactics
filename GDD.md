@@ -8,7 +8,7 @@
 - **Platform**: Web (Mobile-first responsive)
 - **Players**: 2 (Hot-seat or Online multiplayer)
 - **Tech Stack**: React, TypeScript, Tailwind CSS, Vite, Socket.IO
-- **Current Version**: 0.39.0 (Alpha)
+- **Current Version**: 0.40.0 (Alpha)
 
 ---
 
@@ -292,9 +292,9 @@ When a unit moves to **Tall Grass**, there's a **30% chance** of triggering a wi
 
 #### Phase 1: Dramatic Intro
 1. **Flash** (150ms) - White screen flash
-2. **Alert** (550ms) - Giant "!" appears with shake animation
-3. **Silhouette** (700ms) - Mystery dark silhouette with type-colored glow
-4. **Reveal** (800ms) - Pokémon revealed with brightness flash and name
+2. **Alert** (550ms) - Giant "!" with 8 radial energy lines, screen vibrate effect
+3. **Silhouette** (700ms) - Dark silhouette with type-colored glow, 6 rising ground particles, glow bar
+4. **Reveal** (800ms) - Pokémon revealed with 12-particle type-colored energy burst, screen flash
 
 #### Phase 2: Battle Menu
 Player sees the wild Pokémon with:
@@ -326,11 +326,14 @@ Three consecutive ring challenges, each faster than the last:
 | Ring 3 | Fast | 1000ms |
 
 **Visual Elements**:
+- Layered background (dark radial gradient + type-colored center glow + CRT scanlines + vignette)
 - Target ring with type-colored border and glow
 - Zone indicators (green/blue/yellow circles)
-- 12 orbiting particles around the ring
-- Pokéball in center
+- 6 orbiting particles around target circle, 10 ambient floating particles
+- Pokémon in center with breathing idle animation
 - Shrinking ring that changes color based on timing zone
+- Enhanced result feedback: white screen flash, 8 radial particle burst, bounce text with multi-shadow
+- TAP instruction with pulsing ring glow
 
 **Timing Zones**:
 | Ring Size | Rating | Bonus |
@@ -1122,6 +1125,7 @@ Currently in alpha - major version stays at 0 until core features complete.
 
 | Version | Changes |
 |---------|---------|
+| **0.40.0** | **Premium GBA-Style Capture UI/UX Overhaul**: Complete visual upgrade of CaptureMinigame and CaptureModal to match premium quality of StartScreen/BattleCinematic. Added: CRT scanlines + vignette overlays on all capture phases, 15 type-colored ambient floating particles, enhanced encounter intro (8 radial energy lines on alert with screen vibrate, 6 rising ground particles + glow bar on silhouette, 12-particle type-colored energy burst on reveal with screen flash), battle scene orbiting particles around wild Pokemon + ground glow + idle breathing animation, premium ring minigame (layered dark gradient + type-colored center glow + scanlines + vignette background, 10 ambient particles, 6 orbiting particles around target circle, breathing Pokemon animation, enhanced result feedback with white screen flash + 8 radial particle burst + bigger bounce text with multi-layer text-shadow, TAP instruction pulsing ring), 6 trailing energy particles behind pokeball during throw + bigger impact flash with 8 burst particles, energy ripple expanding ring on each shake + background tension pulse animation, premium success result (golden star SVG replacing emoji with scale+rotate entrance, 16 radial gold/amber burst particles, 40 enhanced confetti with type-colored + gold pieces and horizontal drift, rotating conic-gradient light rays, pulsing title glow), premium failure result (8 red energy burst lines replacing emoji, Pokemon escape-fly sprite animation, shake text effect), CaptureModal enhancements (30 type-colored sparkles up from 20, 3 large slow-floating blurred orbs, rotating conic-gradient light rays behind Pokemon, 10-particle energy burst on card appear, enhanced bounce with scale overshoot, segmented HP bars with 5-segment notch marks + stat color glow, count-up animation for stat values using requestAnimationFrame, confirm button idle pulse glow ring + 4 floating sparkles + hover glow burst). All CSS-only effects, no performance impact. |
 | **0.39.0** | **Dark Type + Expanded Roster**: Added Dark as 18th type with full type chart (Psychic immune to Dark=0, Dark super effective vs Psychic/Ghost, weak to Fighting/Bug/Fairy). Fixed Tyranitar to Rock/Dark. Fixed Bug→Psychic effectiveness (was 1x, now 2x). Added 9 new evolution chains: Scyther→Scizor (Bug/Steel), Munchlax→Snorlax (Normal), Beldum→Metang→Metagross (Steel/Psychic), Trapinch→Vibrava→Flygon (Ground/Dragon), Chimchar→Monferno→Infernape (Fire/Fighting), Sneasel→Weavile (Dark/Ice), Swinub→Piloswine→Mamoswine (Ice/Ground), Ralts→Kirlia→Gardevoir (Psychic/Fairy), Cleffa→Clefairy→Clefable (Fairy). Total: 21 evolution chains (55 unique Pokémon), 22 wild capture pool. All 18 types covered. |
 | **0.38.0** | **Cave Terrain (Cueva)**: New terrain type with concealment mechanic — units on cave tiles are hidden from enemies unless an adjacent (Manhattan ≤1) friendly unit reveals them. Rock/Ground/Dark type bonus (+25% ATK), +15% defense, move cost 1. CSS-only decoration with dark cavern arch, stalactites, and glowing amber eyes. Added to random map generation (~3% frequency) and map editor palette. Updated visibility logic in GameBoard and useVision. |
 | **0.37.0** | **5 New Terrain Types**: Ice (Hielo) — slippery surface with ice/water type bonus, frozen cracks decoration. Lava (Lava) — impassable molten rock with fire/dragon bonus, animated hot spots. Swamp (Pantano) — murky terrain with poison/water bonus, +10% def, move cost 2, lily pads and bubbles. Road (Camino) — cobblestone path, no bonuses, fast travel. Ruins (Ruinas) — ancient defensive position with ghost/psychic/dragon bonus, +25% def, move cost 2, mystic glow and broken pillars. All 15 terrains appear in random generation and map editor palette. |

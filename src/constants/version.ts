@@ -15,9 +15,10 @@
  * don't trigger version bumps unless they include breaking changes.
  */
 
-export const VERSION = '0.39.0';
+export const VERSION = '0.40.0';
 
 // Version history (Alpha - v0.x.x):
+// 0.40.0 - Premium GBA-style capture UI/UX overhaul: CRT scanlines + vignette overlays, 15 type-colored ambient floating particles, enhanced encounter intro (8 radial energy lines on alert, rising particles on silhouette, 12-particle energy burst on reveal), battle scene orbiting particles + ground glow + idle breathing, premium ring minigame (layered background, 6 orbiting particles, breathing Pokemon, enhanced result feedback with screen flash + radial burst + bounce text), trailing energy particles on pokeball throw, energy ripple + tension pulse on shake phase, premium success (golden star SVG, 16 radial gold particles, 40 enhanced confetti with drift, rotating light rays, pulsing title glow), premium failure (red burst lines, escape-fly Pokemon sprite, shake text), CaptureModal enhanced (30 type-colored sparkles, 3 floating orbs, rotating light rays behind Pokemon, energy burst on card appear, enhanced bounce, segmented HP bars with stat count-up animation, button pulse glow ring with sparkles)
 // 0.39.0 - Dark type added (18th type), full type chart with immunities (Psychic→Dark=0). Fixed Tyranitar to Rock/Dark. Fixed Bug→Psychic effectiveness (was missing 2x). 9 new evolution chains: Scyther→Scizor, Munchlax→Snorlax, Beldum→Metang→Metagross, Trapinch→Vibrava→Flygon, Chimchar→Monferno→Infernape, Sneasel→Weavile (Dark/Ice), Swinub→Piloswine→Mamoswine (Ice/Ground), Ralts→Kirlia→Gardevoir (Psychic/Fairy), Cleffa→Clefairy→Clefable (Fairy). Total: 21 evolution chains, 22 wild capture pool. All 18 types now covered.
 // 0.38.0 - Cave terrain: dark cavern (rock/ground/dark bonus, +15% def), units hidden from enemies unless adjacent (Manhattan ≤1), stalactite decorations with glowing eyes, random map generation, map editor palette
 // 0.37.0 - 5 new terrain types: Ice (ice/water bonus, slippery surface), Lava (impassable, fire/dragon bonus), Swamp (poison/water bonus, move cost 2), Road (stone path, fast travel), Ruins (ghost/psychic/dragon bonus, +25% def). Map editor palette updated. Random generation distributes all 15 terrain types.
