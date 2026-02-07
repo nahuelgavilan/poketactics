@@ -50,6 +50,7 @@ const TYPE_COLORS: Record<PokemonType, { primary: string; secondary: string; glo
   dragon: { primary: '#7038F8', secondary: '#4924A1', glow: 'rgba(112,56,248,0.8)', dark: '#1A0A4A' },
   steel: { primary: '#B8B8D0', secondary: '#787887', glow: 'rgba(184,184,208,0.8)', dark: '#3A3A4A' },
   fairy: { primary: '#EE99AC', secondary: '#9B6470', glow: 'rgba(238,153,172,0.8)', dark: '#5A3A4A' },
+  dark: { primary: '#705848', secondary: '#49392D', glow: 'rgba(112,88,72,0.8)', dark: '#2A1F17' },
 };
 
 // Ring difficulty - speeds (milliseconds for full shrink)

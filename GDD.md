@@ -8,7 +8,7 @@
 - **Platform**: Web (Mobile-first responsive)
 - **Players**: 2 (Hot-seat or Online multiplayer)
 - **Tech Stack**: React, TypeScript, Tailwind CSS, Vite, Socket.IO
-- **Current Version**: 0.38.0 (Alpha)
+- **Current Version**: 0.39.0 (Alpha)
 
 ---
 
@@ -256,7 +256,7 @@ Counter-attacks:
 
 ### Type Effectiveness
 
-Full 17-type Pokémon type chart implemented:
+Full 18-type Pokémon type chart implemented (includes Dark type):
 
 | Multiplier | Effect |
 |------------|--------|
@@ -455,18 +455,27 @@ Teams start with base forms that can evolve:
 
 | Base | Stage 1 | Final | Kills |
 |------|---------|-------|-------|
-| Charmander | Charmeleon | Charizard | 0→2→4 |
-| Squirtle | Wartortle | Blastoise | 0→2→4 |
-| Bulbasaur | Ivysaur | Venusaur | 0→2→4 |
-| Pichu | Pikachu | Raichu | 0→2→4 |
-| Machop | Machoke | Machamp | 0→2→4 |
-| Gastly | Haunter | Gengar | 0→2→4 |
-| Dratini | Dragonair | Dragonite | 0→2→4 |
-| Geodude | Graveler | Golem | 0→2→4 |
-| Abra | Kadabra | Alakazam | 0→2→4 |
-| Larvitar | Pupitar | Tyranitar | 0→2→4 |
-| Riolu | Lucario | - | 0→2 |
-| Magikarp | Gyarados | - | 0→2 |
+| Charmander | Charmeleon | Charizard (Fire/Flying) | 0→2→4 |
+| Squirtle | Wartortle | Blastoise (Water) | 0→2→4 |
+| Bulbasaur | Ivysaur | Venusaur (Grass/Poison) | 0→2→4 |
+| Pichu | Pikachu | Raichu (Electric) | 0→2→4 |
+| Machop | Machoke | Machamp (Fighting) | 0→2→4 |
+| Gastly | Haunter | Gengar (Ghost/Poison) | 0→2→4 |
+| Dratini | Dragonair | Dragonite (Dragon/Flying) | 0→2→4 |
+| Geodude | Graveler | Golem (Rock/Ground) | 0→2→4 |
+| Abra | Kadabra | Alakazam (Psychic) | 0→2→4 |
+| Larvitar | Pupitar | Tyranitar (Rock/Dark) | 0→2→4 |
+| Beldum | Metang | Metagross (Steel/Psychic) | 0→2→4 |
+| Trapinch | Vibrava | Flygon (Ground/Dragon) | 0→2→4 |
+| Chimchar | Monferno | Infernape (Fire/Fighting) | 0→2→4 |
+| Swinub | Piloswine | Mamoswine (Ice/Ground) | 0→2→4 |
+| Ralts | Kirlia | Gardevoir (Psychic/Fairy) | 0→2→4 |
+| Cleffa | Clefairy | Clefable (Fairy) | 0→2→4 |
+| Riolu | Lucario (Fighting/Steel) | - | 0→2 |
+| Magikarp | Gyarados (Water/Flying) | - | 0→2 |
+| Scyther | Scizor (Bug/Steel) | - | 0→2 |
+| Munchlax | Snorlax (Normal) | - | 0→2 |
+| Sneasel | Weavile (Dark/Ice) | - | 0→2 |
 
 ### Evolution Cinematic
 
@@ -1113,6 +1122,7 @@ Currently in alpha - major version stays at 0 until core features complete.
 
 | Version | Changes |
 |---------|---------|
+| **0.39.0** | **Dark Type + Expanded Roster**: Added Dark as 18th type with full type chart (Psychic immune to Dark=0, Dark super effective vs Psychic/Ghost, weak to Fighting/Bug/Fairy). Fixed Tyranitar to Rock/Dark. Fixed Bug→Psychic effectiveness (was 1x, now 2x). Added 9 new evolution chains: Scyther→Scizor (Bug/Steel), Munchlax→Snorlax (Normal), Beldum→Metang→Metagross (Steel/Psychic), Trapinch→Vibrava→Flygon (Ground/Dragon), Chimchar→Monferno→Infernape (Fire/Fighting), Sneasel→Weavile (Dark/Ice), Swinub→Piloswine→Mamoswine (Ice/Ground), Ralts→Kirlia→Gardevoir (Psychic/Fairy), Cleffa→Clefairy→Clefable (Fairy). Total: 21 evolution chains (55 unique Pokémon), 22 wild capture pool. All 18 types covered. |
 | **0.38.0** | **Cave Terrain (Cueva)**: New terrain type with concealment mechanic — units on cave tiles are hidden from enemies unless an adjacent (Manhattan ≤1) friendly unit reveals them. Rock/Ground/Dark type bonus (+25% ATK), +15% defense, move cost 1. CSS-only decoration with dark cavern arch, stalactites, and glowing amber eyes. Added to random map generation (~3% frequency) and map editor palette. Updated visibility logic in GameBoard and useVision. |
 | **0.37.0** | **5 New Terrain Types**: Ice (Hielo) — slippery surface with ice/water type bonus, frozen cracks decoration. Lava (Lava) — impassable molten rock with fire/dragon bonus, animated hot spots. Swamp (Pantano) — murky terrain with poison/water bonus, +10% def, move cost 2, lily pads and bubbles. Road (Camino) — cobblestone path, no bonuses, fast travel. Ruins (Ruinas) — ancient defensive position with ghost/psychic/dragon bonus, +25% def, move cost 2, mystic glow and broken pillars. All 15 terrains appear in random generation and map editor palette. |
 | **0.36.0** | **Map Size Selector + Map Editor**: Pre-game size picker (Small 8x8, Medium 10x12, Large 14x16) shown before Quick Battle and after Draft. Map Editor accessible from StartScreen — full-screen paint tool with terrain palette, drag-paint on desktop/mobile, size toggle, randomize/clear buttons. Map generation extracted to `mapGenerator.ts` utility with area-based feature scaling. Game flow: Quick Battle → Size Selector → Game, Draft → Size Selector → Game, Editor → Paint → Game. |

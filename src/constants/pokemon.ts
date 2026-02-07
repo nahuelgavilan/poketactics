@@ -154,7 +154,7 @@ export const POKEMON_POOL: PokemonTemplate[] = [
   {
     id: 248,
     name: 'Tyranitar',
-    types: [TYPES.ROCK, TYPES.DRAGON], // Note: Using DRAGON as placeholder since DARK isn't in base types
+    types: [TYPES.ROCK, TYPES.DARK],
     hp: 130,
     atk: 40,
     def: 20,
@@ -222,6 +222,54 @@ export const POKEMON_POOL: PokemonTemplate[] = [
     rng: 2,
     moveName: 'Earth Power',
     moveType: TYPES.GROUND
+  },
+  {
+    id: 461,
+    name: 'Weavile',
+    types: [TYPES.DARK, TYPES.ICE],
+    hp: 75,
+    atk: 44,
+    def: 8,
+    mov: 5,
+    rng: 1,
+    moveName: 'Night Slash',
+    moveType: TYPES.DARK
+  },
+  {
+    id: 473,
+    name: 'Mamoswine',
+    types: [TYPES.ICE, TYPES.GROUND],
+    hp: 120,
+    atk: 38,
+    def: 22,
+    mov: 3,
+    rng: 1,
+    moveName: 'Earthquake',
+    moveType: TYPES.GROUND
+  },
+  {
+    id: 282,
+    name: 'Gardevoir',
+    types: [TYPES.PSYCHIC, TYPES.FAIRY],
+    hp: 75,
+    atk: 42,
+    def: 10,
+    mov: 4,
+    rng: 2,
+    moveName: 'Moonblast',
+    moveType: TYPES.FAIRY
+  },
+  {
+    id: 36,
+    name: 'Clefable',
+    types: [TYPES.FAIRY],
+    hp: 100,
+    atk: 30,
+    def: 22,
+    mov: 3,
+    rng: 1,
+    moveName: 'Dazzling Gleam',
+    moveType: TYPES.FAIRY
   }
 ];
 

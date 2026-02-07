@@ -15,9 +15,10 @@
  * don't trigger version bumps unless they include breaking changes.
  */
 
-export const VERSION = '0.38.0';
+export const VERSION = '0.39.0';
 
 // Version history (Alpha - v0.x.x):
+// 0.39.0 - Dark type added (18th type), full type chart with immunities (Psychic→Dark=0). Fixed Tyranitar to Rock/Dark. Fixed Bug→Psychic effectiveness (was missing 2x). 9 new evolution chains: Scyther→Scizor, Munchlax→Snorlax, Beldum→Metang→Metagross, Trapinch→Vibrava→Flygon, Chimchar→Monferno→Infernape, Sneasel→Weavile (Dark/Ice), Swinub→Piloswine→Mamoswine (Ice/Ground), Ralts→Kirlia→Gardevoir (Psychic/Fairy), Cleffa→Clefairy→Clefable (Fairy). Total: 21 evolution chains, 22 wild capture pool. All 18 types now covered.
 // 0.38.0 - Cave terrain: dark cavern (rock/ground/dark bonus, +15% def), units hidden from enemies unless adjacent (Manhattan ≤1), stalactite decorations with glowing eyes, random map generation, map editor palette
 // 0.37.0 - 5 new terrain types: Ice (ice/water bonus, slippery surface), Lava (impassable, fire/dragon bonus), Swamp (poison/water bonus, move cost 2), Road (stone path, fast travel), Ruins (ghost/psychic/dragon bonus, +25% def). Map editor palette updated. Random generation distributes all 15 terrain types.
 // 0.36.0 - Map Size Selector + Map Editor: pre-game size picker (Small 8x8, Medium 10x12, Large 14x16), terrain paint editor with drag-paint, size toggle, randomize/clear, scales features with map area

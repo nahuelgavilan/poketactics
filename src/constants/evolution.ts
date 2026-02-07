@@ -629,7 +629,7 @@ export const EVOLUTION_CHAINS: EvolutionChain[] = [
           def: 14,
           mov: 3,
           rng: 1,
-          moveName: 'Bite',
+          moveName: 'Smack Down',
           moveType: TYPES.ROCK as PokemonType,
           evolutionChainId: 11,
           evolutionStage: 0
@@ -657,7 +657,7 @@ export const EVOLUTION_CHAINS: EvolutionChain[] = [
         pokemon: {
           id: 248,
           name: 'Tyranitar',
-          types: [TYPES.ROCK, TYPES.DRAGON] as PokemonType[],
+          types: [TYPES.ROCK, TYPES.DARK] as PokemonType[],
           hp: 130,
           atk: 44,
           def: 24,
@@ -666,6 +666,468 @@ export const EVOLUTION_CHAINS: EvolutionChain[] = [
           moveName: 'Stone Edge',
           moveType: TYPES.ROCK as PokemonType,
           evolutionChainId: 11,
+          evolutionStage: 2
+        }
+      }
+    ]
+  },
+  // Scyther line (2 stages)
+  {
+    id: 12,
+    stages: [
+      {
+        killsRequired: 0,
+        pokemon: {
+          id: 123,
+          name: 'Scyther',
+          types: [TYPES.BUG, TYPES.FLYING] as PokemonType[],
+          hp: 65,
+          atk: 28,
+          def: 12,
+          mov: 5,
+          rng: 1,
+          moveName: 'Fury Cutter',
+          moveType: TYPES.BUG as PokemonType,
+          evolutionChainId: 12,
+          evolutionStage: 0
+        }
+      },
+      {
+        killsRequired: 2,
+        pokemon: {
+          id: 212,
+          name: 'Scizor',
+          types: [TYPES.BUG, TYPES.STEEL] as PokemonType[],
+          hp: 90,
+          atk: 42,
+          def: 25,
+          mov: 4,
+          rng: 1,
+          moveName: 'Bullet Punch',
+          moveType: TYPES.STEEL as PokemonType,
+          evolutionChainId: 12,
+          evolutionStage: 1
+        }
+      }
+    ]
+  },
+  // Munchlax line (2 stages)
+  {
+    id: 13,
+    stages: [
+      {
+        killsRequired: 0,
+        pokemon: {
+          id: 446,
+          name: 'Munchlax',
+          types: [TYPES.NORMAL] as PokemonType[],
+          hp: 90,
+          atk: 15,
+          def: 8,
+          mov: 2,
+          rng: 1,
+          moveName: 'Tackle',
+          moveType: TYPES.NORMAL as PokemonType,
+          evolutionChainId: 13,
+          evolutionStage: 0
+        }
+      },
+      {
+        killsRequired: 2,
+        pokemon: {
+          id: 143,
+          name: 'Snorlax',
+          types: [TYPES.NORMAL] as PokemonType[],
+          hp: 160,
+          atk: 30,
+          def: 12,
+          mov: 2,
+          rng: 1,
+          moveName: 'Body Slam',
+          moveType: TYPES.NORMAL as PokemonType,
+          evolutionChainId: 13,
+          evolutionStage: 1
+        }
+      }
+    ]
+  },
+  // Beldum line
+  {
+    id: 14,
+    stages: [
+      {
+        killsRequired: 0,
+        pokemon: {
+          id: 374,
+          name: 'Beldum',
+          types: [TYPES.STEEL, TYPES.PSYCHIC] as PokemonType[],
+          hp: 55,
+          atk: 18,
+          def: 18,
+          mov: 2,
+          rng: 1,
+          moveName: 'Take Down',
+          moveType: TYPES.STEEL as PokemonType,
+          evolutionChainId: 14,
+          evolutionStage: 0
+        }
+      },
+      {
+        killsRequired: 2,
+        pokemon: {
+          id: 375,
+          name: 'Metang',
+          types: [TYPES.STEEL, TYPES.PSYCHIC] as PokemonType[],
+          hp: 80,
+          atk: 28,
+          def: 26,
+          mov: 3,
+          rng: 1,
+          moveName: 'Metal Claw',
+          moveType: TYPES.STEEL as PokemonType,
+          evolutionChainId: 14,
+          evolutionStage: 1
+        }
+      },
+      {
+        killsRequired: 4,
+        pokemon: {
+          id: 376,
+          name: 'Metagross',
+          types: [TYPES.STEEL, TYPES.PSYCHIC] as PokemonType[],
+          hp: 110,
+          atk: 38,
+          def: 30,
+          mov: 3,
+          rng: 1,
+          moveName: 'Meteor Mash',
+          moveType: TYPES.STEEL as PokemonType,
+          evolutionChainId: 14,
+          evolutionStage: 2
+        }
+      }
+    ]
+  },
+  // Trapinch line
+  {
+    id: 15,
+    stages: [
+      {
+        killsRequired: 0,
+        pokemon: {
+          id: 328,
+          name: 'Trapinch',
+          types: [TYPES.GROUND] as PokemonType[],
+          hp: 55,
+          atk: 22,
+          def: 8,
+          mov: 3,
+          rng: 1,
+          moveName: 'Sand Tomb',
+          moveType: TYPES.GROUND as PokemonType,
+          evolutionChainId: 15,
+          evolutionStage: 0
+        }
+      },
+      {
+        killsRequired: 2,
+        pokemon: {
+          id: 329,
+          name: 'Vibrava',
+          types: [TYPES.GROUND, TYPES.DRAGON] as PokemonType[],
+          hp: 70,
+          atk: 28,
+          def: 10,
+          mov: 4,
+          rng: 1,
+          moveName: 'Dragon Breath',
+          moveType: TYPES.DRAGON as PokemonType,
+          evolutionChainId: 15,
+          evolutionStage: 1
+        }
+      },
+      {
+        killsRequired: 4,
+        pokemon: {
+          id: 330,
+          name: 'Flygon',
+          types: [TYPES.GROUND, TYPES.DRAGON] as PokemonType[],
+          hp: 90,
+          atk: 35,
+          def: 12,
+          mov: 4,
+          rng: 2,
+          moveName: 'Earth Power',
+          moveType: TYPES.GROUND as PokemonType,
+          evolutionChainId: 15,
+          evolutionStage: 2
+        }
+      }
+    ]
+  },
+  // Chimchar line
+  {
+    id: 16,
+    stages: [
+      {
+        killsRequired: 0,
+        pokemon: {
+          id: 390,
+          name: 'Chimchar',
+          types: [TYPES.FIRE] as PokemonType[],
+          hp: 50,
+          atk: 20,
+          def: 6,
+          mov: 5,
+          rng: 1,
+          moveName: 'Ember',
+          moveType: TYPES.FIRE as PokemonType,
+          evolutionChainId: 16,
+          evolutionStage: 0
+        }
+      },
+      {
+        killsRequired: 2,
+        pokemon: {
+          id: 391,
+          name: 'Monferno',
+          types: [TYPES.FIRE, TYPES.FIGHTING] as PokemonType[],
+          hp: 65,
+          atk: 30,
+          def: 7,
+          mov: 5,
+          rng: 1,
+          moveName: 'Mach Punch',
+          moveType: TYPES.FIGHTING as PokemonType,
+          evolutionChainId: 16,
+          evolutionStage: 1
+        }
+      },
+      {
+        killsRequired: 4,
+        pokemon: {
+          id: 392,
+          name: 'Infernape',
+          types: [TYPES.FIRE, TYPES.FIGHTING] as PokemonType[],
+          hp: 75,
+          atk: 38,
+          def: 8,
+          mov: 5,
+          rng: 1,
+          moveName: 'Flare Blitz',
+          moveType: TYPES.FIRE as PokemonType,
+          evolutionChainId: 16,
+          evolutionStage: 2
+        }
+      }
+    ]
+  },
+  // Sneasel line (2 stages) — Dark/Ice
+  {
+    id: 17,
+    stages: [
+      {
+        killsRequired: 0,
+        pokemon: {
+          id: 215,
+          name: 'Sneasel',
+          types: [TYPES.DARK, TYPES.ICE] as PokemonType[],
+          hp: 55,
+          atk: 30,
+          def: 6,
+          mov: 5,
+          rng: 1,
+          moveName: 'Feint Attack',
+          moveType: TYPES.DARK as PokemonType,
+          evolutionChainId: 17,
+          evolutionStage: 0
+        }
+      },
+      {
+        killsRequired: 2,
+        pokemon: {
+          id: 461,
+          name: 'Weavile',
+          types: [TYPES.DARK, TYPES.ICE] as PokemonType[],
+          hp: 75,
+          atk: 44,
+          def: 8,
+          mov: 5,
+          rng: 1,
+          moveName: 'Night Slash',
+          moveType: TYPES.DARK as PokemonType,
+          evolutionChainId: 17,
+          evolutionStage: 1
+        }
+      }
+    ]
+  },
+  // Swinub line — Ice/Ground
+  {
+    id: 18,
+    stages: [
+      {
+        killsRequired: 0,
+        pokemon: {
+          id: 220,
+          name: 'Swinub',
+          types: [TYPES.ICE, TYPES.GROUND] as PokemonType[],
+          hp: 60,
+          atk: 16,
+          def: 12,
+          mov: 3,
+          rng: 1,
+          moveName: 'Powder Snow',
+          moveType: TYPES.ICE as PokemonType,
+          evolutionChainId: 18,
+          evolutionStage: 0
+        }
+      },
+      {
+        killsRequired: 2,
+        pokemon: {
+          id: 221,
+          name: 'Piloswine',
+          types: [TYPES.ICE, TYPES.GROUND] as PokemonType[],
+          hp: 90,
+          atk: 26,
+          def: 18,
+          mov: 3,
+          rng: 1,
+          moveName: 'Ice Fang',
+          moveType: TYPES.ICE as PokemonType,
+          evolutionChainId: 18,
+          evolutionStage: 1
+        }
+      },
+      {
+        killsRequired: 4,
+        pokemon: {
+          id: 473,
+          name: 'Mamoswine',
+          types: [TYPES.ICE, TYPES.GROUND] as PokemonType[],
+          hp: 120,
+          atk: 38,
+          def: 22,
+          mov: 3,
+          rng: 1,
+          moveName: 'Earthquake',
+          moveType: TYPES.GROUND as PokemonType,
+          evolutionChainId: 18,
+          evolutionStage: 2
+        }
+      }
+    ]
+  },
+  // Ralts line — Psychic/Fairy
+  {
+    id: 19,
+    stages: [
+      {
+        killsRequired: 0,
+        pokemon: {
+          id: 280,
+          name: 'Ralts',
+          types: [TYPES.PSYCHIC, TYPES.FAIRY] as PokemonType[],
+          hp: 35,
+          atk: 18,
+          def: 6,
+          mov: 4,
+          rng: 2,
+          moveName: 'Confusion',
+          moveType: TYPES.PSYCHIC as PokemonType,
+          evolutionChainId: 19,
+          evolutionStage: 0
+        }
+      },
+      {
+        killsRequired: 2,
+        pokemon: {
+          id: 281,
+          name: 'Kirlia',
+          types: [TYPES.PSYCHIC, TYPES.FAIRY] as PokemonType[],
+          hp: 50,
+          atk: 28,
+          def: 8,
+          mov: 4,
+          rng: 2,
+          moveName: 'Psybeam',
+          moveType: TYPES.PSYCHIC as PokemonType,
+          evolutionChainId: 19,
+          evolutionStage: 1
+        }
+      },
+      {
+        killsRequired: 4,
+        pokemon: {
+          id: 282,
+          name: 'Gardevoir',
+          types: [TYPES.PSYCHIC, TYPES.FAIRY] as PokemonType[],
+          hp: 75,
+          atk: 42,
+          def: 10,
+          mov: 4,
+          rng: 2,
+          moveName: 'Moonblast',
+          moveType: TYPES.FAIRY as PokemonType,
+          evolutionChainId: 19,
+          evolutionStage: 2
+        }
+      }
+    ]
+  },
+  // Cleffa line — Fairy
+  {
+    id: 20,
+    stages: [
+      {
+        killsRequired: 0,
+        pokemon: {
+          id: 173,
+          name: 'Cleffa',
+          types: [TYPES.FAIRY] as PokemonType[],
+          hp: 50,
+          atk: 12,
+          def: 10,
+          mov: 3,
+          rng: 1,
+          moveName: 'Pound',
+          moveType: TYPES.NORMAL as PokemonType,
+          evolutionChainId: 20,
+          evolutionStage: 0
+        }
+      },
+      {
+        killsRequired: 2,
+        pokemon: {
+          id: 35,
+          name: 'Clefairy',
+          types: [TYPES.FAIRY] as PokemonType[],
+          hp: 75,
+          atk: 20,
+          def: 16,
+          mov: 3,
+          rng: 1,
+          moveName: 'Disarming Voice',
+          moveType: TYPES.FAIRY as PokemonType,
+          evolutionChainId: 20,
+          evolutionStage: 1
+        }
+      },
+      {
+        killsRequired: 4,
+        pokemon: {
+          id: 36,
+          name: 'Clefable',
+          types: [TYPES.FAIRY] as PokemonType[],
+          hp: 100,
+          atk: 30,
+          def: 22,
+          mov: 3,
+          rng: 1,
+          moveName: 'Dazzling Gleam',
+          moveType: TYPES.FAIRY as PokemonType,
+          evolutionChainId: 20,
           evolutionStage: 2
         }
       }
