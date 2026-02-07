@@ -23,6 +23,7 @@ const TERRAIN_LIST: { id: TerrainType; key: string }[] = [
   { id: TERRAIN.SWAMP as TerrainType, key: 'SWAMP' },
   { id: TERRAIN.MOUNTAIN as TerrainType, key: 'MOUNTAIN' },
   { id: TERRAIN.RUINS as TerrainType, key: 'RUINS' },
+  { id: TERRAIN.CAVE as TerrainType, key: 'CAVE' },
   { id: TERRAIN.ROAD as TerrainType, key: 'ROAD' },
   { id: TERRAIN.BRIDGE as TerrainType, key: 'BRIDGE' },
   { id: TERRAIN.BERRY_BUSH as TerrainType, key: 'BERRY_BUSH' },

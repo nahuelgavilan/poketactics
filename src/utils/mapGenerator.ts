@@ -28,16 +28,17 @@ export function generateRandomMap(width: number, height: number): GameMap {
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
       const r = Math.random();
-      if (r > 0.92) newMap[y][x] = TERRAIN.MOUNTAIN as TerrainType;
-      else if (r > 0.87) newMap[y][x] = TERRAIN.WATER as TerrainType;
-      else if (r > 0.84) newMap[y][x] = TERRAIN.LAVA as TerrainType;
-      else if (r > 0.80) newMap[y][x] = TERRAIN.SAND as TerrainType;
-      else if (r > 0.77) newMap[y][x] = TERRAIN.ICE as TerrainType;
-      else if (r > 0.74) newMap[y][x] = TERRAIN.SWAMP as TerrainType;
-      else if (r > 0.71) newMap[y][x] = TERRAIN.RUINS as TerrainType;
-      else if (r > 0.68) newMap[y][x] = TERRAIN.ROAD as TerrainType;
-      else if (r > 0.58) newMap[y][x] = TERRAIN.FOREST as TerrainType;
-      else if (r > 0.38) newMap[y][x] = TERRAIN.TALL_GRASS as TerrainType;
+      if (r > 0.93) newMap[y][x] = TERRAIN.MOUNTAIN as TerrainType;
+      else if (r > 0.88) newMap[y][x] = TERRAIN.WATER as TerrainType;
+      else if (r > 0.85) newMap[y][x] = TERRAIN.LAVA as TerrainType;
+      else if (r > 0.82) newMap[y][x] = TERRAIN.CAVE as TerrainType;
+      else if (r > 0.79) newMap[y][x] = TERRAIN.SAND as TerrainType;
+      else if (r > 0.76) newMap[y][x] = TERRAIN.ICE as TerrainType;
+      else if (r > 0.73) newMap[y][x] = TERRAIN.SWAMP as TerrainType;
+      else if (r > 0.70) newMap[y][x] = TERRAIN.RUINS as TerrainType;
+      else if (r > 0.67) newMap[y][x] = TERRAIN.ROAD as TerrainType;
+      else if (r > 0.57) newMap[y][x] = TERRAIN.FOREST as TerrainType;
+      else if (r > 0.37) newMap[y][x] = TERRAIN.TALL_GRASS as TerrainType;
     }
   }
 

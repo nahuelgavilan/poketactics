@@ -8,7 +8,7 @@
 - **Platform**: Web (Mobile-first responsive)
 - **Players**: 2 (Hot-seat or Online multiplayer)
 - **Tech Stack**: React, TypeScript, Tailwind CSS, Vite, Socket.IO
-- **Current Version**: 0.37.0 (Alpha)
+- **Current Version**: 0.38.0 (Alpha)
 
 ---
 
@@ -163,6 +163,7 @@ Accessible from StartScreen via the **Editor** button. Full-screen paint tool fo
 | Swamp (Pantano) | +10% | 2 | Poison, Water | Murky terrain, slows movement |
 | Road (Camino) | 0% | 1 | None | Stone path, quick travel |
 | Ruins (Ruinas) | +25% | 2 | Ghost, Psychic, Dragon | Ancient defensive position |
+| Cave (Cueva) | +15% | 1 | Rock, Ground, Dark | **Hides units** from enemies unless adjacent (Manhattan ≤1) |
 
 ### Terrain Info Panel
 
@@ -188,6 +189,17 @@ Each terrain has unique visual elements (no icons, CSS-only decorations):
 | **Mountain** | Amber → stone | Triangle peaks with snow caps |
 | **Pokémon Center** | Pink/rose | Pulsing healing glow + white cross |
 | **Base** | Slate gray | Tech grid pattern + corner markers |
+| **Cave** | Stone → slate (dark) | Cavern arch, stalactites, glowing amber eyes, rocky ground |
+
+### Cave Concealment
+
+Units standing on a Cave tile are **hidden from enemy vision** even if the tile itself is visible. The enemy must have a unit **adjacent** (Manhattan distance ≤ 1) to reveal the hidden unit. This creates ambush opportunities and rewards map control.
+
+- Provides +15% defense bonus
+- Movement cost: 1 (easy to enter)
+- Type bonus: Rock, Ground, Dark (+25% ATK)
+- Visual: Dark cavern entrance with stalactites and glowing amber eyes
+- Generated randomly (~3% of tiles) and available in map editor
 
 ### Mountain Vision Bonus
 
@@ -1101,6 +1113,7 @@ Currently in alpha - major version stays at 0 until core features complete.
 
 | Version | Changes |
 |---------|---------|
+| **0.38.0** | **Cave Terrain (Cueva)**: New terrain type with concealment mechanic — units on cave tiles are hidden from enemies unless an adjacent (Manhattan ≤1) friendly unit reveals them. Rock/Ground/Dark type bonus (+25% ATK), +15% defense, move cost 1. CSS-only decoration with dark cavern arch, stalactites, and glowing amber eyes. Added to random map generation (~3% frequency) and map editor palette. Updated visibility logic in GameBoard and useVision. |
 | **0.37.0** | **5 New Terrain Types**: Ice (Hielo) — slippery surface with ice/water type bonus, frozen cracks decoration. Lava (Lava) — impassable molten rock with fire/dragon bonus, animated hot spots. Swamp (Pantano) — murky terrain with poison/water bonus, +10% def, move cost 2, lily pads and bubbles. Road (Camino) — cobblestone path, no bonuses, fast travel. Ruins (Ruinas) — ancient defensive position with ghost/psychic/dragon bonus, +25% def, move cost 2, mystic glow and broken pillars. All 15 terrains appear in random generation and map editor palette. |
 | **0.36.0** | **Map Size Selector + Map Editor**: Pre-game size picker (Small 8x8, Medium 10x12, Large 14x16) shown before Quick Battle and after Draft. Map Editor accessible from StartScreen — full-screen paint tool with terrain palette, drag-paint on desktop/mobile, size toggle, randomize/clear buttons. Map generation extracted to `mapGenerator.ts` utility with area-based feature scaling. Game flow: Quick Battle → Size Selector → Game, Draft → Size Selector → Game, Editor → Paint → Game. |
 | **0.35.0** | **New Terrain Types**: Added 3 new terrains — Sand (Arena) with fire/ground type bonus, Bridge (Puente) that allows crossing water tiles, and Berry Bush (Arbusto de Bayas) that heals 10% HP on step and converts to grass after use. CSS-only terrain decorations for all new tiles. Map generation places sand zones, bridges over water adjacent to land, and 3-5 berry bushes. |

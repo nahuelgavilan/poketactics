@@ -39,7 +39,7 @@ interface TileProps {
 export const TERRAIN_THEME: Record<number, {
   gradient: string;
   border: string;
-  texture?: 'plains' | 'tallgrass' | 'forest' | 'water' | 'mountain' | 'pokecenter' | 'base' | 'sand' | 'bridge' | 'berry' | 'ice' | 'lava' | 'swamp' | 'road' | 'ruins';
+  texture?: 'plains' | 'tallgrass' | 'forest' | 'water' | 'mountain' | 'pokecenter' | 'base' | 'sand' | 'bridge' | 'berry' | 'ice' | 'lava' | 'swamp' | 'road' | 'ruins' | 'cave';
 }> = {
   [TERRAIN.GRASS]: {
     gradient: 'from-lime-400 to-green-500',
@@ -115,6 +115,11 @@ export const TERRAIN_THEME: Record<number, {
     gradient: 'from-violet-500 to-indigo-700',
     border: 'border-indigo-900',
     texture: 'ruins',
+  },
+  [TERRAIN.CAVE]: {
+    gradient: 'from-stone-600 to-slate-800',
+    border: 'border-slate-950',
+    texture: 'cave',
   },
 };
 
@@ -405,6 +410,36 @@ export function TerrainDecoration({ texture, bridgeDir }: { texture?: string; br
             <div className="absolute top-[15%] left-[50%] w-[20%] h-[1px] bg-violet-300" />
             <div className="absolute top-[15%] left-[60%] w-[1px] h-[15%] bg-violet-300" />
             <div className="absolute top-[25%] left-[50%] w-[10%] h-[1px] bg-violet-300" />
+          </div>
+        </div>
+      );
+
+    // Cave: dark cavern entrance with stalactites
+    case 'cave':
+      return (
+        <div className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none">
+          {/* Dark cavern interior */}
+          <div className="absolute inset-0 bg-black/30" />
+          {/* Cave entrance arch */}
+          <div className="absolute inset-0 opacity-50">
+            <div className="absolute inset-x-[10%] top-0 h-[60%] rounded-b-[50%] bg-slate-900/70" />
+          </div>
+          {/* Stalactites hanging from top */}
+          <div className="absolute inset-0 opacity-40">
+            <div className="absolute top-0 left-[20%] w-[8%] h-[30%] bg-stone-500" style={{ clipPath: 'polygon(0 0, 100% 0, 50% 100%)' }} />
+            <div className="absolute top-0 left-[40%] w-[10%] h-[38%] bg-stone-500" style={{ clipPath: 'polygon(0 0, 100% 0, 50% 100%)' }} />
+            <div className="absolute top-0 left-[60%] w-[7%] h-[25%] bg-stone-500" style={{ clipPath: 'polygon(0 0, 100% 0, 50% 100%)' }} />
+            <div className="absolute top-0 right-[15%] w-[9%] h-[32%] bg-stone-500" style={{ clipPath: 'polygon(0 0, 100% 0, 50% 100%)' }} />
+          </div>
+          {/* Glowing eyes / crystals inside */}
+          <div className="absolute inset-0 opacity-50">
+            <div className="absolute w-[6%] h-[6%] rounded-full bg-amber-400 top-[35%] left-[30%] shadow-[0_0_4px_rgba(251,191,36,0.8)]" />
+            <div className="absolute w-[6%] h-[6%] rounded-full bg-amber-400 top-[35%] left-[45%] shadow-[0_0_4px_rgba(251,191,36,0.8)]" />
+          </div>
+          {/* Rocky ground */}
+          <div className="absolute inset-0 opacity-20">
+            <div className="absolute bottom-0 left-[5%] w-[25%] h-[20%] rounded-t-full bg-stone-500" />
+            <div className="absolute bottom-0 right-[10%] w-[20%] h-[15%] rounded-t-full bg-stone-500" />
           </div>
         </div>
       );

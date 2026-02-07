@@ -2,7 +2,7 @@ import { useState, useMemo, useCallback } from 'react';
 import { Tile } from './Tile';
 import { UnitActionMenu } from '../UnitActionMenu';
 import { isInRange, isInAttackRange, findPath } from '../../utils/pathfinding';
-import { TERRAIN } from '../../constants/terrain';
+import { TERRAIN, TERRAIN_PROPS } from '../../constants/terrain';
 import { getBridgeOrientation } from '../../utils/mapGenerator';
 import type { GameMap, Unit, Position, AttackTarget, Player, VisibilityMap } from '../../types/game';
 
@@ -96,8 +96,19 @@ export function GameBoard({
     if (unit.owner === currentPlayer) return true;
     // No fog enabled - show all
     if (!visibility) return true;
-    // Check visibility map
-    return visibility.visible[unit.y]?.[unit.x] ?? false;
+    // Check visibility map first
+    const tileVisible = visibility.visible[unit.y]?.[unit.x] ?? false;
+    if (!tileVisible) return false;
+    // Cave hiding: even if tile is visible, unit is hidden unless an ally is adjacent
+    const terrain = map[unit.y]?.[unit.x];
+    if (terrain !== undefined && TERRAIN_PROPS[terrain]?.hidesUnit) {
+      const playerUnits = units.filter(u => u.owner === currentPlayer);
+      const hasAdjacentAlly = playerUnits.some(u =>
+        Math.abs(u.x - unit.x) + Math.abs(u.y - unit.y) <= 1
+      );
+      return hasAdjacentAlly;
+    }
+    return true;
   };
 
 

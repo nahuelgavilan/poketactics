@@ -18,7 +18,8 @@ export const TERRAIN: Record<string, TerrainType> = {
   LAVA: 11,
   SWAMP: 12,
   ROAD: 13,
-  RUINS: 14
+  RUINS: 14,
+  CAVE: 15
 };
 
 /**
@@ -138,6 +139,14 @@ export const TERRAIN_PROPS = {
     name: 'Ruinas',
     bg: 'from-violet-900 to-slate-900',
     typeBonus: ['ghost', 'psychic', 'dragon'] as PokemonType[]
+  },
+  [TERRAIN.CAVE]: {
+    def: 15,
+    moveCost: 1,
+    name: 'Cueva',
+    bg: 'from-stone-800 to-slate-950',
+    typeBonus: ['rock', 'ground', 'dark'] as PokemonType[],
+    hidesUnit: true
   }
 } as Record<TerrainType, TerrainProps>;
 
@@ -188,6 +197,8 @@ export function getTileColor(terrain: TerrainType): string {
       return 'bg-stone-400 border-stone-500';
     case TERRAIN.RUINS:
       return 'bg-violet-400 border-violet-500';
+    case TERRAIN.CAVE:
+      return 'bg-stone-700 border-stone-800';
     default:
       return 'bg-gray-300';
   }

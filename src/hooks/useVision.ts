@@ -77,17 +77,34 @@ export function isPositionVisible(
 }
 
 /**
- * Check if an enemy unit is visible
+ * Check if an enemy unit is visible.
+ * Units on terrain with hidesUnit (e.g., Cave) are hidden unless
+ * a friendly unit is adjacent (Manhattan distance <= 1).
  */
 export function isUnitVisible(
   unit: Unit,
   currentPlayer: Player,
-  visibility: VisibilityMap
+  visibility: VisibilityMap,
+  allUnits?: Unit[],
+  map?: GameMap
 ): boolean {
   // Own units are always visible
   if (unit.owner === currentPlayer) {
     return true;
   }
 
-  return isPositionVisible(unit.x, unit.y, visibility);
+  if (!isPositionVisible(unit.x, unit.y, visibility)) return false;
+
+  // Cave hiding mechanic
+  if (map && allUnits) {
+    const terrain = map[unit.y]?.[unit.x];
+    if (terrain !== undefined && TERRAIN_PROPS[terrain]?.hidesUnit) {
+      const playerUnits = allUnits.filter(u => u.owner === currentPlayer);
+      return playerUnits.some(u =>
+        Math.abs(u.x - unit.x) + Math.abs(u.y - unit.y) <= 1
+      );
+    }
+  }
+
+  return true;
 }
