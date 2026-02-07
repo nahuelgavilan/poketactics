@@ -2,6 +2,8 @@ import { useState, useMemo, useCallback } from 'react';
 import { Tile } from './Tile';
 import { UnitActionMenu } from '../UnitActionMenu';
 import { isInRange, isInAttackRange, findPath } from '../../utils/pathfinding';
+import { TERRAIN } from '../../constants/terrain';
+import { getBridgeOrientation } from '../../utils/mapGenerator';
 import type { GameMap, Unit, Position, AttackTarget, Player, VisibilityMap } from '../../types/game';
 
 interface GameBoardProps {
@@ -149,6 +151,7 @@ export function GameBoard({
                   isVisible={isVisible}
                   isExplored={isExplored}
                   path={activePath}
+                  bridgeDir={terrain === TERRAIN.BRIDGE ? getBridgeOrientation(map, x, y) : undefined}
                 />
                 {/* Action menu - rendered at pending tile position */}
                 {shouldShowMenu && (

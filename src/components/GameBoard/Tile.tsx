@@ -2,6 +2,7 @@ import React from 'react';
 import { TERRAIN } from '../../constants/terrain';
 import { getIconSprite } from '../../utils/sprites';
 import { PathSegment } from './PathSegment';
+import type { BridgeDir } from '../../utils/mapGenerator';
 import type { TerrainType, Unit, Position } from '../../types/game';
 
 interface TileProps {
@@ -19,6 +20,7 @@ interface TileProps {
   isVisible?: boolean;
   isExplored?: boolean;
   path?: Position[];
+  bridgeDir?: BridgeDir;
 }
 
 /*
@@ -92,7 +94,7 @@ export const TERRAIN_THEME: Record<number, {
 };
 
 // Terrain-specific decorative elements (CSS only, no icons)
-export function TerrainDecoration({ texture }: { texture?: string }) {
+export function TerrainDecoration({ texture, bridgeDir }: { texture?: string; bridgeDir?: BridgeDir }) {
   switch (texture) {
     // Plains: subtle horizontal lines like mowed grass
     case 'plains':
@@ -212,19 +214,56 @@ export function TerrainDecoration({ texture }: { texture?: string }) {
         </div>
       );
 
-    // Bridge: wooden planks over water
-    case 'bridge':
+    // Bridge: wooden planks over water — orientation-aware
+    case 'bridge': {
+      const dir = bridgeDir ?? 'v';
+      const isCorner = dir.startsWith('corner');
+      const isCross = dir === 'cross';
+      const isHorizontal = dir === 'h';
+
+      // Plank and grain directions
+      // Vertical bridge (v): planks run horizontally (0deg), water on left/right
+      // Horizontal bridge (h): planks run vertically (90deg), water on top/bottom
+      const plankAngle = isHorizontal ? '90deg' : '0deg';
+      const grainAngle = isHorizontal ? '0deg' : '90deg';
+
       return (
         <div className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none">
           {/* Plank lines */}
-          <div className="absolute inset-0 opacity-35 bg-[repeating-linear-gradient(0deg,transparent,transparent_5px,rgba(0,0,0,0.3)_5px,rgba(0,0,0,0.3)_6px)]" />
+          <div
+            className="absolute inset-0 opacity-35"
+            style={{ background: `repeating-linear-gradient(${plankAngle}, transparent, transparent 5px, rgba(0,0,0,0.3) 5px, rgba(0,0,0,0.3) 6px)` }}
+          />
+          {/* Cross planks (second direction) for corners and cross */}
+          {(isCorner || isCross) && (
+            <div
+              className="absolute inset-0 opacity-25"
+              style={{ background: `repeating-linear-gradient(${isHorizontal ? '0deg' : '90deg'}, transparent, transparent 5px, rgba(0,0,0,0.3) 5px, rgba(0,0,0,0.3) 6px)` }}
+            />
+          )}
           {/* Wood grain */}
-          <div className="absolute inset-0 opacity-15 bg-[repeating-linear-gradient(90deg,transparent,transparent_12px,rgba(139,92,42,0.4)_12px,rgba(139,92,42,0.4)_14px)]" />
-          {/* Water peeking below (sides) */}
-          <div className="absolute inset-y-0 left-0 w-[12%] bg-cyan-500/30" />
-          <div className="absolute inset-y-0 right-0 w-[12%] bg-cyan-500/30" />
+          <div
+            className="absolute inset-0 opacity-15"
+            style={{ background: `repeating-linear-gradient(${grainAngle}, transparent, transparent 12px, rgba(139,92,42,0.4) 12px, rgba(139,92,42,0.4) 14px)` }}
+          />
+          {/* Water peeking below — depends on which sides are NOT connected */}
+          {/* Vertical: water on left/right */}
+          {(dir === 'v' || dir === 'corner-tl' || dir === 'corner-bl') && (
+            <div className="absolute inset-y-0 right-0 w-[12%] bg-cyan-500/30" />
+          )}
+          {(dir === 'v' || dir === 'corner-tr' || dir === 'corner-br') && (
+            <div className="absolute inset-y-0 left-0 w-[12%] bg-cyan-500/30" />
+          )}
+          {/* Horizontal: water on top/bottom */}
+          {(dir === 'h' || dir === 'corner-bl' || dir === 'corner-br') && (
+            <div className="absolute inset-x-0 top-0 h-[12%] bg-cyan-500/30" />
+          )}
+          {(dir === 'h' || dir === 'corner-tl' || dir === 'corner-tr') && (
+            <div className="absolute inset-x-0 bottom-0 h-[12%] bg-cyan-500/30" />
+          )}
         </div>
       );
+    }
 
     // Berry Bush: berries on grass background
     case 'berry':
@@ -267,7 +306,8 @@ export function Tile({
   isMobile = false,
   isVisible = true,
   isExplored = true,
-  path = []
+  path = [],
+  bridgeDir
 }: TileProps) {
   const isOnPath = path.some(p => p.x === x && p.y === y);
   const isInFog = !isVisible;
@@ -301,7 +341,7 @@ export function Tile({
         `}
       >
         {/* Terrain-specific decoration */}
-        <TerrainDecoration texture={theme.texture} />
+        <TerrainDecoration texture={theme.texture} bridgeDir={bridgeDir} />
 
         {/* Top highlight */}
         <div className="absolute inset-x-0 top-0 h-[30%] bg-gradient-to-b from-white/20 to-transparent rounded-t-xl pointer-events-none" />

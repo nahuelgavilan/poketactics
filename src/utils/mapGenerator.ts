@@ -44,13 +44,21 @@ export function generateRandomMap(width: number, height: number): GameMap {
   newMap[height - 1][width - 2] = TERRAIN.GRASS as TerrainType;
   newMap[height - 2][width - 1] = TERRAIN.GRASS as TerrainType;
 
-  // Add bridges over water tiles
-  for (let y = 1; y < height - 1; y++) {
+  // Add bridges over water tiles (vertical and horizontal crossings)
+  for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
       if (newMap[y][x] === TERRAIN.WATER && Math.random() < 0.3) {
         const above = y > 0 ? newMap[y - 1][x] : TERRAIN.WATER;
         const below = y < height - 1 ? newMap[y + 1][x] : TERRAIN.WATER;
-        if (above !== TERRAIN.WATER && below !== TERRAIN.WATER) {
+        const left = x > 0 ? newMap[y][x - 1] : TERRAIN.WATER;
+        const right = x < width - 1 ? newMap[y][x + 1] : TERRAIN.WATER;
+
+        // Vertical crossing: land above and below
+        const verticalCrossing = above !== TERRAIN.WATER && below !== TERRAIN.WATER;
+        // Horizontal crossing: land left and right
+        const horizontalCrossing = left !== TERRAIN.WATER && right !== TERRAIN.WATER;
+
+        if (verticalCrossing || horizontalCrossing) {
           newMap[y][x] = TERRAIN.BRIDGE as TerrainType;
         }
       }
@@ -98,4 +106,52 @@ export function generateRandomMap(width: number, height: number): GameMap {
   }
 
   return newMap;
+}
+
+/**
+ * Bridge orientation type.
+ * Determined at render time by checking which neighbors are non-water (land or bridge).
+ */
+export type BridgeDir = 'v' | 'h' | 'corner-tr' | 'corner-tl' | 'corner-br' | 'corner-bl' | 'cross';
+
+/**
+ * Get bridge orientation based on neighboring tiles.
+ * Returns the visual direction the bridge should render.
+ */
+export function getBridgeOrientation(map: GameMap, x: number, y: number): BridgeDir {
+  const height = map.length;
+  const width = map[0]?.length ?? 0;
+
+  const isConnected = (nx: number, ny: number): boolean => {
+    if (nx < 0 || ny < 0 || nx >= width || ny >= height) return false;
+    const t = map[ny][nx];
+    return t !== TERRAIN.WATER;
+  };
+
+  const up = isConnected(x, y - 1);
+  const down = isConnected(x, y + 1);
+  const left = isConnected(x - 1, y);
+  const right = isConnected(x + 1, y);
+
+  // Count connections
+  const connections = [up, down, left, right].filter(Boolean);
+
+  if (connections.length >= 3) return 'cross';
+
+  // Two connections — determine if straight or corner
+  if (up && down) return 'v';
+  if (left && right) return 'h';
+
+  // Corners
+  if (up && right) return 'corner-tr';
+  if (up && left) return 'corner-tl';
+  if (down && right) return 'corner-br';
+  if (down && left) return 'corner-bl';
+
+  // Single connection — align to that direction
+  if (up || down) return 'v';
+  if (left || right) return 'h';
+
+  // Isolated bridge — default vertical
+  return 'v';
 }
