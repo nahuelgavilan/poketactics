@@ -22,6 +22,9 @@ const TERRAIN_THEME: Record<number, {
   [TERRAIN.TALL_GRASS]: { gradient: 'from-green-500 to-emerald-600', border: 'border-emerald-800', texture: 'tallgrass' },
   [TERRAIN.POKEMON_CENTER]: { gradient: 'from-rose-300 to-pink-400', border: 'border-pink-600', texture: 'pokecenter' },
   [TERRAIN.BASE]: { gradient: 'from-slate-400 to-slate-500', border: 'border-slate-700', texture: 'base' },
+  [TERRAIN.SAND]: { gradient: 'from-yellow-300 to-amber-400', border: 'border-amber-600', texture: 'sand' },
+  [TERRAIN.BRIDGE]: { gradient: 'from-amber-500 to-amber-700', border: 'border-amber-900', texture: 'bridge' },
+  [TERRAIN.BERRY_BUSH]: { gradient: 'from-lime-400 to-green-500', border: 'border-green-700', texture: 'berry' },
 };
 
 function TerrainDecoration({ texture }: { texture?: string }) {
@@ -61,6 +64,25 @@ function TerrainDecoration({ texture }: { texture?: string }) {
       );
     case 'base':
       return <div className="absolute inset-0 rounded-2xl overflow-hidden opacity-15 bg-[repeating-linear-gradient(0deg,transparent,transparent_6px,rgba(255,255,255,0.4)_6px,rgba(255,255,255,0.4)_7px),repeating-linear-gradient(90deg,transparent,transparent_6px,rgba(255,255,255,0.4)_6px,rgba(255,255,255,0.4)_7px)]" />;
+    case 'sand':
+      return <div className="absolute inset-0 rounded-2xl overflow-hidden opacity-25 bg-[repeating-linear-gradient(170deg,transparent,transparent_6px,rgba(255,255,255,0.5)_6px,rgba(255,255,255,0.5)_8px)]" />;
+    case 'bridge':
+      return (
+        <div className="absolute inset-0 rounded-2xl overflow-hidden">
+          <div className="absolute inset-0 opacity-35 bg-[repeating-linear-gradient(0deg,transparent,transparent_5px,rgba(0,0,0,0.3)_5px,rgba(0,0,0,0.3)_6px)]" />
+          <div className="absolute inset-y-0 left-0 w-[12%] bg-cyan-500/30" />
+          <div className="absolute inset-y-0 right-0 w-[12%] bg-cyan-500/30" />
+        </div>
+      );
+    case 'berry':
+      return (
+        <div className="absolute inset-0 rounded-2xl overflow-hidden">
+          <div className="absolute inset-0 opacity-20 bg-[repeating-linear-gradient(90deg,transparent,transparent_8px,rgba(255,255,255,0.4)_8px,rgba(255,255,255,0.4)_10px)]" />
+          <div className="absolute w-[18%] h-[18%] rounded-full bg-fuchsia-500/70 top-[15%] left-[25%]" />
+          <div className="absolute w-[15%] h-[15%] rounded-full bg-fuchsia-600/70 top-[25%] left-[45%]" />
+          <div className="absolute w-[14%] h-[14%] rounded-full bg-fuchsia-400/70 bottom-[22%] right-[30%]" />
+        </div>
+      );
     default:
       return null;
   }

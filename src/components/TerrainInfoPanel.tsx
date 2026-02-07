@@ -43,6 +43,21 @@ const TERRAIN_STYLES: Record<number, { gradient: string; border: string; icon: s
     gradient: 'from-slate-500 to-slate-600',
     border: 'border-slate-400',
     icon: '🏠'
+  },
+  [TERRAIN.SAND]: {
+    gradient: 'from-yellow-400 to-amber-500',
+    border: 'border-yellow-400',
+    icon: '🏜️'
+  },
+  [TERRAIN.BRIDGE]: {
+    gradient: 'from-amber-500 to-amber-700',
+    border: 'border-amber-400',
+    icon: '🌉'
+  },
+  [TERRAIN.BERRY_BUSH]: {
+    gradient: 'from-fuchsia-400 to-green-500',
+    border: 'border-fuchsia-400',
+    icon: '🫐'
   }
 };
 
@@ -56,6 +71,7 @@ export function TerrainInfoPanel({ terrain, onClose }: TerrainInfoPanelProps) {
   const hasCapture = props.capture;
   const hasHeal = props.heals;
   const hasVisionBonus = (props as any).visionBonus;
+  const isConsumable = props.consumable;
 
   return (
     <div
@@ -131,6 +147,14 @@ export function TerrainInfoPanel({ terrain, onClose }: TerrainInfoPanelProps) {
                   <div className="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold bg-pink-900/80 text-pink-400">
                     <Heart className="w-3 h-3" />
                     <span>+20% HP/turno</span>
+                  </div>
+                )}
+
+                {/* Special: Consumable (Berry Bush) */}
+                {isConsumable && (
+                  <div className="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold bg-fuchsia-900/80 text-fuchsia-400">
+                    <Heart className="w-3 h-3" />
+                    <span>+10% HP (1 uso)</span>
                   </div>
                 )}
 

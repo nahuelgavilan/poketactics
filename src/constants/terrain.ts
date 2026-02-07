@@ -10,7 +10,10 @@ export const TERRAIN: Record<string, TerrainType> = {
   MOUNTAIN: 3,
   BASE: 4,
   TALL_GRASS: 5,
-  POKEMON_CENTER: 6
+  POKEMON_CENTER: 6,
+  SAND: 7,
+  BRIDGE: 8,
+  BERRY_BUSH: 9
 };
 
 /**
@@ -73,6 +76,28 @@ export const TERRAIN_PROPS = {
     bg: 'from-pink-800 to-red-950',
     heals: true,
     typeBonus: [] as PokemonType[]
+  },
+  [TERRAIN.SAND]: {
+    def: 0,
+    moveCost: 1,
+    name: 'Arena',
+    bg: 'from-yellow-700 to-amber-900',
+    typeBonus: ['fire', 'ground'] as PokemonType[]
+  },
+  [TERRAIN.BRIDGE]: {
+    def: 0,
+    moveCost: 1,
+    name: 'Puente',
+    bg: 'from-amber-800 to-stone-900',
+    typeBonus: [] as PokemonType[]
+  },
+  [TERRAIN.BERRY_BUSH]: {
+    def: 5,
+    moveCost: 1,
+    name: 'Arbusto de Bayas',
+    bg: 'from-fuchsia-800 to-green-950',
+    consumable: true,
+    typeBonus: ['grass', 'bug'] as PokemonType[]
   }
 } as Record<TerrainType, TerrainProps>;
 
@@ -107,6 +132,12 @@ export function getTileColor(terrain: TerrainType): string {
       return 'bg-teal-700 border-teal-800 shadow-inner';
     case TERRAIN.POKEMON_CENTER:
       return 'bg-pink-200 border-pink-300';
+    case TERRAIN.SAND:
+      return 'bg-yellow-300 border-yellow-400';
+    case TERRAIN.BRIDGE:
+      return 'bg-amber-400 border-amber-500';
+    case TERRAIN.BERRY_BUSH:
+      return 'bg-fuchsia-300 border-fuchsia-400';
     default:
       return 'bg-gray-300';
   }

@@ -37,7 +37,7 @@ interface TileProps {
 const TERRAIN_THEME: Record<number, {
   gradient: string;
   border: string;
-  texture?: 'plains' | 'tallgrass' | 'forest' | 'water' | 'mountain' | 'pokecenter' | 'base';
+  texture?: 'plains' | 'tallgrass' | 'forest' | 'water' | 'mountain' | 'pokecenter' | 'base' | 'sand' | 'bridge' | 'berry';
 }> = {
   [TERRAIN.GRASS]: {
     gradient: 'from-lime-400 to-green-500',
@@ -73,6 +73,21 @@ const TERRAIN_THEME: Record<number, {
     gradient: 'from-slate-400 to-slate-500',
     border: 'border-slate-700',
     texture: 'base',
+  },
+  [TERRAIN.SAND]: {
+    gradient: 'from-yellow-300 to-amber-400',
+    border: 'border-amber-600',
+    texture: 'sand',
+  },
+  [TERRAIN.BRIDGE]: {
+    gradient: 'from-amber-500 to-amber-700',
+    border: 'border-amber-900',
+    texture: 'bridge',
+  },
+  [TERRAIN.BERRY_BUSH]: {
+    gradient: 'from-lime-400 to-green-500',
+    border: 'border-green-700',
+    texture: 'berry',
   },
 };
 
@@ -181,6 +196,55 @@ function TerrainDecoration({ texture }: { texture?: string }) {
           <div className="absolute top-[10%] left-[10%] w-[3px] h-[20%] bg-white/30" />
           <div className="absolute bottom-[10%] right-[10%] w-[20%] h-[3px] bg-white/30" />
           <div className="absolute bottom-[10%] right-[10%] w-[3px] h-[20%] bg-white/30" />
+        </div>
+      );
+
+    // Sand: wavy dunes pattern
+    case 'sand':
+      return (
+        <div className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none">
+          {/* Sand ripple pattern */}
+          <div className="absolute inset-0 opacity-25 bg-[repeating-linear-gradient(170deg,transparent,transparent_6px,rgba(255,255,255,0.5)_6px,rgba(255,255,255,0.5)_8px)]" />
+          {/* Dune curves */}
+          <div className="absolute inset-0 opacity-20 bg-[radial-gradient(ellipse_at_70%_80%,rgba(180,120,40,0.6)_0%,transparent_50%)]" />
+          {/* Shimmer dots */}
+          <div className="absolute inset-0 opacity-15 bg-[radial-gradient(circle_at_25%_35%,rgba(255,255,255,0.5)_0%,transparent_8%),radial-gradient(circle_at_65%_55%,rgba(255,255,255,0.4)_0%,transparent_6%)]" />
+        </div>
+      );
+
+    // Bridge: wooden planks over water
+    case 'bridge':
+      return (
+        <div className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none">
+          {/* Plank lines */}
+          <div className="absolute inset-0 opacity-35 bg-[repeating-linear-gradient(0deg,transparent,transparent_5px,rgba(0,0,0,0.3)_5px,rgba(0,0,0,0.3)_6px)]" />
+          {/* Wood grain */}
+          <div className="absolute inset-0 opacity-15 bg-[repeating-linear-gradient(90deg,transparent,transparent_12px,rgba(139,92,42,0.4)_12px,rgba(139,92,42,0.4)_14px)]" />
+          {/* Water peeking below (sides) */}
+          <div className="absolute inset-y-0 left-0 w-[12%] bg-cyan-500/30" />
+          <div className="absolute inset-y-0 right-0 w-[12%] bg-cyan-500/30" />
+        </div>
+      );
+
+    // Berry Bush: berries on grass background
+    case 'berry':
+      return (
+        <div className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none">
+          {/* Grass base (same as plains) */}
+          <div className="absolute inset-0 opacity-20 bg-[repeating-linear-gradient(90deg,transparent,transparent_8px,rgba(255,255,255,0.4)_8px,rgba(255,255,255,0.4)_10px)]" />
+          {/* Berry clusters */}
+          <div className="absolute inset-0 opacity-70">
+            <div className="absolute w-[18%] h-[18%] rounded-full bg-fuchsia-500 top-[15%] left-[20%] shadow-[inset_-1px_-1px_2px_rgba(0,0,0,0.3)]" />
+            <div className="absolute w-[15%] h-[15%] rounded-full bg-fuchsia-600 top-[25%] left-[35%] shadow-[inset_-1px_-1px_2px_rgba(0,0,0,0.3)]" />
+            <div className="absolute w-[16%] h-[16%] rounded-full bg-fuchsia-500 top-[12%] left-[48%] shadow-[inset_-1px_-1px_2px_rgba(0,0,0,0.3)]" />
+            <div className="absolute w-[14%] h-[14%] rounded-full bg-fuchsia-400 bottom-[20%] right-[25%] shadow-[inset_-1px_-1px_2px_rgba(0,0,0,0.3)]" />
+            <div className="absolute w-[17%] h-[17%] rounded-full bg-fuchsia-500 bottom-[28%] right-[42%] shadow-[inset_-1px_-1px_2px_rgba(0,0,0,0.3)]" />
+          </div>
+          {/* Leaf accents */}
+          <div className="absolute inset-0 opacity-40">
+            <div className="absolute w-[22%] h-[10%] rounded-full bg-green-700 top-[8%] left-[25%] rotate-[-20deg]" />
+            <div className="absolute w-[20%] h-[9%] rounded-full bg-green-700 bottom-[18%] right-[30%] rotate-[15deg]" />
+          </div>
         </div>
       );
 

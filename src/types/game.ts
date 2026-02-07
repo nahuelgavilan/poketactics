@@ -43,7 +43,7 @@ export interface ActionMenuState {
   canWait: boolean;
 }
 
-export type TerrainType = 0 | 1 | 2 | 3 | 4 | 5 | 6;
+export type TerrainType = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
 
 export interface PokemonTemplate {
   id: number;
@@ -90,6 +90,7 @@ export interface TerrainProps {
   typeBonus?: PokemonType[]; // Types that get bonus on this terrain
   heals?: boolean; // Pokemon Center healing
   visionBonus?: number; // Extra vision range on this terrain
+  consumable?: boolean; // Berry bush: consumed on step, heals 10% HP, becomes grass
 }
 
 /**

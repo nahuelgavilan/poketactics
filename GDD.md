@@ -138,6 +138,9 @@ Each Pokémon has base stats and typing:
 | Tall Grass (Hierba Alta) | +5% | 1 | Bug, Grass | Can trigger capture |
 | Base | +10% | 1 | None | Spawn points |
 | Pokémon Center | +15% | 1 | None | Heals 20% HP per turn |
+| Sand (Arena) | 0% | 1 | Fire, Ground | Desert terrain |
+| Bridge (Puente) | 0% | 1 | None | Crosses water tiles |
+| Berry Bush (Arbusto de Bayas) | +5% | 1 | Grass, Bug | Consumable: heals 10% HP, one-time use, converts to grass |
 
 ### Terrain Info Panel
 
@@ -1076,6 +1079,7 @@ Currently in alpha - major version stays at 0 until core features complete.
 
 | Version | Changes |
 |---------|---------|
+| **0.35.0** | **New Terrain Types**: Added 3 new terrains — Sand (Arena) with fire/ground type bonus, Bridge (Puente) that allows crossing water tiles, and Berry Bush (Arbusto de Bayas) that heals 10% HP on step and converts to grass after use. CSS-only terrain decorations for all new tiles. Map generation places sand zones, bridges over water adjacent to land, and 3-5 berry bushes. |
 | **0.34.0** | **Larger Board with Scrollable Camera**: Expanded board from 6x8 to 10x12 tiles. Fixed tile sizes (48px mobile, 56px desktop) with native scroll for panning. All game systems (pathfinding, vision, capture, battle zoom) now derive dimensions from the map dynamically — multiplayer server still sends 6x8 and client renders it correctly. Auto-scroll to selected unit and on turn start. Pokémon Centers increased to 2-3 per map. Added `data-pos` attribute to tiles for scroll targeting. |
 | **0.33.0** | **Battle SFX & Victory Audio**: Added combat sound effects to BattleCinematic (attack_hit, critical_hit, super_effective, not_effective, unit_faint). Victory fanfare plays on win screen. Registered victory/defeat music tracks in audio preloader. Fixed package.json version mismatch (was 1.3.0, now synced). |
 | **0.32.0** | **Audio System Overhaul**: Implemented audio preloader with pooling architecture to fix production timing issues. All audio files now preload on game start (eliminates network delays during gameplay). New loading screen shows progress. Fixed battle desynchronization and slow audio playback in production. Audio pool system reuses instances for better performance. Re-generated `wild_encounter.mp3` (5.6 MB → 48 KB). |

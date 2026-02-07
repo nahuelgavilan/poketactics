@@ -156,9 +156,10 @@ export function useGameState(): UseGameStateReturn {
       for (let x = 0; x < BOARD_WIDTH; x++) {
         const r = Math.random();
         if (r > 0.88) newMap[y][x] = TERRAIN.MOUNTAIN as TerrainType;
-        else if (r > 0.80) newMap[y][x] = TERRAIN.WATER as TerrainType;
-        else if (r > 0.65) newMap[y][x] = TERRAIN.FOREST as TerrainType;
-        else if (r > 0.45) newMap[y][x] = TERRAIN.TALL_GRASS as TerrainType;
+        else if (r > 0.82) newMap[y][x] = TERRAIN.WATER as TerrainType;
+        else if (r > 0.75) newMap[y][x] = TERRAIN.SAND as TerrainType;
+        else if (r > 0.62) newMap[y][x] = TERRAIN.FOREST as TerrainType;
+        else if (r > 0.42) newMap[y][x] = TERRAIN.TALL_GRASS as TerrainType;
       }
     }
 
@@ -169,6 +170,35 @@ export function useGameState(): UseGameStateReturn {
     newMap[BOARD_HEIGHT - 1][BOARD_WIDTH - 1] = TERRAIN.BASE as TerrainType;
     newMap[BOARD_HEIGHT - 1][BOARD_WIDTH - 2] = TERRAIN.GRASS as TerrainType;
     newMap[BOARD_HEIGHT - 2][BOARD_WIDTH - 1] = TERRAIN.GRASS as TerrainType;
+
+    // Add bridges over water tiles (place bridge on water adjacent to land)
+    for (let y = 1; y < BOARD_HEIGHT - 1; y++) {
+      for (let x = 0; x < BOARD_WIDTH; x++) {
+        if (newMap[y][x] === TERRAIN.WATER && Math.random() < 0.3) {
+          // Only bridge if land on both sides (vertical crossing)
+          const above = y > 0 ? newMap[y - 1][x] : TERRAIN.WATER;
+          const below = y < BOARD_HEIGHT - 1 ? newMap[y + 1][x] : TERRAIN.WATER;
+          if (above !== TERRAIN.WATER && below !== TERRAIN.WATER) {
+            newMap[y][x] = TERRAIN.BRIDGE as TerrainType;
+          }
+        }
+      }
+    }
+
+    // Add berry bushes (3-5, scattered, not on special tiles)
+    const berryCount = 3 + Math.floor(Math.random() * 3);
+    for (let i = 0; i < berryCount; i++) {
+      let attempts = 0;
+      while (attempts < 20) {
+        const bx = 1 + Math.floor(Math.random() * (BOARD_WIDTH - 2));
+        const by = 2 + Math.floor(Math.random() * (BOARD_HEIGHT - 4));
+        if (newMap[by][bx] === TERRAIN.GRASS || newMap[by][bx] === TERRAIN.TALL_GRASS) {
+          newMap[by][bx] = TERRAIN.BERRY_BUSH as TerrainType;
+          break;
+        }
+        attempts++;
+      }
+    }
 
     // Add Pokémon Centers in the middle area (2-3 centers for larger board)
     const centerCount = Math.random() < 0.5 ? 2 : 3;
@@ -261,9 +291,10 @@ export function useGameState(): UseGameStateReturn {
       for (let x = 0; x < BOARD_WIDTH; x++) {
         const r = Math.random();
         if (r > 0.88) newMap[y][x] = TERRAIN.MOUNTAIN as TerrainType;
-        else if (r > 0.80) newMap[y][x] = TERRAIN.WATER as TerrainType;
-        else if (r > 0.65) newMap[y][x] = TERRAIN.FOREST as TerrainType;
-        else if (r > 0.45) newMap[y][x] = TERRAIN.TALL_GRASS as TerrainType;
+        else if (r > 0.82) newMap[y][x] = TERRAIN.WATER as TerrainType;
+        else if (r > 0.75) newMap[y][x] = TERRAIN.SAND as TerrainType;
+        else if (r > 0.62) newMap[y][x] = TERRAIN.FOREST as TerrainType;
+        else if (r > 0.42) newMap[y][x] = TERRAIN.TALL_GRASS as TerrainType;
       }
     }
 
@@ -274,6 +305,34 @@ export function useGameState(): UseGameStateReturn {
     newMap[BOARD_HEIGHT - 1][BOARD_WIDTH - 1] = TERRAIN.BASE as TerrainType;
     newMap[BOARD_HEIGHT - 1][BOARD_WIDTH - 2] = TERRAIN.GRASS as TerrainType;
     newMap[BOARD_HEIGHT - 2][BOARD_WIDTH - 1] = TERRAIN.GRASS as TerrainType;
+
+    // Add bridges over water tiles
+    for (let y = 1; y < BOARD_HEIGHT - 1; y++) {
+      for (let x = 0; x < BOARD_WIDTH; x++) {
+        if (newMap[y][x] === TERRAIN.WATER && Math.random() < 0.3) {
+          const above = y > 0 ? newMap[y - 1][x] : TERRAIN.WATER;
+          const below = y < BOARD_HEIGHT - 1 ? newMap[y + 1][x] : TERRAIN.WATER;
+          if (above !== TERRAIN.WATER && below !== TERRAIN.WATER) {
+            newMap[y][x] = TERRAIN.BRIDGE as TerrainType;
+          }
+        }
+      }
+    }
+
+    // Add berry bushes (3-5)
+    const berryCount = 3 + Math.floor(Math.random() * 3);
+    for (let i = 0; i < berryCount; i++) {
+      let attempts = 0;
+      while (attempts < 20) {
+        const bx = 1 + Math.floor(Math.random() * (BOARD_WIDTH - 2));
+        const by = 2 + Math.floor(Math.random() * (BOARD_HEIGHT - 4));
+        if (newMap[by][bx] === TERRAIN.GRASS || newMap[by][bx] === TERRAIN.TALL_GRASS) {
+          newMap[by][bx] = TERRAIN.BERRY_BUSH as TerrainType;
+          break;
+        }
+        attempts++;
+      }
+    }
 
     // Add Pokémon Centers in the middle area (2-3 centers for larger board)
     const centerCount = Math.random() < 0.5 ? 2 : 3;
@@ -850,9 +909,27 @@ export function useGameState(): UseGameStateReturn {
       return; // Encounter triggered, will continue after minigame
     }
 
+    // Consume berry bush: heal 10% HP and convert to grass
+    if (map[movedUnit.y]?.[movedUnit.x] === TERRAIN.BERRY_BUSH) {
+      const healAmount = Math.floor(movedUnit.template.hp * 0.1);
+      const newHp = Math.min(movedUnit.template.hp, movedUnit.currentHp + healAmount);
+      const healedUnit = { ...movedUnit, currentHp: newHp };
+      const healedUnits = nextUnits.map(u => u.uid === movedUnit.uid ? healedUnit : u);
+      setUnits(healedUnits);
+      const newMap = map.map((row, ry) =>
+        ry === movedUnit.y
+          ? row.map((cell, cx) => cx === movedUnit.x ? TERRAIN.GRASS as TerrainType : cell)
+          : row
+      );
+      setMap(newMap);
+      addLog(`🫐 ${movedUnit.template.name} comió una baya (+${healAmount} HP)`);
+      waitUnit(movedUnit.uid, healedUnits);
+      return;
+    }
+
     // Mark unit as done
     waitUnit(movedUnit.uid, nextUnits);
-  }, [selectedUnit, pendingPosition, units, map, tryRandomEncounter, waitUnit]);
+  }, [selectedUnit, pendingPosition, units, map, tryRandomEncounter, waitUnit, setMap, addLog]);
 
   // Cancel action - deselect if on same position, otherwise go back to MOVING phase
   const cancelAction = useCallback(() => {
