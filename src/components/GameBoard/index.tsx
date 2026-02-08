@@ -116,11 +116,11 @@ export function GameBoard({
 
   return (
     <div
-      className="relative bg-[#0f1d20] rounded-sm shadow-2xl border-2 border-amber-800/75 select-none touch-manipulation overflow-visible w-fit"
+      className="relative bg-[#f7edd8] rounded-sm shadow-[0_8px_18px_rgba(101,74,40,0.2)] border-2 border-amber-800/65 select-none touch-manipulation overflow-visible w-fit"
       style={{ padding: `${padSize}px` }}
     >
       {/* Subtle inner glow */}
-      <div className="absolute inset-0 rounded-sm bg-gradient-to-br from-cyan-500/8 via-transparent to-rose-500/8 pointer-events-none" />
+      <div className="absolute inset-0 rounded-sm bg-gradient-to-br from-cyan-500/6 via-transparent to-rose-500/6 pointer-events-none" />
       <div className="absolute inset-[3px] rounded-[2px] border border-amber-300/25 pointer-events-none" />
 
       <div

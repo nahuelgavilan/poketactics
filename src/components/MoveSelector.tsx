@@ -19,7 +19,7 @@ export function MoveSelector({ attacker, target, onSelectMove, onCancel }: MoveS
   const distance = getDistance(attacker, target);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/66 backdrop-blur-sm animate-in">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/54 animate-in">
       <div className="relative w-[340px] max-w-[95vw]">
         {/* Main container */}
         <div className="
@@ -52,7 +52,7 @@ export function MoveSelector({ attacker, target, onSelectMove, onCancel }: MoveS
           </div>
 
           {/* Target info */}
-          <div className="px-3 py-2 border-b border-amber-800/45 bg-[#16272b]/90 flex items-center gap-2">
+          <div className="px-3 py-2 border-b border-amber-800/45 bg-[#f4e8ce] flex items-center gap-2">
             <img
               src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/${target.template.id}.gif`}
               className="w-8 h-8 object-contain"
@@ -60,7 +60,7 @@ export function MoveSelector({ attacker, target, onSelectMove, onCancel }: MoveS
               alt=""
             />
             <div>
-              <span className="text-xs font-bold text-amber-100">{target.template.name}</span>
+              <span className="text-xs font-bold text-slate-800">{target.template.name}</span>
               <div className="flex gap-1 mt-0.5">
                 {target.template.types.map(type => (
                   <span key={type} className={`text-[8px] px-1 py-0.5 rounded text-white font-bold ${TYPE_COLORS[type]}`}>
@@ -69,7 +69,7 @@ export function MoveSelector({ attacker, target, onSelectMove, onCancel }: MoveS
                 ))}
               </div>
             </div>
-            <span className="ml-auto text-[10px] font-mono text-amber-100/75">
+            <span className="ml-auto text-[10px] font-mono text-slate-700">
               HP {target.currentHp}/{target.template.hp}
             </span>
           </div>

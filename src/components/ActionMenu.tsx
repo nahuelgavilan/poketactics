@@ -129,8 +129,8 @@ export function ActionMenu({
         <div className={`
           relative flex items-center gap-2 px-2 py-1 rounded-sm text-xs font-bold
           ${selectedUnit.owner === 'P1'
-            ? 'bg-sky-950/90 text-sky-100 border border-sky-500/45'
-            : 'bg-rose-950/90 text-rose-100 border border-rose-500/45'}
+            ? 'bg-sky-100 text-sky-900 border border-sky-500/45'
+            : 'bg-rose-100 text-rose-900 border border-rose-500/45'}
         `}>
           <img
             src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${selectedUnit.template.id}.png`}

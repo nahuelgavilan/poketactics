@@ -91,11 +91,11 @@ export function TurnTimer({
       <div className={`
         flex items-center gap-1.5 px-2 py-1 rounded text-xs font-mono font-bold border
         transition-all duration-300
-        ${isCritical ? 'bg-rose-900/80 border-rose-500/50 text-rose-200 animate-pulse' :
-          isWarning ? 'bg-amber-900/80 border-amber-500/50 text-amber-200' :
+        ${isCritical ? 'bg-rose-100 border-rose-500/50 text-rose-800 animate-pulse' :
+          isWarning ? 'bg-amber-100 border-amber-500/50 text-amber-900' :
           playerColor === 'blue'
-            ? 'bg-sky-950/70 border-sky-500/45 text-sky-100'
-            : 'bg-rose-950/70 border-rose-500/45 text-rose-100'}
+            ? 'bg-sky-100 border-sky-500/45 text-sky-900'
+            : 'bg-rose-100 border-rose-500/45 text-rose-900'}
       `}>
         <Clock className="w-3 h-3" />
         <span>{timeLeft}s</span>
@@ -106,7 +106,7 @@ export function TurnTimer({
   return (
     <div className={`
       relative flex items-center gap-2 px-3 py-2 rounded-sm border-[2px]
-      bg-gradient-to-b from-[#f3e7c7] to-[#e4d4ad] backdrop-blur-sm
+      bg-gradient-to-b from-[#f3e7c7] to-[#e4d4ad]
       transition-all duration-300
       ${isCritical ? 'border-rose-500/75 shadow-[3px_3px_0_0_rgba(159,18,57,0.35)]' :
         isWarning ? 'border-amber-600/75 shadow-[3px_3px_0_0_rgba(146,64,14,0.28)]' :

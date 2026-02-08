@@ -28,7 +28,7 @@ function MiniGrid({ width, height, selected }: { width: number; height: number; 
       {Array.from({ length: width * height }).map((_, i) => (
         <div
           key={i}
-          className={selected ? 'bg-amber-300/70 rounded-[1px]' : 'bg-slate-500/65 rounded-[1px]'}
+          className={selected ? 'bg-amber-500/65 rounded-[1px]' : 'bg-stone-400/65 rounded-[1px]'}
           style={{ width: cellSize, height: cellSize }}
         />
       ))}
@@ -75,10 +75,10 @@ export function MapSizeSelector({ onSelect, onBack }: MapSizeSelectorProps) {
         <div className="w-full max-w-4xl flex flex-col gap-3 md:gap-4 animate-start-menu-slide-up">
           <button
             onClick={handleBack}
-            className="self-start inline-flex items-center gap-2 px-3 py-2 rounded-sm border-[2px] border-amber-500/80 bg-[#16292d]/90 hover:bg-[#1c3338]/95 transition-colors"
+            className="self-start inline-flex items-center gap-2 px-3 py-2 rounded-sm border-[2px] border-amber-600/70 bg-[#f8efd9] hover:bg-[#f2e4c5] transition-colors"
           >
-            <ArrowLeft className="w-4 h-4 text-slate-100" />
-            <span className="text-[9px] uppercase tracking-[0.12em] text-slate-100" style={{ fontFamily: '"Press Start 2P", monospace' }}>
+            <ArrowLeft className="w-4 h-4 text-slate-700" />
+            <span className="text-[9px] uppercase tracking-[0.12em] text-slate-700" style={{ fontFamily: '"Press Start 2P", monospace' }}>
               Volver
             </span>
           </button>
@@ -102,30 +102,30 @@ export function MapSizeSelector({ onSelect, onBack }: MapSizeSelectorProps) {
                       className={`relative p-3 rounded-sm border-[2px] transition-all duration-150 min-h-[124px] ${
                         isSelected
                           ? accent === 'green'
-                            ? 'bg-emerald-900/50 border-emerald-400/80 shadow-[0_0_22px_rgba(16,185,129,0.22)]'
+                            ? 'bg-emerald-100 border-emerald-400/80 shadow-[0_4px_14px_rgba(16,185,129,0.16)]'
                             : accent === 'violet'
-                            ? 'bg-indigo-900/50 border-indigo-400/80 shadow-[0_0_22px_rgba(99,102,241,0.22)]'
-                            : 'bg-sky-900/50 border-sky-400/80 shadow-[0_0_22px_rgba(56,189,248,0.22)]'
-                          : 'bg-[#172b30]/85 border-amber-700/65 hover:border-amber-500/80'
+                            ? 'bg-indigo-100 border-indigo-400/80 shadow-[0_4px_14px_rgba(99,102,241,0.16)]'
+                            : 'bg-sky-100 border-sky-400/80 shadow-[0_4px_14px_rgba(56,189,248,0.16)]'
+                          : 'bg-[#f8efd9] border-amber-700/55 hover:border-amber-600/80'
                       }`}
                     >
-                      <span className="pointer-events-none absolute inset-[2px] border border-white/10 rounded-[2px]" />
+                      <span className="pointer-events-none absolute inset-[2px] border border-amber-600/20 rounded-[2px]" />
                       <div className="relative flex flex-col items-center gap-2">
                         <span
-                          className={`text-lg ${isSelected ? 'text-white' : 'text-slate-400'}`}
+                          className={`text-lg ${isSelected ? 'text-slate-800' : 'text-slate-500'}`}
                           style={{ fontFamily: '"Press Start 2P", monospace' }}
                         >
                           {SIZE_LABELS[size.label] || size.label[0]}
                         </span>
                         <MiniGrid width={size.width} height={size.height} selected={isSelected} />
                         <span
-                          className={`text-[8px] uppercase tracking-[0.12em] ${isSelected ? 'text-slate-100' : 'text-slate-400'}`}
+                          className={`text-[8px] uppercase tracking-[0.12em] ${isSelected ? 'text-slate-800' : 'text-slate-600'}`}
                           style={{ fontFamily: '"Press Start 2P", monospace' }}
                         >
                           {size.label}
                         </span>
                         <span
-                          className={`text-[8px] uppercase tracking-[0.1em] ${isSelected ? 'text-slate-200' : 'text-slate-500'}`}
+                          className={`text-[8px] uppercase tracking-[0.1em] ${isSelected ? 'text-slate-700' : 'text-slate-500'}`}
                           style={{ fontFamily: '"Press Start 2P", monospace' }}
                         >
                           {size.width}x{size.height}
@@ -136,10 +136,10 @@ export function MapSizeSelector({ onSelect, onBack }: MapSizeSelectorProps) {
                 })}
               </div>
 
-              <div className="bg-[#14272b]/88 border-[2px] border-amber-700/75 rounded-sm p-3 space-y-2">
+              <div className="bg-[#f8efd9] border-[2px] border-amber-700/65 rounded-sm p-3 space-y-2">
                 <div className="flex items-center gap-2">
-                  <Grid2x2 className="w-4 h-4 text-amber-300" />
-                  <p className="text-[9px] uppercase tracking-[0.12em] text-amber-200" style={{ fontFamily: '"Press Start 2P", monospace' }}>
+                  <Grid2x2 className="w-4 h-4 text-amber-700" />
+                  <p className="text-[9px] uppercase tracking-[0.12em] text-amber-900" style={{ fontFamily: '"Press Start 2P", monospace' }}>
                     Seleccion actual
                   </p>
                 </div>
@@ -150,8 +150,8 @@ export function MapSizeSelector({ onSelect, onBack }: MapSizeSelectorProps) {
                 <MenuStatRow label="Area" value={`${selected.width * selected.height} cells`} />
 
                 <div className="pt-2 flex items-center gap-2">
-                  <Ruler className="w-4 h-4 text-slate-300" />
-                  <p className="text-[12px] tracking-[0.02em] text-amber-100/85 font-ui">
+                  <Ruler className="w-4 h-4 text-slate-700" />
+                  <p className="text-[12px] tracking-[0.02em] text-slate-700 font-ui">
                     Mas espacio = mas flanqueo y vision.
                   </p>
                 </div>

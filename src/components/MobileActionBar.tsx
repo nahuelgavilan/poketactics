@@ -17,14 +17,14 @@ export function MobileActionBar({
   onHelp
 }: MobileActionBarProps) {
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-40 bg-[#101d20]/96 backdrop-blur-lg border-t-2 border-amber-700/75 safe-area-pb">
+    <div className="fixed bottom-0 left-0 right-0 z-40 bg-[#f8efd9]/96 border-t-2 border-amber-700/70 safe-area-pb">
       {/* Selected unit info */}
       {selectedUnit ? (
         <div className="px-4 py-3">
           {/* Unit header */}
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-3">
-              <div className={`relative rounded-md border ${selectedUnit.owner === 'P1' ? 'border-sky-500/55 bg-sky-950/70' : 'border-rose-500/55 bg-rose-950/70'}`}>
+              <div className={`relative rounded-md border ${selectedUnit.owner === 'P1' ? 'border-sky-500/55 bg-sky-100' : 'border-rose-500/55 bg-rose-100'}`}>
                 <img
                   src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-viii/icons/${selectedUnit.template.id}.png`}
                   alt={selectedUnit.template.name}
@@ -36,7 +36,7 @@ export function MobileActionBar({
                 )}
               </div>
               <div>
-                <div className="font-bold text-slate-100 text-sm">{selectedUnit.template.name}</div>
+                <div className="font-bold text-slate-800 text-sm">{selectedUnit.template.name}</div>
                 <div className="flex gap-1">
                   {selectedUnit.template.types.map(type => (
                     <span
@@ -52,11 +52,11 @@ export function MobileActionBar({
 
             {/* HP Bar */}
             <div className="text-right">
-              <div className="flex items-center gap-1 text-xs text-amber-100/80 mb-1">
-                <Heart className="w-3 h-3 text-rose-300" />
+              <div className="flex items-center gap-1 text-xs text-slate-700 mb-1">
+                <Heart className="w-3 h-3 text-rose-700" />
                 <span className="font-mono">{selectedUnit.currentHp}/{selectedUnit.template.hp}</span>
               </div>
-              <div className="w-20 h-2 bg-[#1e2d30] rounded-full overflow-hidden border border-amber-900/45">
+              <div className="w-20 h-2 bg-[#d8c6a4] rounded-full overflow-hidden border border-amber-700/35">
                 <div
                   className={`h-full transition-all duration-300 ${
                     selectedUnit.currentHp / selectedUnit.template.hp > 0.5
@@ -72,32 +72,32 @@ export function MobileActionBar({
           </div>
 
           {/* Stats row */}
-          <div className="flex items-center justify-between bg-[#18282b]/82 border border-amber-700/40 rounded-md p-2">
+          <div className="flex items-center justify-between bg-[#f3e7cd] border border-amber-700/40 rounded-md p-2">
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-1.5">
-                <Sword className="w-3.5 h-3.5 text-orange-300" />
-                <span className="text-xs font-bold text-amber-50">{selectedUnit.template.atk}</span>
+                <Sword className="w-3.5 h-3.5 text-orange-700" />
+                <span className="text-xs font-bold text-slate-800">{selectedUnit.template.atk}</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <Shield className="w-3.5 h-3.5 text-sky-300" />
-                <span className="text-xs font-bold text-amber-50">{selectedUnit.template.def}</span>
+                <Shield className="w-3.5 h-3.5 text-sky-700" />
+                <span className="text-xs font-bold text-slate-800">{selectedUnit.template.def}</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <Zap className="w-3.5 h-3.5 text-emerald-300" />
-                <span className="text-xs font-bold text-amber-50">{selectedUnit.template.mov}</span>
+                <Zap className="w-3.5 h-3.5 text-emerald-700" />
+                <span className="text-xs font-bold text-slate-800">{selectedUnit.template.mov}</span>
               </div>
             </div>
 
             {canAttack && (
-              <div className="flex items-center gap-1 px-2 py-1 bg-rose-900/40 rounded border border-rose-500/35">
-                <div className="w-2 h-2 bg-rose-400 rounded-full animate-pulse" />
-                <span className="text-xs font-bold text-rose-200">EN RANGO</span>
+              <div className="flex items-center gap-1 px-2 py-1 bg-rose-100 rounded border border-rose-500/35">
+                <div className="w-2 h-2 bg-rose-500 rounded-full animate-pulse" />
+                <span className="text-xs font-bold text-rose-800">EN RANGO</span>
               </div>
             )}
           </div>
         </div>
       ) : (
-        <div className="px-4 py-4 text-center text-amber-100/60 text-sm">
+        <div className="px-4 py-4 text-center text-slate-600 text-sm">
           Toca un Pokémon para seleccionarlo
         </div>
       )}

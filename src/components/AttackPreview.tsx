@@ -72,7 +72,7 @@ export function AttackPreview({ preview, map, onConfirm, onCancel }: AttackPrevi
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/72 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/54">
       <div className="relative w-full max-w-lg bg-gradient-to-b from-[#f3e7c7] to-[#e1d0a7] rounded-sm border-[3px] border-amber-900 shadow-[0_18px_40px_rgba(0,0,0,0.75)] overflow-hidden animate-scale-in">
         <div className="absolute inset-[2px] border border-amber-300/85 rounded-[2px] pointer-events-none" />
         {/* Header */}
@@ -210,11 +210,11 @@ export function AttackPreview({ preview, map, onConfirm, onCancel }: AttackPrevi
           {/* Damage prediction */}
           <div className="mt-4 space-y-2">
             {/* Your attack */}
-            <div className="bg-[#16282c] rounded-md p-3 border border-amber-700/30">
+            <div className="bg-[#f5e9cf] rounded-md p-3 border border-amber-700/35">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Sword className="w-4 h-4 text-rose-300" />
-                  <span className="text-sm text-amber-50 font-medium">{move.name}</span>
+                  <Sword className="w-4 h-4 text-rose-700" />
+                  <span className="text-sm text-slate-800 font-medium">{move.name}</span>
                   <span className={`text-[9px] px-1 py-0.5 rounded text-white font-bold ${TYPE_COLORS[move.type]}`}>
                     {move.type.slice(0, 3).toUpperCase()}
                   </span>
@@ -223,7 +223,7 @@ export function AttackPreview({ preview, map, onConfirm, onCancel }: AttackPrevi
                   )}
                 </div>
                 <div className="text-right">
-                  <div className="text-lg font-bold text-rose-300">
+                  <div className="text-lg font-bold text-rose-700">
                     {predictedDamage.min === predictedDamage.max
                       ? predictedDamage.min
                       : `${predictedDamage.min}-${predictedDamage.max}`
@@ -232,11 +232,11 @@ export function AttackPreview({ preview, map, onConfirm, onCancel }: AttackPrevi
                   <EffectivenessLabel effectiveness={effectiveness} />
                 </div>
               </div>
-              <div className="mt-1 text-xs text-amber-100/70">
+              <div className="mt-1 text-xs text-slate-700">
                 Precisión: {accuracy}% · {move.category === 'physical' ? 'Físico' : move.category === 'special' ? 'Especial' : 'Estado'}
               </div>
               {willKO && (
-                <div className="mt-2 flex items-center gap-1 text-emerald-300 text-xs">
+                <div className="mt-2 flex items-center gap-1 text-emerald-700 text-xs">
                   <Zap className="w-3 h-3" />
                   <span className="font-bold">¡PUEDE NOQUEAR!</span>
                 </div>
@@ -245,14 +245,14 @@ export function AttackPreview({ preview, map, onConfirm, onCancel }: AttackPrevi
 
             {/* Counter attack */}
             {canCounter && counterDamage && counterEffectiveness !== null && (
-              <div className="bg-amber-950/30 border border-amber-700/50 rounded-md p-3">
+              <div className="bg-amber-100 border border-amber-700/45 rounded-md p-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Shield className="w-4 h-4 text-amber-300" />
-                    <span className="text-sm text-amber-100 font-medium">CONTRAATAQUE</span>
+                    <Shield className="w-4 h-4 text-amber-700" />
+                    <span className="text-sm text-amber-900 font-medium">CONTRAATAQUE</span>
                   </div>
                   <div className="text-right">
-                    <div className="text-lg font-bold text-amber-300">
+                    <div className="text-lg font-bold text-amber-800">
                       {counterDamage.min === counterDamage.max
                         ? counterDamage.min
                         : `${counterDamage.min}-${counterDamage.max}`
@@ -261,7 +261,7 @@ export function AttackPreview({ preview, map, onConfirm, onCancel }: AttackPrevi
                     <EffectivenessLabel effectiveness={counterEffectiveness} />
                   </div>
                 </div>
-                <div className="mt-1 text-xs text-amber-200/70">
+                <div className="mt-1 text-xs text-amber-900/75">
                   Contraataque{counterMove ? `: ${counterMove.name}` : ''} (75% daño)
                 </div>
               </div>

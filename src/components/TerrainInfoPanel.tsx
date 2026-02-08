@@ -93,8 +93,8 @@ export function TerrainInfoPanel({ terrain, centerOwner = null, onClose }: Terra
     >
       <div className={`
         relative overflow-hidden
-        bg-[#112126]/95 backdrop-blur-xl rounded-sm
-        border-[3px] border-amber-800 shadow-[4px_4px_0_0_rgba(0,0,0,0.35)]
+        bg-[#f8efd9]/95 rounded-sm
+        border-[3px] border-amber-800/70 shadow-[3px_3px_0_0_rgba(92,66,34,0.22)]
       `}>
         <div className="absolute inset-[2px] border border-amber-300/40 rounded-[2px] pointer-events-none" />
         {/* Colored header bar */}
@@ -116,8 +116,8 @@ export function TerrainInfoPanel({ terrain, centerOwner = null, onClose }: Terra
             {/* Info */}
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between">
-                <h3 className="text-[10px] uppercase tracking-[0.12em] text-amber-100" style={{ fontFamily: '"Press Start 2P", monospace' }}>{props.name}</h3>
-                <span className="text-slate-400 text-[11px] font-ui">Toca para cerrar</span>
+                <h3 className="text-[10px] uppercase tracking-[0.12em] text-amber-900" style={{ fontFamily: '"Press Start 2P", monospace' }}>{props.name}</h3>
+                <span className="text-slate-600 text-[11px] font-ui">Toca para cerrar</span>
               </div>
 
               {/* Stats row */}
@@ -125,7 +125,7 @@ export function TerrainInfoPanel({ terrain, centerOwner = null, onClose }: Terra
                 {/* Defense */}
                 <div className={`
                   flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold
-                  ${props.def > 0 ? 'bg-emerald-900/80 text-emerald-400' : 'bg-slate-800 text-slate-500'}
+                  ${props.def > 0 ? 'bg-emerald-100 text-emerald-800 border border-emerald-500/35' : 'bg-[#f1e3c4] text-slate-600 border border-amber-700/25'}
                 `}>
                   <Shield className="w-3 h-3" />
                   <span>{props.def > 0 ? `+${props.def}%` : '0%'}</span>
@@ -134,7 +134,7 @@ export function TerrainInfoPanel({ terrain, centerOwner = null, onClose }: Terra
                 {/* Movement cost */}
                 <div className={`
                   flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold
-                  ${isImpassable ? 'bg-red-900/80 text-red-400' : props.moveCost > 1 ? 'bg-amber-900/80 text-amber-400' : 'bg-slate-800 text-slate-400'}
+                  ${isImpassable ? 'bg-rose-100 text-rose-800 border border-rose-500/35' : props.moveCost > 1 ? 'bg-amber-100 text-amber-900 border border-amber-500/35' : 'bg-[#f1e3c4] text-slate-700 border border-amber-700/25'}
                 `}>
                   <Footprints className="w-3 h-3" />
                   <span>{isImpassable ? 'Bloqueado' : `MOV ${props.moveCost}`}</span>
@@ -142,7 +142,7 @@ export function TerrainInfoPanel({ terrain, centerOwner = null, onClose }: Terra
 
                 {/* Special: Vision bonus */}
                 {hasVisionBonus && (
-                  <div className="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold bg-sky-900/80 text-sky-300">
+                  <div className="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold bg-sky-100 text-sky-800 border border-sky-500/35">
                     <Eye className="w-3 h-3" />
                     <span>+{hasVisionBonus} visión</span>
                   </div>
@@ -150,7 +150,7 @@ export function TerrainInfoPanel({ terrain, centerOwner = null, onClose }: Terra
 
                 {/* Special: Capture */}
                 {hasCapture && (
-                  <div className="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold bg-yellow-900/80 text-yellow-400">
+                  <div className="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold bg-yellow-100 text-yellow-800 border border-yellow-500/35">
                     <Sparkles className="w-3 h-3" />
                     <span>Captura</span>
                   </div>
@@ -158,7 +158,7 @@ export function TerrainInfoPanel({ terrain, centerOwner = null, onClose }: Terra
 
                 {/* Special: Heals */}
                 {hasHeal && (
-                  <div className="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold bg-pink-900/80 text-pink-400">
+                  <div className="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold bg-pink-100 text-pink-800 border border-pink-500/35">
                     <Heart className="w-3 h-3" />
                     <span>Servicio con coste</span>
                   </div>
@@ -166,7 +166,7 @@ export function TerrainInfoPanel({ terrain, centerOwner = null, onClose }: Terra
 
                 {/* Special: Consumable (Berry Bush) */}
                 {isConsumable && (
-                  <div className="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold bg-fuchsia-900/80 text-fuchsia-400">
+                  <div className="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold bg-fuchsia-100 text-fuchsia-800 border border-fuchsia-500/35">
                     <Heart className="w-3 h-3" />
                     <span>+10% HP (1 uso)</span>
                   </div>
@@ -174,41 +174,41 @@ export function TerrainInfoPanel({ terrain, centerOwner = null, onClose }: Terra
 
                 {/* Type bonus */}
                 {props.typeBonus && props.typeBonus.length > 0 && (
-                  <div className="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold bg-orange-900/80 text-orange-400">
+                  <div className="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold bg-orange-100 text-orange-800 border border-orange-500/35">
                     <Zap className="w-3 h-3" />
                     <span>+25% ATK: {props.typeBonus.slice(0, 2).join(', ')}</span>
                   </div>
                 )}
 
                 {economyEntity && (
-                  <div className="w-full mt-1 p-2 rounded-md border border-amber-500/30 bg-amber-950/20">
+                  <div className="w-full mt-1 p-2 rounded-md border border-amber-500/30 bg-[#f2e4c6]">
                     <div className="flex items-center gap-2">
                       <img src={getShowdownItemIconUrl(economyEntity.primaryItemId)} alt="" className="w-4 h-4 object-contain" />
                       {economyEntity.secondaryItemId && (
                         <img src={getShowdownItemIconUrl(economyEntity.secondaryItemId)} alt="" className="w-4 h-4 object-contain" />
                       )}
-                      <span className="text-[10px] font-bold text-amber-300">{economyEntity.label}</span>
+                      <span className="text-[10px] font-bold text-amber-900">{economyEntity.label}</span>
                     </div>
-                    <div className="mt-1 text-[10px] text-amber-100/80">
+                    <div className="mt-1 text-[10px] text-slate-700">
                       {economyEntity.description}
                     </div>
                     {terrain === TERRAIN.POKEMON_CENTER && (
                       <>
-                        <div className="mt-1 text-[10px] text-amber-200/80">
+                        <div className="mt-1 text-[10px] text-slate-700">
                           Reparar: {CENTER_REPAIR_COST_PER_HP} c/HP · PP: {CENTER_RESUPPLY_COST_PER_PP} c/PP · Estado: {CENTER_STATUS_CURE_COST}
                         </div>
-                        <div className="mt-1 text-[10px] text-amber-200/80">
+                        <div className="mt-1 text-[10px] text-slate-700">
                           Propiedad: {centerOwner ? `Jugador ${centerOwner === 'P1' ? '1' : '2'}` : 'Neutral (se captura con Esperar)'}
                         </div>
                       </>
                     )}
                     {terrain === TERRAIN.BASE && (
-                      <div className="mt-1 text-[10px] text-amber-200/80">
+                      <div className="mt-1 text-[10px] text-slate-700">
                         Ingreso fijo por turno: +{BASE_TURN_INCOME}
                       </div>
                     )}
                     {terrain === TERRAIN.RUINS && (
-                      <div className="mt-1 text-[10px] text-amber-200/80">
+                      <div className="mt-1 text-[10px] text-slate-700">
                         Max Potion: {POKEMART_MAX_POTION_COST} · Elixir: {POKEMART_ELIXIR_COST} · Full Heal: {POKEMART_FULL_HEAL_COST}
                       </div>
                     )}

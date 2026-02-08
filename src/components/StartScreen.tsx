@@ -92,14 +92,14 @@ export function StartScreen({ onStartGame, onHowToPlay, onMultiplayer, onDraft, 
   return (
     <StartMenuShell>
       <div
-        className={`absolute inset-0 z-30 flex items-center justify-center bg-black transition-opacity duration-500 ${
+        className={`absolute inset-0 z-30 flex items-center justify-center bg-[#e8dcc2] transition-opacity duration-500 ${
           phase === 'boot' ? 'opacity-100' : 'opacity-0 pointer-events-none'
         }`}
       >
         <div className="text-center animate-pulse">
-          <Swords className="w-12 h-12 text-amber-500 mx-auto mb-3" strokeWidth={1.5} />
+          <Swords className="w-12 h-12 text-amber-700 mx-auto mb-3" strokeWidth={1.5} />
           <p
-            className="text-[9px] tracking-[0.22em] text-amber-500/85 uppercase"
+            className="text-[9px] tracking-[0.22em] text-amber-800/85 uppercase"
             style={{ fontFamily: '"Press Start 2P", monospace' }}
           >
             Booting Command Deck
@@ -123,13 +123,13 @@ export function StartScreen({ onStartGame, onHowToPlay, onMultiplayer, onDraft, 
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div>
                 <h1
-                  className="text-base md:text-lg text-amber-100 uppercase tracking-[0.14em]"
-                  style={{ fontFamily: '"Press Start 2P", monospace', textShadow: '2px 2px 0 rgba(0,0,0,0.6)' }}
+                  className="text-base md:text-lg text-amber-900 uppercase tracking-[0.14em]"
+                  style={{ fontFamily: '"Press Start 2P", monospace', textShadow: '1px 1px 0 rgba(255,255,255,0.42)' }}
                 >
                   Tactical Pokemon Battles
                 </h1>
                 <p
-                  className="text-[12px] md:text-[13px] text-slate-300 mt-1 font-ui"
+                  className="text-[12px] md:text-[13px] text-slate-700 mt-1 font-ui"
                 >
                   Local, online and draft combat with shared battle rules.
                 </p>
@@ -273,7 +273,7 @@ export function StartScreen({ onStartGame, onHowToPlay, onMultiplayer, onDraft, 
                           className={`px-2 py-2 border-[2px] rounded-sm text-[8px] uppercase tracking-[0.12em] transition-colors ${
                             onlineMode === 'quick'
                               ? 'bg-emerald-100 border-emerald-500 text-emerald-900'
-                              : 'bg-[#182c31]/85 border-amber-700/65 text-amber-100/80 hover:border-amber-500/70'
+                              : 'bg-[#f5ead3] border-amber-700/45 text-amber-900/85 hover:border-amber-600/70'
                           }`}
                           style={{ fontFamily: '"Press Start 2P", monospace' }}
                         >
@@ -285,7 +285,7 @@ export function StartScreen({ onStartGame, onHowToPlay, onMultiplayer, onDraft, 
                           className={`px-2 py-2 border-[2px] rounded-sm text-[8px] uppercase tracking-[0.12em] transition-colors ${
                             onlineMode === 'draft'
                               ? 'bg-indigo-100 border-indigo-400 text-indigo-900'
-                              : 'bg-[#182c31]/85 border-amber-700/65 text-amber-100/80 hover:border-amber-500/70'
+                              : 'bg-[#f5ead3] border-amber-700/45 text-amber-900/85 hover:border-amber-600/70'
                           }`}
                           style={{ fontFamily: '"Press Start 2P", monospace' }}
                         >
@@ -355,8 +355,8 @@ export function StartScreen({ onStartGame, onHowToPlay, onMultiplayer, onDraft, 
                     <MenuBadge label="Reserve deploy" accent="amber" />
                   </div>
                   <div className="pt-1 flex items-center gap-2">
-                    <Users className="w-4 h-4 text-slate-300" />
-                    <p className="text-[12px] tracking-[0.02em] text-slate-300 font-ui">
+                    <Users className="w-4 h-4 text-slate-700" />
+                    <p className="text-[12px] tracking-[0.02em] text-slate-700 font-ui">
                       Online rooms with host and guest sync.
                     </p>
                   </div>
