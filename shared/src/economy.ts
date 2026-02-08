@@ -1,14 +1,14 @@
 import type { GameMap, Player, PokemonTemplate, StatusEffect, TerrainType } from './types';
 import { TERRAIN } from './terrain';
 
-export const STARTING_CREDITS = 1600;
-export const BASE_TURN_INCOME = 260;
-export const CENTER_CONTROL_INCOME = 90;
+export const STARTING_CREDITS = 1250;
+export const BASE_TURN_INCOME = 220;
+export const CENTER_CONTROL_INCOME = 75;
 
-export const CENTER_REPAIR_COST_PER_HP = 4;
-export const CENTER_RESUPPLY_COST_PER_PP = 35;
-export const CENTER_STATUS_CURE_COST = 120;
-export const CENTER_MAX_REPAIR_RATIO = 0.3;
+export const CENTER_REPAIR_COST_PER_HP = 5;
+export const CENTER_RESUPPLY_COST_PER_PP = 30;
+export const CENTER_STATUS_CURE_COST = 100;
+export const CENTER_MAX_REPAIR_RATIO = 0.25;
 
 export const SHOWDOWN_ITEM_ICON_BASE_URL = 'https://play.pokemonshowdown.com/sprites/itemicons';
 
@@ -45,17 +45,17 @@ export function getBaseStatTotal(template: PokemonTemplate): number {
 
 export function calculateDeployCost(template: PokemonTemplate): number {
   const bst = getBaseStatTotal(template);
-  const hpWeight = template.hp * 0.2;
-  const mobilityWeight = template.mov * 25;
+  const hpWeight = template.hp * 0.15;
+  const mobilityWeight = template.mov * 30;
   const maxRange = template.moves.reduce((max, move) => Math.max(max, move.range), 1);
-  const rangeWeight = maxRange * 18;
-  const statusUtility = template.moves.filter(move => move.category === 'status').length * 12;
-  const stageBonus = Math.max(0, (template.evolutionStage ?? 1) - 1) * 40;
+  const rangeWeight = maxRange * 22;
+  const statusUtility = template.moves.filter(move => move.category === 'status').length * 15;
+  const stageBonus = Math.max(0, (template.evolutionStage ?? 1) - 1) * 85;
 
-  const rawCost = 140 + (bst + hpWeight + mobilityWeight) * 0.62 + rangeWeight + statusUtility + stageBonus;
+  const rawCost = 120 + (bst * 0.58) + hpWeight + mobilityWeight + rangeWeight + statusUtility + stageBonus;
   const rounded = Math.round(rawCost / 25) * 25;
 
-  return Math.max(250, Math.min(900, rounded));
+  return Math.max(275, Math.min(950, rounded));
 }
 
 export function canAffordAnyDeploy(reserve: PokemonTemplate[], credits: number): boolean {
