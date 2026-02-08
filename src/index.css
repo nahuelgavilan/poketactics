@@ -1,9 +1,9 @@
+/* Import Google Fonts for retro feel */
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-/* Import Google Fonts for retro feel */
-@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 
 /* Root variables */
 :root {
@@ -188,6 +188,72 @@ body {
   }
 }
 
+@keyframes start-menu-sparkle {
+  0%, 100% {
+    transform: scale(0.2);
+    opacity: 0;
+  }
+  45% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes start-menu-orbit {
+  0% {
+    transform: rotate(var(--menu-orbit-offset, 0deg))
+      translateX(var(--menu-orbit-radius, 20px))
+      rotate(calc(-1 * var(--menu-orbit-offset, 0deg)));
+  }
+  100% {
+    transform: rotate(calc(var(--menu-orbit-offset, 0deg) + 360deg))
+      translateX(var(--menu-orbit-radius, 20px))
+      rotate(calc(-1 * (var(--menu-orbit-offset, 0deg) + 360deg)));
+  }
+}
+
+@keyframes start-menu-idle {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes start-menu-pulse {
+  0%, 100% {
+    opacity: 0.7;
+    transform: scale(0.98);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.02);
+  }
+}
+
+@keyframes start-menu-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes start-menu-appear {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
 /* Animation utilities */
 .animate-float {
   animation: float 6s ease-in-out infinite;
@@ -223,6 +289,30 @@ body {
 
 .animate-move-pulse {
   animation: move-pulse 1.5s ease-in-out infinite;
+}
+
+.animate-start-menu-sparkle {
+  animation: start-menu-sparkle ease-in-out infinite;
+}
+
+.animate-start-menu-orbit {
+  animation: start-menu-orbit linear infinite;
+}
+
+.animate-start-menu-idle {
+  animation: start-menu-idle 2.5s ease-in-out infinite;
+}
+
+.animate-start-menu-pulse {
+  animation: start-menu-pulse 2s ease-in-out infinite;
+}
+
+.animate-start-menu-slide-up {
+  animation: start-menu-slide-up 0.45s ease-out both;
+}
+
+.animate-start-menu-appear {
+  animation: start-menu-appear 0.5s ease-out both;
 }
 
 /* Stagger animation delays */

@@ -1,18 +1,25 @@
 import { useState, useCallback } from 'react';
-import { ArrowLeft, Play } from 'lucide-react';
+import { ArrowLeft, Play, Grid2x2, Ruler } from 'lucide-react';
 import { MAP_SIZES, type MapSize } from '../utils/mapGenerator';
 import { useSFX } from '../hooks/useSFX';
+import {
+  StartMenuShell,
+  MenuActionButton,
+  MenuBadge,
+  MenuPanel,
+  MenuStatRow,
+} from './menu/StartMenuTheme';
 
 interface MapSizeSelectorProps {
   onSelect: (width: number, height: number) => void;
   onBack: () => void;
 }
 
-function MiniGrid({ width, height }: { width: number; height: number }) {
+function MiniGrid({ width, height, selected }: { width: number; height: number; selected: boolean }) {
   const cellSize = Math.min(6, Math.floor(48 / Math.max(width, height)));
   return (
     <div
-      className="grid gap-px opacity-60"
+      className="grid gap-px"
       style={{
         gridTemplateColumns: `repeat(${width}, ${cellSize}px)`,
         gridTemplateRows: `repeat(${height}, ${cellSize}px)`,
@@ -21,7 +28,7 @@ function MiniGrid({ width, height }: { width: number; height: number }) {
       {Array.from({ length: width * height }).map((_, i) => (
         <div
           key={i}
-          className="bg-slate-400/50 rounded-[1px]"
+          className={selected ? 'bg-amber-300/70 rounded-[1px]' : 'bg-slate-500/65 rounded-[1px]'}
           style={{ width: cellSize, height: cellSize }}
         />
       ))}
@@ -30,19 +37,21 @@ function MiniGrid({ width, height }: { width: number; height: number }) {
 }
 
 const SIZE_LABELS: Record<string, string> = {
-  'Pequeño': 'S',
-  'Mediano': 'M',
-  'Grande': 'L',
+  Pequeno: 'S',
+  Mediano: 'M',
+  Grande: 'L',
+  Pequeño: 'S',
 };
 
-const SIZE_COLORS: Record<string, { bg: string; border: string; glow: string }> = {
-  'Pequeño': { bg: 'from-emerald-600 to-emerald-800', border: 'border-emerald-400/50', glow: 'shadow-emerald-500/30' },
-  'Mediano': { bg: 'from-blue-600 to-blue-800', border: 'border-blue-400/50', glow: 'shadow-blue-500/30' },
-  'Grande': { bg: 'from-purple-600 to-purple-800', border: 'border-purple-400/50', glow: 'shadow-purple-500/30' },
+const SIZE_ACCENT: Record<string, 'green' | 'blue' | 'violet'> = {
+  Pequeno: 'green',
+  Mediano: 'blue',
+  Grande: 'violet',
+  Pequeño: 'green',
 };
 
 export function MapSizeSelector({ onSelect, onBack }: MapSizeSelectorProps) {
-  const [selected, setSelected] = useState<MapSize>(MAP_SIZES[1]); // Default: Medium
+  const [selected, setSelected] = useState<MapSize>(MAP_SIZES[1]);
   const { playSFX } = useSFX();
 
   const handleSelect = useCallback((size: MapSize) => {
@@ -61,109 +70,115 @@ export function MapSizeSelector({ onSelect, onBack }: MapSizeSelectorProps) {
   }, [playSFX, onBack]);
 
   return (
-    <div className="fixed inset-0 z-50 bg-[#030305] flex flex-col items-center justify-center select-none">
-      {/* Background gradients */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(30,58,138,0.15),transparent_70%)]" />
-
-      {/* Scanlines */}
-      <div
-        className="absolute inset-0 pointer-events-none opacity-[0.03]"
-        style={{ background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.5) 2px, rgba(0,0,0,0.5) 4px)' }}
-      />
-
-      <div className="relative z-10 flex flex-col items-center gap-6 px-4 w-full max-w-md">
-        {/* Title */}
-        <h2
-          className="text-base md:text-lg text-amber-400 tracking-wide"
-          style={{ fontFamily: '"Press Start 2P", monospace', textShadow: '2px 2px 0 #000' }}
-        >
-          Tamaño de Mapa
-        </h2>
-
-        {/* Size cards */}
-        <div className="flex gap-3 w-full justify-center">
-          {MAP_SIZES.map((size) => {
-            const isSelected = selected.label === size.label;
-            const colors = SIZE_COLORS[size.label];
-            return (
-              <button
-                key={size.label}
-                onClick={() => handleSelect(size)}
-                className={`
-                  relative flex flex-col items-center gap-2 p-3 md:p-4 rounded-xl
-                  border-2 transition-all duration-200
-                  ${isSelected
-                    ? `bg-gradient-to-b ${colors.bg} ${colors.border} shadow-lg ${colors.glow} scale-105`
-                    : 'bg-slate-900/80 border-slate-700/50 hover:border-slate-500/50'
-                  }
-                `}
-              >
-                {/* Badge */}
-                <div className={`
-                  text-lg md:text-xl font-bold
-                  ${isSelected ? 'text-white' : 'text-slate-400'}
-                `}
-                  style={{ fontFamily: '"Press Start 2P", monospace' }}
-                >
-                  {SIZE_LABELS[size.label]}
-                </div>
-
-                {/* Mini grid preview */}
-                <MiniGrid width={size.width} height={size.height} />
-
-                {/* Label */}
-                <div
-                  className={`text-[8px] md:text-[9px] tracking-wide ${isSelected ? 'text-white/90' : 'text-slate-500'}`}
-                  style={{ fontFamily: '"Press Start 2P", monospace' }}
-                >
-                  {size.label}
-                </div>
-
-                {/* Dimensions */}
-                <div className={`text-[7px] ${isSelected ? 'text-white/60' : 'text-slate-600'}`}
-                  style={{ fontFamily: '"Press Start 2P", monospace' }}
-                >
-                  {size.width}x{size.height}
-                </div>
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Buttons */}
-        <div className="flex gap-3 w-full">
+    <StartMenuShell>
+      <div className="h-full flex items-center justify-center p-3 md:p-6">
+        <div className="w-full max-w-4xl flex flex-col gap-3 md:gap-4 animate-start-menu-slide-up">
           <button
             onClick={handleBack}
-            className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl
-              bg-slate-800 hover:bg-slate-700 border border-slate-600/50
-              transition-all duration-150 active:scale-95"
+            className="self-start inline-flex items-center gap-2 px-3 py-2 rounded-sm border border-slate-600 bg-slate-900/80 hover:bg-slate-800/95 transition-colors"
           >
-            <ArrowLeft className="w-4 h-4 text-slate-300" />
-            <span
-              className="text-[9px] md:text-[10px] text-slate-300 font-bold"
-              style={{ fontFamily: '"Press Start 2P", monospace' }}
-            >
+            <ArrowLeft className="w-4 h-4 text-slate-100" />
+            <span className="text-[9px] uppercase tracking-[0.12em] text-slate-100" style={{ fontFamily: '"Press Start 2P", monospace' }}>
               Volver
             </span>
           </button>
 
-          <button
-            onClick={handleConfirm}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl
-              bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500
-              border border-amber-400/50 shadow-lg shadow-amber-500/20
-              transition-all duration-150 active:scale-95"
+          <MenuPanel
+            title="Seleccion de Mapa"
+            subtitle="Choose the battlefield size"
+            accent="amber"
+            rightSlot={<MenuBadge label="Setup" accent="blue" />}
           >
-            <Play className="w-4 h-4 text-white" fill="white" />
-            <span
-              className="text-[10px] md:text-xs text-white font-bold"
-              style={{ fontFamily: '"Press Start 2P", monospace' }}
-            >
-              Jugar
-            </span>
-          </button>
+            <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_0.8fr] gap-3 md:gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {MAP_SIZES.map((size) => {
+                  const isSelected = selected.label === size.label;
+                  const accent = SIZE_ACCENT[size.label] || 'blue';
+
+                  return (
+                    <button
+                      key={size.label}
+                      onClick={() => handleSelect(size)}
+                      className={`relative p-3 rounded-sm border-[2px] transition-all duration-150 ${
+                        isSelected
+                          ? accent === 'green'
+                            ? 'bg-emerald-900/55 border-emerald-400/80 shadow-[0_0_22px_rgba(16,185,129,0.25)]'
+                            : accent === 'violet'
+                            ? 'bg-violet-900/55 border-violet-400/80 shadow-[0_0_22px_rgba(139,92,246,0.25)]'
+                            : 'bg-blue-900/55 border-blue-400/80 shadow-[0_0_22px_rgba(59,130,246,0.25)]'
+                          : 'bg-slate-900/80 border-slate-600 hover:border-slate-400'
+                      }`}
+                    >
+                      <span className="pointer-events-none absolute inset-[2px] border border-white/10 rounded-[2px]" />
+                      <div className="relative flex flex-col items-center gap-2">
+                        <span
+                          className={`text-lg ${isSelected ? 'text-white' : 'text-slate-400'}`}
+                          style={{ fontFamily: '"Press Start 2P", monospace' }}
+                        >
+                          {SIZE_LABELS[size.label] || size.label[0]}
+                        </span>
+                        <MiniGrid width={size.width} height={size.height} selected={isSelected} />
+                        <span
+                          className={`text-[8px] uppercase tracking-[0.12em] ${isSelected ? 'text-slate-100' : 'text-slate-400'}`}
+                          style={{ fontFamily: '"Press Start 2P", monospace' }}
+                        >
+                          {size.label}
+                        </span>
+                        <span
+                          className={`text-[8px] uppercase tracking-[0.1em] ${isSelected ? 'text-slate-200' : 'text-slate-500'}`}
+                          style={{ fontFamily: '"Press Start 2P", monospace' }}
+                        >
+                          {size.width}x{size.height}
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="bg-slate-950/70 border border-slate-700 rounded-sm p-3 space-y-2">
+                <div className="flex items-center gap-2">
+                  <Grid2x2 className="w-4 h-4 text-amber-300" />
+                  <p className="text-[9px] uppercase tracking-[0.12em] text-amber-200" style={{ fontFamily: '"Press Start 2P", monospace' }}>
+                    Seleccion actual
+                  </p>
+                </div>
+
+                <MenuStatRow label="Label" value={selected.label} />
+                <MenuStatRow label="Ancho" value={`${selected.width} tiles`} />
+                <MenuStatRow label="Alto" value={`${selected.height} tiles`} />
+                <MenuStatRow label="Area" value={`${selected.width * selected.height} cells`} />
+
+                <div className="pt-2 flex items-center gap-2">
+                  <Ruler className="w-4 h-4 text-slate-300" />
+                  <p
+                    className="text-[8px] uppercase tracking-[0.1em] text-slate-300"
+                    style={{ fontFamily: '"Press Start 2P", monospace' }}
+                  >
+                    Mas espacio = mas flanqueo y vision.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <MenuActionButton
+                label="Volver"
+                icon={ArrowLeft}
+                color="slate"
+                onClick={handleBack}
+              />
+              <MenuActionButton
+                label="Iniciar"
+                icon={Play}
+                color="amber"
+                onClick={handleConfirm}
+                subtitle={`${selected.width}x${selected.height}`}
+              />
+            </div>
+          </MenuPanel>
         </div>
       </div>
-    </div>
+    </StartMenuShell>
   );
 }
