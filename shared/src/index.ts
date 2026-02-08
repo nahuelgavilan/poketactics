@@ -9,3 +9,4 @@ export * from './constants';
 export * from './moves';
 export * from './status';
 export * from './abilities';
+export * from './economy';

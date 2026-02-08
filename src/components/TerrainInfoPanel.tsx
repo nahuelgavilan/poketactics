@@ -1,5 +1,13 @@
 import { Shield, Footprints, Sparkles, Heart, Eye, Zap } from 'lucide-react';
 import { TERRAIN, TERRAIN_PROPS } from '../constants/terrain';
+import {
+  BASE_TURN_INCOME,
+  CENTER_REPAIR_COST_PER_HP,
+  CENTER_RESUPPLY_COST_PER_PP,
+  CENTER_STATUS_CURE_COST,
+  getShowdownItemIconUrl,
+  getTerrainEconomyEntity
+} from '@poketactics/shared';
 import type { TerrainType } from '../types/game';
 
 interface TerrainInfoPanelProps {
@@ -72,6 +80,7 @@ export function TerrainInfoPanel({ terrain, onClose }: TerrainInfoPanelProps) {
   const hasHeal = props.heals;
   const hasVisionBonus = (props as any).visionBonus;
   const isConsumable = props.consumable;
+  const economyEntity = getTerrainEconomyEntity(terrain);
 
   return (
     <div
@@ -146,7 +155,7 @@ export function TerrainInfoPanel({ terrain, onClose }: TerrainInfoPanelProps) {
                 {hasHeal && (
                   <div className="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold bg-pink-900/80 text-pink-400">
                     <Heart className="w-3 h-3" />
-                    <span>+20% HP/turno</span>
+                    <span>Servicio con coste</span>
                   </div>
                 )}
 
@@ -163,6 +172,31 @@ export function TerrainInfoPanel({ terrain, onClose }: TerrainInfoPanelProps) {
                   <div className="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold bg-orange-900/80 text-orange-400">
                     <Zap className="w-3 h-3" />
                     <span>+25% ATK: {props.typeBonus.slice(0, 2).join(', ')}</span>
+                  </div>
+                )}
+
+                {economyEntity && (
+                  <div className="w-full mt-1 p-2 rounded-md border border-amber-500/30 bg-amber-950/20">
+                    <div className="flex items-center gap-2">
+                      <img src={getShowdownItemIconUrl(economyEntity.primaryItemId)} alt="" className="w-4 h-4 object-contain" />
+                      {economyEntity.secondaryItemId && (
+                        <img src={getShowdownItemIconUrl(economyEntity.secondaryItemId)} alt="" className="w-4 h-4 object-contain" />
+                      )}
+                      <span className="text-[10px] font-bold text-amber-300">{economyEntity.label}</span>
+                    </div>
+                    <div className="mt-1 text-[10px] text-amber-100/80">
+                      {economyEntity.description}
+                    </div>
+                    {terrain === TERRAIN.POKEMON_CENTER && (
+                      <div className="mt-1 text-[10px] text-amber-200/80">
+                        Reparar: {CENTER_REPAIR_COST_PER_HP} c/HP · PP: {CENTER_RESUPPLY_COST_PER_PP} c/PP · Estado: {CENTER_STATUS_CURE_COST}
+                      </div>
+                    )}
+                    {terrain === TERRAIN.BASE && (
+                      <div className="mt-1 text-[10px] text-amber-200/80">
+                        Ingreso fijo por turno: +{BASE_TURN_INCOME}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

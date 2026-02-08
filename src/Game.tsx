@@ -13,6 +13,7 @@ import {
   EvolutionCinematic,
   MultiplayerLobby,
   TerrainInfoPanel,
+  BaseDeploySelector,
   DraftScreen,
   TurnTimer,
   TURN_TIMER_DURATION
@@ -25,7 +26,8 @@ import { MapSizeSelector } from './components/MapSizeSelector';
 import { MapEditor } from './components/MapEditor';
 import { audioPreloader, AUDIO_CONFIGS } from './utils/audioPreloader';
 import { MoveSelector } from './components/MoveSelector';
-import type { Position, TerrainType, Unit, GameMap, PokemonTemplate, EvolutionData } from './types/game';
+import { TERRAIN } from './constants/terrain';
+import type { Position, TerrainType, Unit, GameMap, PokemonTemplate, EvolutionData, Move } from './types/game';
 
 export default function Game() {
   const {
@@ -43,6 +45,11 @@ export default function Game() {
     winner,
     exploredP1,
     exploredP2,
+    baseReserveP1,
+    baseReserveP2,
+    creditsP1,
+    creditsP2,
+    deployBase,
     // Multiplayer state
     myPlayer,
     isMultiplayer,
@@ -81,6 +88,8 @@ export default function Game() {
     attackTarget,
     selectMove,
     cancelMoveSelect,
+    deployFromBase,
+    cancelDeploySelect,
     // Timer
     autoWaitAllUnits
   } = useGameState();
@@ -96,6 +105,7 @@ export default function Game() {
     onActionResult,
     sendMove,
     sendAttack,
+    sendDeploy,
     sendWait,
     sendCapture,
     sendEndTurn,
@@ -120,7 +130,7 @@ export default function Game() {
     if (state === 'menu') {
       // Menu theme - plays on start screen
       playMusic('menu_theme', { loop: true, volume: 0.5 });
-    } else if (state === 'playing' && (phase === 'SELECT' || phase === 'MOVING' || phase === 'ACTION_MENU')) {
+    } else if (state === 'playing' && (phase === 'SELECT' || phase === 'DEPLOY_SELECT' || phase === 'MOVING' || phase === 'ACTION_MENU')) {
       // Board theme - plays during normal gameplay (not battle) - lowered volume
       playMusic('board_theme', { loop: true, volume: 0.3 });
     } else if (phase === 'ATTACKING' || phase === 'MOVE_SELECT' || state === 'battle' || state === 'battle_zoom') {
@@ -219,10 +229,12 @@ export default function Game() {
 
   const handleSelectAttack = useCallback(() => {
     if (isInMultiplayerGame.current && selectedUnit && pendingPosition) {
-      // In multiplayer: first move unit, then enter attack phase
-      // Server will validate the move and send state update
-      console.log('[Multiplayer] Sending move for attack:', selectedUnit.uid, pendingPosition);
-      sendMove(selectedUnit.uid, pendingPosition.x, pendingPosition.y);
+      // In multiplayer: if destination changed, send move first.
+      const isSameTile = pendingPosition.x === selectedUnit.x && pendingPosition.y === selectedUnit.y;
+      if (!isSameTile) {
+        console.log('[Multiplayer] Sending move for attack:', selectedUnit.uid, pendingPosition);
+        sendMove(selectedUnit.uid, pendingPosition.x, pendingPosition.y);
+      }
       // Continue to attack phase locally (so user can select target)
       selectAttack();
     } else {
@@ -262,6 +274,15 @@ export default function Game() {
       triggerTurnTransition();
     }
   }, [sendEndTurn, triggerTurnTransition]);
+
+  const handleDeployFromBase = useCallback((templateId: number) => {
+    if (isInMultiplayerGame.current) {
+      sendDeploy(templateId);
+      cancelDeploySelect();
+      return;
+    }
+    deployFromBase(templateId);
+  }, [sendDeploy, cancelDeploySelect, deployFromBase]);
 
   // Track unit that needs a wait action sent after move confirmation (no encounter)
   const pendingWaitUnitRef = useRef<string | null>(null);
@@ -314,27 +335,29 @@ export default function Game() {
   }, [sendCapture, confirmCapture]);
 
   // Track pending battle for multiplayer (to show animation after server confirms)
-  const pendingBattleRef = useRef<{ attackerId: string; defenderId: string } | null>(null);
+  const pendingBattleRef = useRef<{ attackerId: string; defenderId: string; moveId: string } | null>(null);
+  const awaitingServerAttackRef = useRef(false);
   // Track pending evolution for multiplayer (to show after battle animation)
   const pendingEvolutionRef = useRef<{ unitId: string; newTemplate: PokemonTemplate } | null>(null);
 
-  // Handle tile clicks - in multiplayer ATTACKING phase, send attack to server
-  const handleTileClickMultiplayer = useCallback((x: number, y: number) => {
-    if (isInMultiplayerGame.current && gamePhase === 'ATTACKING' && selectedUnit) {
-      // Check if clicking on a valid attack target
-      const target = units.find(u => u.x === x && u.y === y && u.owner !== selectedUnit.owner);
-      if (target && attackRange.some(a => a.x === x && a.y === y)) {
-        console.log('[Multiplayer] Sending attack:', selectedUnit.uid, target.uid);
-        // Store pending battle info to show animation when server confirms
-        pendingBattleRef.current = { attackerId: selectedUnit.uid, defenderId: target.uid };
-        sendAttack(selectedUnit.uid, target.uid);
-        // DON'T run local battle - wait for server action-result
-        return;
-      }
+  const handleSelectMove = useCallback((move: Move) => {
+    if (isInMultiplayerGame.current && selectedUnit && attackTarget) {
+      pendingBattleRef.current = { attackerId: selectedUnit.uid, defenderId: attackTarget.uid, moveId: move.id };
+      awaitingServerAttackRef.current = true;
+      sendAttack(selectedUnit.uid, attackTarget.uid, move.id);
+      cancelMoveSelect();
+      return;
     }
-    // Use local handler for non-attack clicks (handles phase transitions, selection, etc)
+    selectMove(move);
+  }, [isInMultiplayerGame, selectedUnit, attackTarget, sendAttack, cancelMoveSelect, selectMove]);
+
+  // Handle tile clicks - in multiplayer we still use local phase flow until move is picked
+  const handleTileClickMultiplayer = useCallback((x: number, y: number) => {
+    if (isInMultiplayerGame.current && awaitingServerAttackRef.current) {
+      return;
+    }
     handleTileClick(x, y);
-  }, [gamePhase, selectedUnit, units, attackRange, sendAttack, handleTileClick]);
+  }, [handleTileClick]);
 
   const [showHowToPlay, setShowHowToPlay] = useState(false);
   const [showMultiplayer, setShowMultiplayer] = useState(false);
@@ -361,17 +384,16 @@ export default function Game() {
   const [timerResetKey, setTimerResetKey] = useState(0);
   const [timerEnabled, setTimerEnabled] = useState(true);
 
-  // Track if stats have been initialized
-  const statsInitializedRef = useRef(false);
+  useEffect(() => {
+    if (multiplayer.error) {
+      awaitingServerAttackRef.current = false;
+    }
+  }, [multiplayer.error]);
 
   // Initialize stats when units change (game start)
   useEffect(() => {
-    if (units.length > 0 && gameState === 'playing' && !statsInitializedRef.current) {
+    if (units.length > 0 && gameState === 'playing') {
       battleStats.initUnitStats(units);
-      statsInitializedRef.current = true;
-    }
-    if (gameState === 'menu') {
-      statsInitializedRef.current = false;
     }
   }, [units, gameState, battleStats]);
 
@@ -412,7 +434,6 @@ export default function Game() {
   const handleSizeSelected = useCallback((width: number, height: number) => {
     setShowMapSizeSelector(false);
     battleStats.resetStats();
-    statsInitializedRef.current = false;
 
     if (pendingDraftTeams) {
       initGameWithTeams(pendingDraftTeams.p1, pendingDraftTeams.p2, width, height);
@@ -426,7 +447,6 @@ export default function Game() {
   const handleEditorPlay = useCallback((customMap: GameMap) => {
     setShowMapEditor(false);
     battleStats.resetStats();
-    statsInitializedRef.current = false;
     initGameWithMap(customMap);
   }, [battleStats, initGameWithMap]);
 
@@ -434,14 +454,34 @@ export default function Game() {
   const handleTileClickWithTerrain = useCallback((x: number, y: number) => {
     // Check if there's a unit at this position
     const unitAtPosition = units.find(u => u.x === x && u.y === y);
+    const interactionPlayer = isMultiplayer && myPlayer ? myPlayer : currentPlayer;
+    const interactionReserve = interactionPlayer === 'P1' ? baseReserveP1 : baseReserveP2;
+    const tileTerrain = map[y]?.[x];
+    const bases: Position[] = [];
+    for (let by = 0; by < map.length; by++) {
+      for (let bx = 0; bx < (map[0]?.length ?? 0); bx++) {
+        if (map[by]?.[bx] === TERRAIN.BASE) {
+          bases.push({ x: bx, y: by });
+        }
+      }
+    }
+    const ownBase = bases.length > 0
+      ? (interactionPlayer === 'P1'
+        ? bases.reduce((best, tile) => (tile.x + tile.y > best.x + best.y ? tile : best), bases[0])
+        : bases.reduce((best, tile) => (tile.x + tile.y < best.x + best.y ? tile : best), bases[0]))
+      : null;
+    const canOpenDeploy = !!ownBase
+      && ownBase.x === x
+      && ownBase.y === y
+      && interactionReserve.length > 0;
 
     // If clicking empty tile while in SELECT phase and no unit selected
-    if (!unitAtPosition && gamePhase === 'SELECT' && !selectedUnit && map[y] && map[y][x] !== undefined) {
+    if (!unitAtPosition && gamePhase === 'SELECT' && !selectedUnit && tileTerrain !== undefined && !canOpenDeploy) {
       // Toggle: if clicking same tile, close panel; otherwise show new terrain
       if (selectedTerrain && selectedTerrain.x === x && selectedTerrain.y === y) {
         setSelectedTerrain(null);
       } else {
-        setSelectedTerrain({ x, y, terrain: map[y][x] });
+        setSelectedTerrain({ x, y, terrain: tileTerrain });
       }
       return;
     }
@@ -451,7 +491,7 @@ export default function Game() {
 
     // Pass to multiplayer-aware handler
     handleTileClickMultiplayer(x, y);
-  }, [units, gamePhase, selectedUnit, map, handleTileClickMultiplayer, selectedTerrain]);
+  }, [units, gamePhase, selectedUnit, map, handleTileClickMultiplayer, selectedTerrain, isMultiplayer, myPlayer, currentPlayer, baseReserveP1, baseReserveP2]);
 
   // Clear terrain selection when game state changes
   useEffect(() => {
@@ -536,6 +576,10 @@ export default function Game() {
         myPlayer: serverState.myPlayer,
         status: serverState.status,
         winner: serverState.winner,
+        baseReserveP1: serverState.baseReserveP1 ?? [],
+        baseReserveP2: serverState.baseReserveP2 ?? [],
+        creditsP1: serverState.creditsP1,
+        creditsP2: serverState.creditsP2,
         visibility: serverState.visibility
       });
     };
@@ -544,6 +588,7 @@ export default function Game() {
     onStateUpdate.current = (serverState: ClientGameState) => {
       console.log('[Multiplayer] State update from server:', serverState);
       if (!isInMultiplayerGame.current) return;
+      awaitingServerAttackRef.current = false;
 
       setMultiplayerState({
         map: serverState.map as GameMap,
@@ -553,6 +598,10 @@ export default function Game() {
         myPlayer: serverState.myPlayer,
         status: serverState.status,
         winner: serverState.winner,
+        baseReserveP1: serverState.baseReserveP1 ?? [],
+        baseReserveP2: serverState.baseReserveP2 ?? [],
+        creditsP1: serverState.creditsP1,
+        creditsP2: serverState.creditsP2,
         visibility: serverState.visibility
       });
     };
@@ -589,8 +638,11 @@ export default function Game() {
       }
 
       // Handle attack results - trigger battle animation WITH battle_zoom
-      if (result.type === 'attack' && pendingBattleRef.current) {
-        const { attackerId, defenderId } = pendingBattleRef.current;
+      if (result.type === 'attack') {
+        awaitingServerAttackRef.current = false;
+        const attackerId = pendingBattleRef.current?.attackerId ?? result.attackerId;
+        const defenderId = pendingBattleRef.current?.defenderId ?? result.defenderId;
+        const selectedMoveId = pendingBattleRef.current?.moveId ?? result.moveId;
 
         // Find units for battle data
         const attacker = units.find(u => u.uid === attackerId);
@@ -607,10 +659,22 @@ export default function Game() {
           pendingEvolutionRef.current = result.evolution;
         }
 
+        const attackerMove = attacker.template.moves.find(m => m.id === selectedMoveId)
+          || attacker.template.moves.find(m => m.category !== 'status')
+          || attacker.template.moves[0];
+        const defenderMove = result.counterMoveId
+          ? (defender.template.moves.find(m => m.id === result.counterMoveId) || null)
+          : null;
+
         // Trigger battle with zoom (just like local mode)
-        triggerServerBattleWithZoom(attacker, defender, result.damage, result.counterDamage);
+        triggerServerBattleWithZoom(attacker, defender, result.damage, result.counterDamage, attackerMove, defenderMove);
 
         pendingBattleRef.current = null;
+        return;
+      }
+
+      if (result.type === 'deploy') {
+        return;
       }
     };
   }, [onGameStarted, onStateUpdate, onActionResult, setMultiplayerState, triggerServerEncounter, triggerServerBattleWithZoom, myPlayer, units, sendWait]);
@@ -690,7 +754,14 @@ export default function Game() {
   // Check if all player units have moved (use myPlayer in multiplayer)
   const activePlayer = isMultiplayer && myPlayer ? myPlayer : currentPlayer;
   const playerUnits = units.filter(u => u.owner === activePlayer);
-  const allMoved = playerUnits.length > 0 && playerUnits.every(u => u.hasMoved);
+  const activeReserve = activePlayer === 'P1' ? baseReserveP1 : baseReserveP2;
+  const activeCredits = activePlayer === 'P1' ? creditsP1 : creditsP2;
+  const showMobileUnitPanel = !!selectedUnit
+    && isMobile
+    && gameState === 'playing'
+    && gamePhase !== 'ACTION_MENU'
+    && gamePhase !== 'MOVE_SELECT'
+    && gamePhase !== 'DEPLOY_SELECT';
 
   return (
     <div className="fixed inset-0 bg-slate-900 text-slate-100 flex flex-col select-none overflow-hidden">
@@ -706,6 +777,8 @@ export default function Game() {
         movedCount={playerUnits.filter(u => u.hasMoved).length}
         totalCount={playerUnits.length}
         gamePhase={gamePhase}
+        creditsP1={creditsP1}
+        creditsP2={creditsP2}
       />
 
       {/* Main game area - scrollable container for larger boards */}
@@ -736,7 +809,7 @@ export default function Game() {
 
         {/* Fixed HUD overlay - positioned over scroll area */}
         {/* Phase indicator - floating top-right during MOVING/ATTACKING */}
-        {gameState === 'playing' && (gamePhase === 'MOVING' || gamePhase === 'ATTACKING' || gamePhase === 'MOVE_SELECT') && (
+        {gameState === 'playing' && (gamePhase === 'MOVING' || gamePhase === 'ATTACKING' || gamePhase === 'MOVE_SELECT' || gamePhase === 'DEPLOY_SELECT') && (
           <div className="absolute top-1 right-1 md:top-3 md:right-3 z-20 animate-in pointer-events-none">
             <div className={`
               px-3 py-1.5 md:px-4 md:py-2 rounded-lg
@@ -744,10 +817,17 @@ export default function Game() {
               backdrop-blur-sm shadow-lg
               ${gamePhase === 'MOVING'
                 ? 'bg-blue-900/90 border border-blue-500/50 text-blue-300 shadow-blue-500/20'
-                : 'bg-red-900/90 border border-red-500/50 text-red-300 shadow-red-500/30'
-              }
+                : gamePhase === 'DEPLOY_SELECT'
+                ? 'bg-amber-900/90 border border-amber-500/50 text-amber-300 shadow-amber-500/20'
+                : 'bg-red-900/90 border border-red-500/50 text-red-300 shadow-red-500/30'}
             `}>
-              {gamePhase === 'MOVING' ? 'Elige destino' : gamePhase === 'MOVE_SELECT' ? 'Elige movimiento' : 'Elige objetivo'}
+              {gamePhase === 'MOVING'
+                ? 'Elige destino'
+                : gamePhase === 'MOVE_SELECT'
+                ? 'Elige movimiento'
+                : gamePhase === 'DEPLOY_SELECT'
+                ? 'Desplegar desde base'
+                : 'Elige objetivo'}
             </div>
           </div>
         )}
@@ -838,7 +918,7 @@ export default function Game() {
         )}
 
         {/* Mobile: Selected unit stats panel - bottom of screen */}
-        {selectedUnit && isMobile && (
+        {showMobileUnitPanel && selectedUnit && (
           <div className="absolute bottom-2 left-2 right-2 animate-slide-up z-30 pointer-events-none">
             <div className={`
               flex items-center gap-3 px-3 py-2
@@ -936,11 +1016,21 @@ export default function Game() {
         />
       )}
 
+      {gamePhase === 'DEPLOY_SELECT' && deployBase && (
+        <BaseDeploySelector
+          player={activePlayer}
+          reserve={activeReserve}
+          credits={activeCredits}
+          onDeploy={handleDeployFromBase}
+          onCancel={cancelDeploySelect}
+        />
+      )}
+
       {gamePhase === 'MOVE_SELECT' && selectedUnit && attackTarget && (
         <MoveSelector
           attacker={selectedUnit}
           target={attackTarget}
-          onSelectMove={selectMove}
+          onSelectMove={handleSelectMove}
           onCancel={cancelMoveSelect}
         />
       )}

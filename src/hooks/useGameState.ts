@@ -1,12 +1,22 @@
 import { useState, useCallback } from 'react';
 import { TERRAIN } from '../constants/terrain';
-import { getRandomPokemon } from '../constants/pokemon';
-import { getNextEvolution } from '../constants/evolution';
+import { getNextEvolution, getBalancedRandomBaseTeams } from '../constants/evolution';
 import { calculateMoveRange, calculateAttackRange } from '../utils/pathfinding';
 import { createBattleData } from '../utils/combat';
-import { triggerWildEncounter, createCapturedUnit } from '../utils/capture';
+import { triggerWildEncounter } from '../utils/capture';
 import { generateRandomMap, DEFAULT_MAP_SIZE } from '../utils/mapGenerator';
-import { applyStatusTick, getMovReduction } from '@poketactics/shared';
+import {
+  applyStatusTick,
+  initPP,
+  STARTING_CREDITS,
+  calculateDeployCost,
+  applyPokemonCenterService,
+  calculateTurnIncome,
+  playerCanStillActWithDeploy,
+  CENTER_REPAIR_COST_PER_HP,
+  CENTER_RESUPPLY_COST_PER_PP,
+  CENTER_STATUS_CURE_COST
+} from '@poketactics/shared';
 import type {
   GameState,
   GamePhase,
@@ -42,6 +52,11 @@ interface UseGameStateReturn {
   winner: Player | null;
   exploredP1: boolean[][];
   exploredP2: boolean[][];
+  baseReserveP1: PokemonTemplate[];
+  baseReserveP2: PokemonTemplate[];
+  creditsP1: number;
+  creditsP2: number;
+  deployBase: Position | null;
 
   // Multiplayer state
   myPlayer: Player | null;
@@ -74,6 +89,8 @@ interface UseGameStateReturn {
   attackTarget: Unit | null;
   selectMove: (move: Move) => void;
   cancelMoveSelect: () => void;
+  deployFromBase: (templateId: number) => void;
+  cancelDeploySelect: () => void;
   // Multiplayer battle (triggered by server result)
   startServerBattle: (attackerId: string, defenderId: string, damage: number, counterDamage: number) => void;
   // Multiplayer encounter
@@ -83,7 +100,14 @@ interface UseGameStateReturn {
   // Multiplayer encounter (from server)
   triggerServerEncounter: (pokemon: PokemonTemplate, spawnPos: Position, player: Player) => void;
   // Multiplayer battle with zoom (from server)
-  triggerServerBattleWithZoom: (attacker: Unit, defender: Unit, damage: number, counterDamage: number) => void;
+  triggerServerBattleWithZoom: (
+    attacker: Unit,
+    defender: Unit,
+    damage: number,
+    counterDamage: number,
+    attackerMove?: Move,
+    defenderMove?: Move | null
+  ) => void;
   // Optimistic update for multiplayer
   updateUnitsOptimistic: (unitId: string, x: number, y: number) => void;
   // Timer auto-wait
@@ -99,6 +123,10 @@ interface MultiplayerGameState {
   myPlayer: Player;
   status: 'waiting' | 'playing' | 'finished';
   winner: Player | null;
+  baseReserveP1: PokemonTemplate[];
+  baseReserveP2: PokemonTemplate[];
+  creditsP1: number;
+  creditsP2: number;
   visibility: {
     visible: boolean[][];
     explored: boolean[][];
@@ -129,6 +157,11 @@ export function useGameState(): UseGameStateReturn {
   // Fog of War - explored tiles per player
   const [exploredP1, setExploredP1] = useState<boolean[][]>([]);
   const [exploredP2, setExploredP2] = useState<boolean[][]>([]);
+  const [baseReserveP1, setBaseReserveP1] = useState<PokemonTemplate[]>([]);
+  const [baseReserveP2, setBaseReserveP2] = useState<PokemonTemplate[]>([]);
+  const [creditsP1, setCreditsP1] = useState(STARTING_CREDITS);
+  const [creditsP2, setCreditsP2] = useState(STARTING_CREDITS);
+  const [deployBase, setDeployBase] = useState<Position | null>(null);
 
   // Track if unit has moved this action (for action menu state)
   const [unitHasMoved, setUnitHasMoved] = useState(false);
@@ -143,6 +176,66 @@ export function useGameState(): UseGameStateReturn {
   // Computed: is it my turn?
   const isMyTurn = !isMultiplayer || myPlayer === currentPlayer;
 
+  const getPlayerBaseTile = useCallback((currentMap: GameMap, player: Player): Position | null => {
+    const bases: Position[] = [];
+    for (let y = 0; y < currentMap.length; y++) {
+      for (let x = 0; x < (currentMap[0]?.length ?? 0); x++) {
+        if (currentMap[y][x] === TERRAIN.BASE) {
+          bases.push({ x, y });
+        }
+      }
+    }
+    if (bases.length === 0) return null;
+    if (player === 'P1') {
+      return bases.reduce((best, tile) => (tile.x + tile.y > best.x + best.y ? tile : best), bases[0]);
+    }
+    return bases.reduce((best, tile) => (tile.x + tile.y < best.x + best.y ? tile : best), bases[0]);
+  }, []);
+
+  const resolveWinner = useCallback((
+    currentUnits: Unit[],
+    reserveP1: PokemonTemplate[],
+    reserveP2: PokemonTemplate[]
+  ): Player | null => {
+    const p1Alive = currentUnits.some(u => u.owner === 'P1') || reserveP1.length > 0;
+    const p2Alive = currentUnits.some(u => u.owner === 'P2') || reserveP2.length > 0;
+    if (!p1Alive && p2Alive) return 'P2';
+    if (!p2Alive && p1Alive) return 'P1';
+    return null;
+  }, []);
+
+  const getCreditsForPlayer = useCallback((player: Player): number => {
+    return player === 'P1' ? creditsP1 : creditsP2;
+  }, [creditsP1, creditsP2]);
+
+  const setCreditsForPlayer = useCallback((player: Player, credits: number) => {
+    if (player === 'P1') {
+      setCreditsP1(credits);
+    } else {
+      setCreditsP2(credits);
+    }
+  }, []);
+
+  const canPlayerStillAct = useCallback((
+    player: Player,
+    currentUnits: Unit[],
+    reserveP1: PokemonTemplate[],
+    reserveP2: PokemonTemplate[],
+    p1Credits: number,
+    p2Credits: number
+  ): boolean => {
+    const reserve = player === 'P1' ? reserveP1 : reserveP2;
+    const credits = player === 'P1' ? p1Credits : p2Credits;
+
+    return playerCanStillActWithDeploy(
+      map,
+      currentUnits.map(unit => ({ owner: unit.owner, x: unit.x, y: unit.y, hasMoved: unit.hasMoved })),
+      reserve,
+      credits,
+      player
+    );
+  }, [map]);
+
   const addLog = useCallback((message: string) => {
     setLogs(prev => [message, ...prev]);
   }, []);
@@ -152,6 +245,7 @@ export function useGameState(): UseGameStateReturn {
     setMoveRange([]);
     setAttackRange([]);
     setPendingPosition(null);
+    setDeployBase(null);
     setGamePhase('SELECT');
     setUnitHasMoved(false);
     setSelectedMove(null);
@@ -165,53 +259,18 @@ export function useGameState(): UseGameStateReturn {
     const newMap = generateRandomMap(w, h);
     setMap(newMap);
 
-    // Create teams with positions based on map dimensions
-    const p1Units: Unit[] = [];
-    const p2Units: Unit[] = [];
-    const usedIds = new Set<number>();
+    const { p1Team, p2Team } = getBalancedRandomBaseTeams(3);
 
-    for (let i = 0; i < 3; i++) {
-      const temp = getRandomPokemon(usedIds);
-      usedIds.add(temp.id);
-      p1Units.push({
-        uid: Math.random().toString(36).substring(7),
-        owner: 'P1',
-        template: temp,
-        x: i % w,
-        y: h - 1 - Math.floor(i / w),
-        currentHp: temp.hp,
-        hasMoved: false,
-        kills: 0,
-        pp: temp.moves.map(m => m.pp),
-        status: null,
-        statusTurns: 0
-      });
-    }
-
-    for (let i = 0; i < 3; i++) {
-      const temp = getRandomPokemon(usedIds);
-      usedIds.add(temp.id);
-      p2Units.push({
-        uid: Math.random().toString(36).substring(7),
-        owner: 'P2',
-        template: temp,
-        x: w - 1 - (i % w),
-        y: 0 + Math.floor(i / w),
-        currentHp: temp.hp,
-        hasMoved: false,
-        kills: 0,
-        pp: temp.moves.map(m => m.pp),
-        status: null,
-        statusTurns: 0
-      });
-    }
-
-    setUnits([...p1Units, ...p2Units]);
+    setUnits([]);
+    setBaseReserveP1(p1Team);
+    setBaseReserveP2(p2Team);
+    setCreditsP1(STARTING_CREDITS);
+    setCreditsP2(STARTING_CREDITS);
     setTurn(1);
     setCurrentPlayer('P1');
     setGameState('playing');
     setGamePhase('SELECT');
-    setLogs(['¡Empieza el combate!', '¡Usa la Hierba Alta para capturar!']);
+    setLogs(['¡Empieza el combate!', 'Despliega tu equipo desde la Base.', '¡Usa la Hierba Alta para capturar!']);
     setWinner(null);
 
     // Initialize fog of war
@@ -232,41 +291,16 @@ export function useGameState(): UseGameStateReturn {
     const newMap = generateRandomMap(w, h);
     setMap(newMap);
 
-    // Create units from provided teams
-    const p1Units: Unit[] = p1Team.map((temp, i) => ({
-      uid: Math.random().toString(36).substring(7),
-      owner: 'P1' as Player,
-      template: temp,
-      x: i % w,
-      y: h - 1 - Math.floor(i / w),
-      currentHp: temp.hp,
-      hasMoved: false,
-      kills: 0,
-      pp: temp.moves.map(m => m.pp),
-      status: null,
-      statusTurns: 0
-    }));
-
-    const p2Units: Unit[] = p2Team.map((temp, i) => ({
-      uid: Math.random().toString(36).substring(7),
-      owner: 'P2' as Player,
-      template: temp,
-      x: w - 1 - (i % w),
-      y: 0 + Math.floor(i / w),
-      currentHp: temp.hp,
-      hasMoved: false,
-      kills: 0,
-      pp: temp.moves.map(m => m.pp),
-      status: null,
-      statusTurns: 0
-    }));
-
-    setUnits([...p1Units, ...p2Units]);
+    setUnits([]);
+    setBaseReserveP1([...p1Team]);
+    setBaseReserveP2([...p2Team]);
+    setCreditsP1(STARTING_CREDITS);
+    setCreditsP2(STARTING_CREDITS);
     setTurn(1);
     setCurrentPlayer('P1');
     setGameState('playing');
     setGamePhase('SELECT');
-    setLogs(['¡Empieza el combate!', '¡Equipos seleccionados por draft!']);
+    setLogs(['¡Empieza el combate!', '¡Equipos seleccionados por draft!', 'Despliega tu equipo desde la Base.']);
     setWinner(null);
 
     // Initialize fog of war
@@ -286,53 +320,18 @@ export function useGameState(): UseGameStateReturn {
 
     setMap(customMap);
 
-    // Create random teams
-    const p1Units: Unit[] = [];
-    const p2Units: Unit[] = [];
-    const usedIds = new Set<number>();
+    const { p1Team, p2Team } = getBalancedRandomBaseTeams(3);
 
-    for (let i = 0; i < 3; i++) {
-      const temp = getRandomPokemon(usedIds);
-      usedIds.add(temp.id);
-      p1Units.push({
-        uid: Math.random().toString(36).substring(7),
-        owner: 'P1',
-        template: temp,
-        x: i % w,
-        y: h - 1 - Math.floor(i / w),
-        currentHp: temp.hp,
-        hasMoved: false,
-        kills: 0,
-        pp: temp.moves.map(m => m.pp),
-        status: null,
-        statusTurns: 0
-      });
-    }
-
-    for (let i = 0; i < 3; i++) {
-      const temp = getRandomPokemon(usedIds);
-      usedIds.add(temp.id);
-      p2Units.push({
-        uid: Math.random().toString(36).substring(7),
-        owner: 'P2',
-        template: temp,
-        x: w - 1 - (i % w),
-        y: 0 + Math.floor(i / w),
-        currentHp: temp.hp,
-        hasMoved: false,
-        kills: 0,
-        pp: temp.moves.map(m => m.pp),
-        status: null,
-        statusTurns: 0
-      });
-    }
-
-    setUnits([...p1Units, ...p2Units]);
+    setUnits([]);
+    setBaseReserveP1(p1Team);
+    setBaseReserveP2(p2Team);
+    setCreditsP1(STARTING_CREDITS);
+    setCreditsP2(STARTING_CREDITS);
     setTurn(1);
     setCurrentPlayer('P1');
     setGameState('playing');
     setGamePhase('SELECT');
-    setLogs(['¡Empieza el combate!', '¡Mapa personalizado!']);
+    setLogs(['¡Empieza el combate!', '¡Mapa personalizado!', 'Despliega tu equipo desde la Base.']);
     setWinner(null);
 
     // Initialize fog of war
@@ -349,6 +348,10 @@ export function useGameState(): UseGameStateReturn {
   const initMultiplayerGame = useCallback((player: Player) => {
     setMyPlayer(player);
     setIsMultiplayer(true);
+    setBaseReserveP1([]);
+    setBaseReserveP2([]);
+    setCreditsP1(STARTING_CREDITS);
+    setCreditsP2(STARTING_CREDITS);
     setGameState('playing');
     setGamePhase('SELECT');
     resetSelection();
@@ -358,6 +361,10 @@ export function useGameState(): UseGameStateReturn {
   const setMultiplayerState = useCallback((state: MultiplayerGameState) => {
     setMap(state.map);
     setUnits(state.units);
+    setBaseReserveP1(state.baseReserveP1 ?? []);
+    setBaseReserveP2(state.baseReserveP2 ?? []);
+    setCreditsP1(state.creditsP1 ?? STARTING_CREDITS);
+    setCreditsP2(state.creditsP2 ?? STARTING_CREDITS);
     setTurn(state.turn);
     setCurrentPlayer(state.currentPlayer);
     setMyPlayer(state.myPlayer);
@@ -375,7 +382,10 @@ export function useGameState(): UseGameStateReturn {
       setMoveRange([]);
       setAttackRange([]);
       setPendingPosition(null);
+      setDeployBase(null);
       setUnitHasMoved(false);
+      setSelectedMove(null);
+      setAttackTarget(null);
     }
 
     // Update explored tiles based on server visibility
@@ -389,24 +399,34 @@ export function useGameState(): UseGameStateReturn {
   }, []);
 
   // Mark unit as having completed their turn
-  const waitUnit = useCallback((uid: string, currentUnits: Unit[]) => {
+  const waitUnit = useCallback((
+    uid: string,
+    currentUnits: Unit[],
+    overrides?: {
+      reserveP1?: PokemonTemplate[];
+      reserveP2?: PokemonTemplate[];
+      creditsP1?: number;
+      creditsP2?: number;
+    }
+  ) => {
     const nextUnits = currentUnits.map(u =>
       u.uid === uid ? { ...u, hasMoved: true } : u
     );
     setUnits(nextUnits);
     resetSelection();
 
-    // Check if all units of current player have moved
-    const playerUnits = nextUnits.filter(u => u.owner === currentPlayer);
-    const allMoved = playerUnits.every(u => u.hasMoved);
+    const nextReserveP1 = overrides?.reserveP1 ?? baseReserveP1;
+    const nextReserveP2 = overrides?.reserveP2 ?? baseReserveP2;
+    const nextCreditsP1 = overrides?.creditsP1 ?? creditsP1;
+    const nextCreditsP2 = overrides?.creditsP2 ?? creditsP2;
 
-    if (allMoved && playerUnits.length > 0) {
+    if (!canPlayerStillAct(currentPlayer, nextUnits, nextReserveP1, nextReserveP2, nextCreditsP1, nextCreditsP2)) {
       // Auto-trigger turn transition after a brief delay for feedback
       setTimeout(() => {
         setGameState('transition');
       }, 300);
     }
-  }, [resetSelection, currentPlayer]);
+  }, [resetSelection, currentPlayer, canPlayerStillAct, baseReserveP1, baseReserveP2, creditsP1, creditsP2]);
 
   // Try to trigger random encounter on tall grass (30% chance)
   const tryRandomEncounter = useCallback((unit: Unit, currentUnits: Unit[], currentMap: GameMap): boolean => {
@@ -448,7 +468,24 @@ export function useGameState(): UseGameStateReturn {
         setMoveRange(moves);
         setAttackRange([]);
         setGamePhase('MOVING');
+        return;
       }
+
+      const playerReserve = currentPlayer === 'P1' ? baseReserveP1 : baseReserveP2;
+      if (!clickedUnit && playerReserve.length > 0) {
+        const baseTile = getPlayerBaseTile(map, currentPlayer);
+        if (baseTile && baseTile.x === x && baseTile.y === y) {
+          setDeployBase(baseTile);
+          setGamePhase('DEPLOY_SELECT');
+        }
+      }
+      return;
+    }
+
+    if (gamePhase === 'DEPLOY_SELECT') {
+      if (deployBase && deployBase.x === x && deployBase.y === y) return;
+      setDeployBase(null);
+      setGamePhase('SELECT');
       return;
     }
 
@@ -547,7 +584,26 @@ export function useGameState(): UseGameStateReturn {
       }
       return;
     }
-  }, [gameState, gamePhase, units, currentPlayer, selectedUnit, moveRange, attackRange, map, unitHasMoved, waitUnit, resetSelection, tryRandomEncounter, isMultiplayer, isMyTurn]);
+  }, [
+    gameState,
+    gamePhase,
+    units,
+    currentPlayer,
+    selectedUnit,
+    moveRange,
+    attackRange,
+    map,
+    unitHasMoved,
+    waitUnit,
+    resetSelection,
+    tryRandomEncounter,
+    isMultiplayer,
+    isMyTurn,
+    baseReserveP1,
+    baseReserveP2,
+    getPlayerBaseTile,
+    deployBase
+  ]);
 
   const endBattle = useCallback(() => {
     if (!battleData) return;
@@ -626,14 +682,9 @@ export function useGameState(): UseGameStateReturn {
     setUnits(nextUnits);
     setBattleData(null);
 
-    // Check victory first
-    if (!nextUnits.some(u => u.owner === 'P1')) {
-      setWinner('P2');
-      setGameState('victory');
-      return;
-    }
-    if (!nextUnits.some(u => u.owner === 'P2')) {
-      setWinner('P1');
+    const nextWinner = resolveWinner(nextUnits, baseReserveP1, baseReserveP2);
+    if (nextWinner) {
+      setWinner(nextWinner);
       setGameState('victory');
       return;
     }
@@ -665,18 +716,27 @@ export function useGameState(): UseGameStateReturn {
       // Attacker died - check if all remaining player units have moved
       resetSelection();
 
-      // Check if turn should end (all remaining units have moved, or no units left that can act)
-      const playerUnits = nextUnits.filter(u => u.owner === currentPlayer);
-      const allMoved = playerUnits.length === 0 || playerUnits.every(u => u.hasMoved);
-
-      if (allMoved) {
+      if (!canPlayerStillAct(currentPlayer, nextUnits, baseReserveP1, baseReserveP2, creditsP1, creditsP2)) {
         // Auto-trigger turn transition
         setTimeout(() => {
           setGameState('transition');
         }, 300);
       }
     }
-  }, [battleData, units, waitUnit, addLog, resetSelection, currentPlayer]);
+  }, [
+    battleData,
+    units,
+    waitUnit,
+    addLog,
+    resetSelection,
+    currentPlayer,
+    resolveWinner,
+    baseReserveP1,
+    baseReserveP2,
+    canPlayerStillAct,
+    creditsP1,
+    creditsP2
+  ]);
 
   // Called when minigame succeeds - show capture celebration
   // Apply damage taken from wild Pokemon counter-attack and PP usage
@@ -699,12 +759,13 @@ export function useGameState(): UseGameStateReturn {
     if (!captureData || !selectedUnit) return;
 
     // Apply damage and PP to player's Pokemon
-    setUnits(prev => prev.map(u => {
+    const nextUnits = units.map(u => {
       if (u.uid !== selectedUnit.uid) return u;
       const newHp = damageTaken > 0 ? Math.max(1, u.currentHp - damageTaken) : u.currentHp;
       const newPP = ppUsed.length > 0 ? u.pp.map((p, i) => Math.max(0, p - (ppUsed[i] || 0))) : u.pp;
       return { ...u, currentHp: newHp, pp: newPP };
-    }));
+    });
+    setUnits(nextUnits);
     if (damageTaken > 0) addLog(`${selectedUnit.template.name} recibió ${damageTaken} de daño`);
 
     addLog(`¡${captureData.pokemon.name} salvaje escapó!`);
@@ -712,7 +773,7 @@ export function useGameState(): UseGameStateReturn {
     setGameState('playing');
 
     // Mark unit as having used their turn
-    waitUnit(selectedUnit.uid, units);
+    waitUnit(selectedUnit.uid, nextUnits);
   }, [captureData, selectedUnit, units, addLog, waitUnit]);
 
   // Called when player flees from capture minigame - unit's turn ends
@@ -750,18 +811,19 @@ export function useGameState(): UseGameStateReturn {
   const confirmCapture = useCallback(() => {
     if (!captureData || !selectedUnit) return;
 
-    const newUnit = createCapturedUnit(captureData);
-    // Add kills: 0 to new unit
-    const newUnitWithKills = { ...newUnit, kills: 0 };
-    const nextUnits = [...units, newUnitWithKills];
+    if (captureData.player === 'P1') {
+      setBaseReserveP1(prev => [...prev, captureData.pokemon]);
+    } else {
+      setBaseReserveP2(prev => [...prev, captureData.pokemon]);
+    }
 
-    setUnits(nextUnits);
     addLog(`¡${captureData.player === 'P1' ? 'Azul' : 'Rojo'} capturó un ${captureData.pokemon.name}!`);
+    addLog(`El ${captureData.pokemon.name} fue enviado a la Base.`);
 
     setCaptureData(null);
     setGameState('playing');
 
-    waitUnit(selectedUnit.uid, nextUnits);
+    waitUnit(selectedUnit.uid, units);
   }, [captureData, selectedUnit, units, addLog, waitUnit]);
 
   const confirmEvolution = useCallback(() => {
@@ -792,26 +854,31 @@ export function useGameState(): UseGameStateReturn {
     setGameState('playing');
     resetSelection();
 
-    // Check if turn should end (all units have moved)
-    const playerUnits = nextUnits.filter(u => u.owner === currentPlayer);
-    const allMoved = playerUnits.length === 0 || playerUnits.every(u => u.hasMoved);
-
-    if (allMoved) {
+    if (!canPlayerStillAct(currentPlayer, nextUnits, baseReserveP1, baseReserveP2, creditsP1, creditsP2)) {
       setTimeout(() => {
         setGameState('transition');
       }, 300);
     }
-  }, [evolutionData, units, addLog, resetSelection, currentPlayer]);
+  }, [
+    evolutionData,
+    units,
+    addLog,
+    resetSelection,
+    currentPlayer,
+    canPlayerStillAct,
+    baseReserveP1,
+    baseReserveP2,
+    creditsP1,
+    creditsP2
+  ]);
 
   const confirmTurnChange = useCallback(() => {
     const nextPlayer: Player = currentPlayer === 'P1' ? 'P2' : 'P1';
 
-    // Apply status ticks + healing at turn start
-    const healedUnits = units.map(u => {
-      // Reset hasMoved for all units
+    // Apply status ticks at turn start
+    const updatedUnits = units.map(u => {
       let updated = { ...u, hasMoved: false };
 
-      // Apply status effects for the incoming player's units
       if (u.owner === nextPlayer && u.status) {
         const tick = applyStatusTick(u.status, u.statusTurns, u.template.hp, u.currentHp);
         updated = {
@@ -820,6 +887,14 @@ export function useGameState(): UseGameStateReturn {
           status: tick.newStatus,
           statusTurns: tick.newStatusTurns,
         };
+        if (tick.cantAct && tick.newHp > 0) {
+          updated = { ...updated, hasMoved: true };
+          const statusName =
+            u.status === 'sleep' ? 'sueño' :
+            u.status === 'freeze' ? 'congelación' :
+            'parálisis';
+          addLog(`¡${u.template.name} no puede actuar por ${statusName}!`);
+        }
         if (tick.chipDamage > 0) {
           addLog(`${u.template.name} perdió ${tick.chipDamage} HP por ${u.status === 'burn' ? 'quemadura' : 'veneno'}`);
         }
@@ -828,35 +903,49 @@ export function useGameState(): UseGameStateReturn {
         }
       }
 
-      // Heal units on Pokémon Center (20% of max HP + cure status)
-      if (u.owner === nextPlayer && map[u.y]?.[u.x] === TERRAIN.POKEMON_CENTER) {
-        const healAmount = Math.floor(u.template.hp * 0.2);
-        const newHp = Math.min(u.template.hp, updated.currentHp + healAmount);
-        if (newHp > updated.currentHp) {
-          addLog(`¡${u.template.name} recuperó ${healAmount} HP en el Centro Pokémon!`);
-          updated = { ...updated, currentHp: newHp };
-        }
-        // Pokemon Center also heals status
-        if (updated.status) {
-          addLog(`¡${u.template.name} fue curado en el Centro Pokémon!`);
-          updated = { ...updated, status: null, statusTurns: 0 };
-        }
-      }
-
       return updated;
     });
 
-    setUnits(healedUnits);
+    const aliveUnits = updatedUnits.filter(u => u.currentHp > 0);
+    setUnits(aliveUnits);
+
+    const turnIncome = calculateTurnIncome(
+      map,
+      aliveUnits.map(unit => ({ owner: unit.owner, x: unit.x, y: unit.y })),
+      nextPlayer
+    );
+    const nextCredits = getCreditsForPlayer(nextPlayer) + turnIncome;
+    setCreditsForPlayer(nextPlayer, nextCredits);
+
+    addLog(`+${turnIncome} créditos para ${nextPlayer === 'P1' ? 'Jugador 1' : 'Jugador 2'}.`);
     setCurrentPlayer(nextPlayer);
 
     if (nextPlayer === 'P1') {
       setTurn(t => t + 1);
     }
 
+    const nextWinner = resolveWinner(aliveUnits, baseReserveP1, baseReserveP2);
+    if (nextWinner) {
+      setWinner(nextWinner);
+      setGameState('victory');
+      return;
+    }
+
     addLog(`Turno ${nextPlayer === 'P1' ? turn + 1 : turn}: Jugador ${nextPlayer === 'P1' ? '1' : '2'}`);
     setGameState('playing');
     setGamePhase('SELECT');
-  }, [currentPlayer, units, turn, addLog, map]);
+  }, [
+    currentPlayer,
+    units,
+    turn,
+    addLog,
+    map,
+    resolveWinner,
+    baseReserveP1,
+    baseReserveP2,
+    getCreditsForPlayer,
+    setCreditsForPlayer
+  ]);
 
   const triggerTurnTransition = useCallback(() => {
     resetSelection();
@@ -938,9 +1027,63 @@ export function useGameState(): UseGameStateReturn {
       return;
     }
 
+    // Paid service on Pokémon Center (repair + PP + status cure)
+    if (map[movedUnit.y]?.[movedUnit.x] === TERRAIN.POKEMON_CENTER) {
+      const currentCredits = getCreditsForPlayer(currentPlayer);
+      const service = applyPokemonCenterService({
+        template: movedUnit.template,
+        currentHp: movedUnit.currentHp,
+        pp: movedUnit.pp,
+        status: movedUnit.status,
+        statusTurns: movedUnit.statusTurns,
+        availableCredits: currentCredits
+      });
+
+      if (service.creditsSpent > 0) {
+        const servicedUnit: Unit = {
+          ...movedUnit,
+          currentHp: service.newHp,
+          pp: service.newPp,
+          status: service.newStatus,
+          statusTurns: service.newStatusTurns
+        };
+        const servicedUnits = nextUnits.map(u => u.uid === movedUnit.uid ? servicedUnit : u);
+        setUnits(servicedUnits);
+        setCreditsForPlayer(currentPlayer, currentCredits - service.creditsSpent);
+
+        if (service.healedHp > 0) {
+          addLog(`🏥 ${servicedUnit.template.name} reparó ${service.healedHp} HP (-${service.healedHp * CENTER_REPAIR_COST_PER_HP} créditos)`);
+        }
+        if (service.restoredPp > 0) {
+          addLog(`🔋 ${servicedUnit.template.name} recuperó ${service.restoredPp} PP (-${service.restoredPp * CENTER_RESUPPLY_COST_PER_PP} créditos)`);
+        }
+        if (service.curedStatus) {
+          addLog(`🩹 ${servicedUnit.template.name} fue curado de estado (-${CENTER_STATUS_CURE_COST} créditos)`);
+        }
+
+        const nextCredits = currentPlayer === 'P1'
+          ? { creditsP1: currentCredits - service.creditsSpent }
+          : { creditsP2: currentCredits - service.creditsSpent };
+        waitUnit(servicedUnit.uid, servicedUnits, nextCredits);
+        return;
+      }
+    }
+
     // Mark unit as done
     waitUnit(movedUnit.uid, nextUnits);
-  }, [selectedUnit, pendingPosition, units, map, tryRandomEncounter, waitUnit, setMap, addLog]);
+  }, [
+    selectedUnit,
+    pendingPosition,
+    units,
+    map,
+    tryRandomEncounter,
+    waitUnit,
+    setMap,
+    addLog,
+    getCreditsForPlayer,
+    currentPlayer,
+    setCreditsForPlayer
+  ]);
 
   // Move selection: player picked a move → initiate battle
   const selectMove = useCallback((move: Move) => {
@@ -961,6 +1104,96 @@ export function useGameState(): UseGameStateReturn {
     setAttackRange(attacks);
     setGamePhase('ATTACKING');
   }, [selectedUnit, units]);
+
+  const deployFromBase = useCallback((templateId: number) => {
+    if (gameState !== 'playing' || gamePhase !== 'DEPLOY_SELECT' || !deployBase) return;
+
+    const reserve = currentPlayer === 'P1' ? baseReserveP1 : baseReserveP2;
+    const reserveIndex = reserve.findIndex(p => p.id === templateId);
+    if (reserveIndex === -1) return;
+
+    if (units.some(u => u.x === deployBase.x && u.y === deployBase.y)) {
+      addLog('La base está ocupada.');
+      return;
+    }
+
+    const template = reserve[reserveIndex];
+    const deployCost = calculateDeployCost(template);
+    const currentCredits = getCreditsForPlayer(currentPlayer);
+    if (currentCredits < deployCost) {
+      addLog(`Créditos insuficientes para desplegar ${template.name} (${currentCredits}/${deployCost}).`);
+      return;
+    }
+
+    const newUnit: Unit = {
+      uid: `${currentPlayer}-dep-${Math.random().toString(36).slice(2, 9)}`,
+      owner: currentPlayer,
+      template,
+      x: deployBase.x,
+      y: deployBase.y,
+      currentHp: template.hp,
+      hasMoved: true,
+      kills: 0,
+      pp: initPP(template),
+      status: null,
+      statusTurns: 0
+    };
+
+    const nextUnits = [...units, newUnit];
+    setUnits(nextUnits);
+
+    const nextReserveP1 = currentPlayer === 'P1'
+      ? baseReserveP1.filter((_, i) => i !== reserveIndex)
+      : baseReserveP1;
+    const nextReserveP2 = currentPlayer === 'P2'
+      ? baseReserveP2.filter((_, i) => i !== reserveIndex)
+      : baseReserveP2;
+
+    const nextCredits = currentCredits - deployCost;
+    setCreditsForPlayer(currentPlayer, nextCredits);
+
+    if (currentPlayer === 'P1') {
+      setBaseReserveP1(nextReserveP1);
+    } else {
+      setBaseReserveP2(nextReserveP2);
+    }
+
+    addLog(`¡${template.name} fue desplegado desde la Base! (-${deployCost} créditos)`);
+    setDeployBase(null);
+    setGamePhase('SELECT');
+    setSelectedUnit(null);
+    setMoveRange([]);
+    setAttackRange([]);
+    setPendingPosition(null);
+    setUnitHasMoved(false);
+    setSelectedMove(null);
+    setAttackTarget(null);
+
+    const nextCreditsP1 = currentPlayer === 'P1' ? nextCredits : creditsP1;
+    const nextCreditsP2 = currentPlayer === 'P2' ? nextCredits : creditsP2;
+    if (!canPlayerStillAct(currentPlayer, nextUnits, nextReserveP1, nextReserveP2, nextCreditsP1, nextCreditsP2)) {
+      setTimeout(() => setGameState('transition'), 300);
+    }
+  }, [
+    gameState,
+    gamePhase,
+    deployBase,
+    currentPlayer,
+    units,
+    baseReserveP1,
+    baseReserveP2,
+    addLog,
+    getCreditsForPlayer,
+    setCreditsForPlayer,
+    canPlayerStillAct,
+    creditsP1,
+    creditsP2
+  ]);
+
+  const cancelDeploySelect = useCallback(() => {
+    setDeployBase(null);
+    setGamePhase('SELECT');
+  }, []);
 
   // Cancel action - deselect if on same position, otherwise go back to MOVING phase
   const cancelAction = useCallback(() => {
@@ -1084,17 +1317,19 @@ export function useGameState(): UseGameStateReturn {
     attacker: Unit,
     defender: Unit,
     damage: number,
-    counterDamage: number
+    counterDamage: number,
+    attackerMove?: Move,
+    defenderMove?: Move | null
   ) => {
-    const attackerMove = attacker.template.moves.find(m => m.category !== 'status') || attacker.template.moves[0];
-    const defenderMove = counterDamage > 0
-      ? (defender.template.moves.find(m => m.category !== 'status') || defender.template.moves[0])
+    const resolvedAttackerMove = attackerMove || attacker.template.moves.find(m => m.category !== 'status') || attacker.template.moves[0];
+    const resolvedDefenderMove = counterDamage > 0
+      ? (defenderMove || defender.template.moves.find(m => m.category !== 'status') || defender.template.moves[0])
       : null;
 
     const serverBattleData: BattleData = {
       attacker,
       defender,
-      attackerMove,
+      attackerMove: resolvedAttackerMove,
       attackerResult: {
         damage,
         effectiveness: 1,
@@ -1113,7 +1348,7 @@ export function useGameState(): UseGameStateReturn {
         terrainBonus: 0,
         typeTerrainBonus: false
       } : null,
-      defenderMove,
+      defenderMove: resolvedDefenderMove,
       terrainType: map[defender.y]?.[defender.x] ?? TERRAIN.GRASS as TerrainType,
     };
 
@@ -1166,6 +1401,11 @@ export function useGameState(): UseGameStateReturn {
     winner,
     exploredP1,
     exploredP2,
+    baseReserveP1,
+    baseReserveP2,
+    creditsP1,
+    creditsP2,
+    deployBase,
 
     // Multiplayer state
     myPlayer,
@@ -1198,6 +1438,8 @@ export function useGameState(): UseGameStateReturn {
     attackTarget,
     selectMove,
     cancelMoveSelect,
+    deployFromBase,
+    cancelDeploySelect,
     // Multiplayer
     startServerBattle,
     triggerMultiplayerEncounter,

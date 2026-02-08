@@ -1,6 +1,7 @@
 import React from 'react';
 import { TERRAIN } from '../../constants/terrain';
 import { getIconSprite } from '../../utils/sprites';
+import { SHOWDOWN_SERVICE_ITEMS, getShowdownItemIconUrl } from '@poketactics/shared';
 import { PathSegment } from './PathSegment';
 import type { BridgeDir } from '../../utils/mapGenerator';
 import type { TerrainType, Unit, Position } from '../../types/game';
@@ -502,6 +503,29 @@ export function Tile({
 
         {/* Top highlight */}
         <div className="absolute inset-x-0 top-0 h-[30%] bg-gradient-to-b from-white/20 to-transparent rounded-t-xl pointer-events-none" />
+
+        {/* Economy entities (Pokemon Showdown item assets) */}
+        {terrain === TERRAIN.BASE && (
+          <img
+            src={getShowdownItemIconUrl(SHOWDOWN_SERVICE_ITEMS.credits.id)}
+            alt=""
+            className="absolute top-1 left-1 w-4 h-4 opacity-80 pointer-events-none drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]"
+          />
+        )}
+        {terrain === TERRAIN.POKEMON_CENTER && (
+          <>
+            <img
+              src={getShowdownItemIconUrl(SHOWDOWN_SERVICE_ITEMS.repair.id)}
+              alt=""
+              className="absolute top-1 left-1 w-4 h-4 opacity-80 pointer-events-none drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]"
+            />
+            <img
+              src={getShowdownItemIconUrl(SHOWDOWN_SERVICE_ITEMS.resupply.id)}
+              alt=""
+              className="absolute top-1 right-1 w-4 h-4 opacity-80 pointer-events-none drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]"
+            />
+          </>
+        )}
 
         {/* === MOVE INDICATOR === */}
         {canMove && !isSelected && !isOnPath && (

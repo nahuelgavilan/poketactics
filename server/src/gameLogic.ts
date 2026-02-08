@@ -4,25 +4,25 @@
  */
 
 import type { ServerGameState, ServerUnit, Player, ClientGameState, ClientUnit } from './types';
-import type { PokemonTemplate, PokemonType, TerrainType, GameMap, Move, StatusEffect } from '@poketactics/shared';
+import type { PokemonTemplate, PokemonType, TerrainType, GameMap, Move } from '@poketactics/shared';
 import {
   BOARD_WIDTH, BOARD_HEIGHT, VISION_RANGE,
   TERRAIN, TERRAIN_GAME_PROPS,
-  TYPE_CHART,
   EVOLUTION_CHAINS,
   WILD_POKEMON_POOL,
-  getFullEffectiveness,
-  calculateBaseDamage as sharedCalculateBaseDamage,
-  checkAccuracy,
+  getBalancedRandomBaseTeams,
+  rollDamage,
   getCounterMove,
-  getMaxAttackRange,
   initPP,
   STRUGGLE_MOVE,
   getNextEvolution as sharedGetNextEvolution,
   calculateMoveRange,
   applyStatusTick,
-  getMovReduction,
-  CRIT_CHANCE, CRIT_MULTIPLIER, VARIANCE_MIN, VARIANCE_MAX, COUNTER_DAMAGE_PENALTY
+  STARTING_CREDITS,
+  calculateDeployCost,
+  applyPokemonCenterService,
+  calculateTurnIncome,
+  playerCanStillActWithDeploy
 } from '@poketactics/shared';
 
 // Re-export for draftLogic
@@ -33,16 +33,20 @@ export { EVOLUTION_CHAINS };
  */
 export function createGameState(): ServerGameState {
   const map = generateMap();
-  const units = generateUnits();
+  const { p1Team, p2Team } = generateInitialTeams();
   const emptyExplored = Array(BOARD_HEIGHT).fill(null).map(() => Array(BOARD_WIDTH).fill(false));
 
   return {
     map,
-    units,
+    units: [],
     turn: 1,
     currentPlayer: 'P1',
     status: 'playing',
     winner: null,
+    baseReserveP1: p1Team.map(p => ({ ...p })),
+    baseReserveP2: p2Team.map(p => ({ ...p })),
+    creditsP1: STARTING_CREDITS,
+    creditsP2: STARTING_CREDITS,
     exploredP1: emptyExplored.map(row => [...row]),
     exploredP2: emptyExplored.map(row => [...row])
   };
@@ -112,63 +116,10 @@ function generateMap(): number[][] {
 }
 
 /**
- * Generate initial units for both players
+ * Generate initial reserve teams for both players.
  */
-function generateUnits(): ServerUnit[] {
-  const units: ServerUnit[] = [];
-  const usedChains = new Set<number>();
-
-  // P1 team (bottom)
-  for (let i = 0; i < 3; i++) {
-    let chainId: number;
-    do {
-      chainId = Math.floor(Math.random() * EVOLUTION_CHAINS.length);
-    } while (usedChains.has(chainId));
-    usedChains.add(chainId);
-
-    const template = EVOLUTION_CHAINS[chainId].stages[0].pokemon;
-    units.push({
-      uid: `p1-${i}-${Date.now()}`,
-      owner: 'P1',
-      templateId: template.id,
-      template: { ...template },
-      x: i % BOARD_WIDTH,
-      y: BOARD_HEIGHT - 1 - Math.floor(i / BOARD_WIDTH),
-      currentHp: template.hp,
-      hasMoved: false,
-      kills: 0,
-      pp: initPP(template),
-      status: null,
-      statusTurns: 0
-    });
-  }
-
-  // P2 team (top)
-  for (let i = 0; i < 3; i++) {
-    let chainId: number;
-    do {
-      chainId = Math.floor(Math.random() * EVOLUTION_CHAINS.length);
-    } while (usedChains.has(chainId));
-    usedChains.add(chainId);
-
-    const template = EVOLUTION_CHAINS[chainId].stages[0].pokemon;
-    units.push({
-      uid: `p2-${i}-${Date.now()}`,
-      owner: 'P2',
-      templateId: template.id,
-      template: { ...template },
-      x: BOARD_WIDTH - 1 - (i % BOARD_WIDTH),
-      y: 0 + Math.floor(i / BOARD_WIDTH),
-      currentHp: template.hp,
-      hasMoved: false,
-      kills: 0,
-      pp: initPP(template),
-      status: null,
-      statusTurns: 0
-    });
-  }
-
-  return units;
+function generateInitialTeams(): { p1Team: PokemonTemplate[]; p2Team: PokemonTemplate[] } {
+  return getBalancedRandomBaseTeams(3);
 }
 
 /**
@@ -176,55 +127,19 @@ function generateUnits(): ServerUnit[] {
  */
 export function createGameStateWithTeams(p1Team: PokemonTemplate[], p2Team: PokemonTemplate[]): ServerGameState {
   const map = generateMap();
-  const units: ServerUnit[] = [];
-
-  // P1 team (bottom)
-  for (let i = 0; i < p1Team.length; i++) {
-    const template = p1Team[i];
-    units.push({
-      uid: `p1-${i}-${Date.now()}`,
-      owner: 'P1',
-      templateId: template.id,
-      template: { ...template },
-      x: i % BOARD_WIDTH,
-      y: BOARD_HEIGHT - 1 - Math.floor(i / BOARD_WIDTH),
-      currentHp: template.hp,
-      hasMoved: false,
-      kills: 0,
-      pp: initPP(template),
-      status: null,
-      statusTurns: 0
-    });
-  }
-
-  // P2 team (top)
-  for (let i = 0; i < p2Team.length; i++) {
-    const template = p2Team[i];
-    units.push({
-      uid: `p2-${i}-${Date.now()}`,
-      owner: 'P2',
-      templateId: template.id,
-      template: { ...template },
-      x: BOARD_WIDTH - 1 - (i % BOARD_WIDTH),
-      y: 0 + Math.floor(i / BOARD_WIDTH),
-      currentHp: template.hp,
-      hasMoved: false,
-      kills: 0,
-      pp: initPP(template),
-      status: null,
-      statusTurns: 0
-    });
-  }
-
   const emptyExplored = Array(BOARD_HEIGHT).fill(null).map(() => Array(BOARD_WIDTH).fill(false));
 
   return {
     map,
-    units,
+    units: [],
     turn: 1,
     currentPlayer: 'P1',
     status: 'playing',
     winner: null,
+    baseReserveP1: p1Team.map(p => ({ ...p })),
+    baseReserveP2: p2Team.map(p => ({ ...p })),
+    creditsP1: STARTING_CREDITS,
+    creditsP2: STARTING_CREDITS,
     exploredP1: emptyExplored.map(row => [...row]),
     exploredP2: emptyExplored.map(row => [...row])
   };
@@ -239,6 +154,20 @@ export function calculateVisibility(game: ServerGameState, player: Player): { vi
   const explored: boolean[][] = previousExplored.map(row => [...row]);
 
   const playerUnits = game.units.filter(u => u.owner === player);
+  const baseTile = getPlayerBaseTile(game, player);
+
+  if (baseTile) {
+    const baseVisionRange = 2;
+    for (let y = 0; y < game.map.length; y++) {
+      for (let x = 0; x < game.map[0].length; x++) {
+        const distance = Math.abs(x - baseTile.x) + Math.abs(y - baseTile.y);
+        if (distance <= baseVisionRange) {
+          visible[y][x] = true;
+          explored[y][x] = true;
+        }
+      }
+    }
+  }
 
   for (const unit of playerUnits) {
     let visionRange = VISION_RANGE;
@@ -322,8 +251,77 @@ export function getClientState(game: ServerGameState, player: Player): ClientGam
     myPlayer: player,
     status: game.status,
     winner: game.winner,
+    baseReserveP1: game.baseReserveP1.map(p => ({ ...p })),
+    baseReserveP2: game.baseReserveP2.map(p => ({ ...p })),
+    creditsP1: game.creditsP1,
+    creditsP2: game.creditsP2,
     visibility
   };
+}
+
+function getReserveForPlayer(game: ServerGameState, player: Player): PokemonTemplate[] {
+  return player === 'P1' ? game.baseReserveP1 : game.baseReserveP2;
+}
+
+function getCreditsForPlayer(game: ServerGameState, player: Player): number {
+  return player === 'P1' ? game.creditsP1 : game.creditsP2;
+}
+
+function setCreditsForPlayer(game: ServerGameState, player: Player, credits: number): void {
+  if (player === 'P1') {
+    game.creditsP1 = credits;
+  } else {
+    game.creditsP2 = credits;
+  }
+}
+
+function getPlayerBaseTile(game: ServerGameState, player: Player): { x: number; y: number } | null {
+  const bases: { x: number; y: number }[] = [];
+
+  for (let y = 0; y < game.map.length; y++) {
+    for (let x = 0; x < game.map[0].length; x++) {
+      if (game.map[y][x] === TERRAIN.BASE) {
+        bases.push({ x, y });
+      }
+    }
+  }
+
+  if (bases.length === 0) return null;
+
+  if (player === 'P1') {
+    return bases.reduce((best, tile) => (tile.x + tile.y > best.x + best.y ? tile : best), bases[0]);
+  }
+
+  return bases.reduce((best, tile) => (tile.x + tile.y < best.x + best.y ? tile : best), bases[0]);
+}
+
+function canPlayerStillFight(game: ServerGameState, player: Player): boolean {
+  const hasUnits = game.units.some(u => u.owner === player);
+  const hasReserve = getReserveForPlayer(game, player).length > 0;
+  return hasUnits || hasReserve;
+}
+
+function updateWinnerStatus(game: ServerGameState): void {
+  const p1Alive = canPlayerStillFight(game, 'P1');
+  const p2Alive = canPlayerStillFight(game, 'P2');
+
+  if (!p1Alive && !p2Alive) {
+    game.winner = null;
+    game.status = 'finished';
+    return;
+  }
+
+  if (!p1Alive) {
+    game.winner = 'P2';
+    game.status = 'finished';
+    return;
+  }
+
+  if (!p2Alive) {
+    game.winner = 'P1';
+    game.status = 'finished';
+    return;
+  }
 }
 
 /**
@@ -350,7 +348,7 @@ function checkWildEncounter(unit: ServerUnit, game: ServerGameState): { pokemon:
     if (nx < 0 || nx >= game.map[0].length || ny < 0 || ny >= game.map.length) continue;
 
     const terrain = game.map[ny][nx];
-    if (terrain === TERRAIN.WATER || terrain === TERRAIN.LAVA) continue;
+    if (terrain === TERRAIN.WATER || terrain === TERRAIN.MOUNTAIN || terrain === TERRAIN.LAVA) continue;
 
     if (game.units.some(u => u.x === nx && u.y === ny)) continue;
 
@@ -436,19 +434,13 @@ export function executeMove(game: ServerGameState, playerId: Player, unitId: str
 }
 
 /**
- * Calculate damage using new division-based formula with Move
+ * Roll damage/status using shared server-authoritative combat logic.
  */
-function calculateDamage(attacker: ServerUnit, defender: ServerUnit, move: Move, isCounter: boolean, game: ServerGameState): { damage: number; isCritical: boolean; missed: boolean; effectiveness: number; isStab: boolean } {
-  // Check accuracy
-  const missed = !checkAccuracy(move);
-  if (missed) {
-    return { damage: 0, isCritical: false, missed: true, effectiveness: 1, isStab: false };
-  }
-
+function calculateDamage(attacker: ServerUnit, defender: ServerUnit, move: Move, isCounter: boolean, game: ServerGameState) {
   const attackerTerrain = game.map[attacker.y][attacker.x] as TerrainType;
   const defenderTerrain = game.map[defender.y][defender.x] as TerrainType;
 
-  const result = sharedCalculateBaseDamage({
+  return rollDamage({
     move,
     attackerTemplate: attacker.template,
     attackerTypes: attacker.template.types,
@@ -457,16 +449,15 @@ function calculateDamage(attacker: ServerUnit, defender: ServerUnit, move: Move,
     attackerTerrain,
     defenderTerrain,
     isCounter,
-    attackerStatus: attacker.status
+    attackerStatus: attacker.status,
+    defenderStatus: defender.status,
+    attackerAbility: attacker.template.ability,
+    defenderAbility: defender.template.ability,
+    attackerCurrentHp: attacker.currentHp,
+    attackerMaxHp: attacker.template.hp,
+    defenderCurrentHp: defender.currentHp,
+    defenderMaxHp: defender.template.hp
   });
-
-  const isCritical = Math.random() < CRIT_CHANCE;
-  const critMultiplier = isCritical ? CRIT_MULTIPLIER : 1;
-  const variance = VARIANCE_MIN + Math.random() * (VARIANCE_MAX - VARIANCE_MIN);
-
-  const damage = Math.max(1, Math.floor(result.base * critMultiplier * variance));
-
-  return { damage, isCritical, missed: false, effectiveness: result.effectiveness, isStab: result.isStab };
 }
 
 /**
@@ -481,6 +472,8 @@ function getNextEvolution(unit: ServerUnit): PokemonTemplate | null {
  */
 export function executeAttack(game: ServerGameState, playerId: Player, attackerId: string, defenderId: string, moveId?: string): {
   success: boolean;
+  moveId?: string;
+  counterMoveId?: string;
   damage: number;
   counterDamage: number;
   attackerDied: boolean;
@@ -497,6 +490,9 @@ export function executeAttack(game: ServerGameState, playerId: Player, attackerI
 
   if (!attacker || attacker.owner !== playerId) {
     return { success: false, damage: 0, counterDamage: 0, attackerDied: false, defenderDied: false, error: 'Atacante no válido' };
+  }
+  if (attacker.hasMoved) {
+    return { success: false, damage: 0, counterDamage: 0, attackerDied: false, defenderDied: false, error: 'La unidad ya se movió' };
   }
 
   if (!defender || defender.owner === playerId) {
@@ -536,31 +532,43 @@ export function executeAttack(game: ServerGameState, playerId: Player, attackerI
     return { success: false, damage: 0, counterDamage: 0, attackerDied: false, defenderDied: false, error: 'Fuera de rango' };
   }
 
+  const usedMoveId = move.id;
+
   // Deduct PP
   if (moveIndex >= 0) {
     attacker.pp[moveIndex]--;
   }
 
-  // Calculate damage
-  const { damage } = calculateDamage(attacker, defender, move, false, game);
+  const attackRoll = calculateDamage(attacker, defender, move, false, game);
+  const damage = attackRoll.damage;
 
   defender.currentHp = Math.max(0, defender.currentHp - damage);
   const defenderDied = defender.currentHp <= 0;
+  if (attackRoll.statusApplied && !defender.status && !defenderDied) {
+    defender.status = attackRoll.statusApplied;
+    defender.statusTurns = 0;
+  }
 
   let counterDamage = 0;
   let attackerDied = false;
+  let counterMoveId: string | undefined;
 
   // Counter-attack (priority moves prevent counter)
   if (!defenderDied && move.priority <= 0) {
     const counterResult = getCounterMove(defender.template, distance, defender.pp);
     if (counterResult) {
       const { move: counterMove, moveIndex: counterIdx } = counterResult;
+      counterMoveId = counterMove.id;
       // Deduct counter PP
       defender.pp[counterIdx]--;
-      const counterCalc = calculateDamage(defender, attacker, counterMove, true, game);
-      counterDamage = counterCalc.damage;
+      const counterRoll = calculateDamage(defender, attacker, counterMove, true, game);
+      counterDamage = counterRoll.damage;
       attacker.currentHp = Math.max(0, attacker.currentHp - counterDamage);
       attackerDied = attacker.currentHp <= 0;
+      if (counterRoll.statusApplied && !attacker.status && !attackerDied) {
+        attacker.status = counterRoll.statusApplied;
+        attacker.statusTurns = 0;
+      }
     }
   }
 
@@ -587,15 +595,70 @@ export function executeAttack(game: ServerGameState, playerId: Player, attackerI
     attacker.hasMoved = true;
   }
 
-  if (!game.units.some(u => u.owner === 'P1')) {
-    game.winner = 'P2';
-    game.status = 'finished';
-  } else if (!game.units.some(u => u.owner === 'P2')) {
-    game.winner = 'P1';
-    game.status = 'finished';
+  updateWinnerStatus(game);
+
+  return {
+    success: true,
+    moveId: usedMoveId,
+    counterMoveId,
+    damage,
+    counterDamage,
+    attackerDied,
+    defenderDied,
+    evolution
+  };
+}
+
+/**
+ * Deploy a Pokemon from base reserve to the player's base tile.
+ */
+export function executeDeploy(game: ServerGameState, playerId: Player, templateId: number): { success: boolean; newUnit?: ServerUnit; error?: string } {
+  if (game.currentPlayer !== playerId) {
+    return { success: false, error: 'No es tu turno' };
   }
 
-  return { success: true, damage, counterDamage, attackerDied, defenderDied, evolution };
+  const reserve = getReserveForPlayer(game, playerId);
+  const reserveIndex = reserve.findIndex(p => p.id === templateId);
+  if (reserveIndex === -1) {
+    return { success: false, error: 'Pokémon no disponible en base' };
+  }
+
+  const baseTile = getPlayerBaseTile(game, playerId);
+  if (!baseTile) {
+    return { success: false, error: 'No hay base en este mapa' };
+  }
+
+  if (game.units.some(u => u.x === baseTile.x && u.y === baseTile.y)) {
+    return { success: false, error: 'La base está ocupada' };
+  }
+
+  const template = reserve[reserveIndex];
+  const deployCost = calculateDeployCost(template);
+  const currentCredits = getCreditsForPlayer(game, playerId);
+  if (currentCredits < deployCost) {
+    return { success: false, error: `Créditos insuficientes (${currentCredits}/${deployCost})` };
+  }
+
+  const newUnit: ServerUnit = {
+    uid: `${playerId}-dep-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    owner: playerId,
+    templateId: template.id,
+    template: { ...template },
+    x: baseTile.x,
+    y: baseTile.y,
+    currentHp: template.hp,
+    hasMoved: true,
+    kills: 0,
+    pp: initPP(template),
+    status: null,
+    statusTurns: 0
+  };
+
+  reserve.splice(reserveIndex, 1);
+  game.units.push(newUnit);
+  setCreditsForPlayer(game, playerId, currentCredits - deployCost);
+
+  return { success: true, newUnit };
 }
 
 /**
@@ -610,8 +673,31 @@ export function executeWait(game: ServerGameState, playerId: Player, unitId: str
   if (!unit || unit.owner !== playerId) {
     return { success: false, error: 'Unidad no válida' };
   }
+  if (unit.hasMoved) {
+    return { success: false, error: 'La unidad ya se movió' };
+  }
 
   applyBerryBush(unit, game);
+
+  if (game.map[unit.y]?.[unit.x] === TERRAIN.POKEMON_CENTER) {
+    const credits = getCreditsForPlayer(game, playerId);
+    const service = applyPokemonCenterService({
+      template: unit.template,
+      currentHp: unit.currentHp,
+      pp: unit.pp,
+      status: unit.status,
+      statusTurns: unit.statusTurns,
+      availableCredits: credits
+    });
+
+    if (service.creditsSpent > 0) {
+      unit.currentHp = service.newHp;
+      unit.pp = service.newPp;
+      unit.status = service.newStatus;
+      unit.statusTurns = service.newStatusTurns;
+      setCreditsForPlayer(game, playerId, credits - service.creditsSpent);
+    }
+  }
 
   unit.hasMoved = true;
   return { success: true };
@@ -623,7 +709,6 @@ export function executeWait(game: ServerGameState, playerId: Player, unitId: str
 export function executeCapture(game: ServerGameState, playerId: Player, unitId: string, minigameSuccess?: boolean): {
   success: boolean;
   captured: boolean;
-  newUnit?: ServerUnit;
   pokemon?: PokemonTemplate;
   error?: string;
 } {
@@ -634,6 +719,9 @@ export function executeCapture(game: ServerGameState, playerId: Player, unitId: 
   const unit = game.units.find(u => u.uid === unitId);
   if (!unit || unit.owner !== playerId) {
     return { success: false, captured: false, error: 'Unidad no válida' };
+  }
+  if (unit.hasMoved) {
+    return { success: false, captured: false, error: 'La unidad ya se movió' };
   }
 
   if (game.map[unit.y][unit.x] !== TERRAIN.TALL_GRASS) {
@@ -647,62 +735,29 @@ export function executeCapture(game: ServerGameState, playerId: Player, unitId: 
     return { success: true, captured: false };
   }
 
-  const directions = [
-    { dx: 0, dy: -1 }, { dx: 1, dy: 0 }, { dx: 0, dy: 1 }, { dx: -1, dy: 0 },
-    { dx: 1, dy: -1 }, { dx: 1, dy: 1 }, { dx: -1, dy: 1 }, { dx: -1, dy: -1 }
-  ];
-
-  let spawnX = -1, spawnY = -1;
-  for (const dir of directions) {
-    const nx = unit.x + dir.dx;
-    const ny = unit.y + dir.dy;
-    if (nx >= 0 && nx < game.map[0].length && ny >= 0 && ny < game.map.length) {
-      const terrain = game.map[ny][nx];
-      if (terrain !== TERRAIN.WATER && terrain !== TERRAIN.MOUNTAIN && terrain !== TERRAIN.LAVA) {
-        if (!game.units.some(u => u.x === nx && u.y === ny)) {
-          spawnX = nx;
-          spawnY = ny;
-          break;
-        }
-      }
-    }
-  }
-
-  if (spawnX === -1) {
-    unit.hasMoved = true;
-    return { success: true, captured: false, error: 'No hay espacio' };
-  }
-
   const pokemon = WILD_POKEMON_POOL[Math.floor(Math.random() * WILD_POKEMON_POOL.length)];
-  const newUnit: ServerUnit = {
-    uid: `${playerId}-cap-${Date.now()}`,
-    owner: playerId,
-    templateId: pokemon.id,
-    template: { ...pokemon },
-    x: spawnX,
-    y: spawnY,
-    currentHp: pokemon.hp,
-    hasMoved: true,
-    kills: 0,
-    pp: initPP(pokemon),
-    status: null,
-    statusTurns: 0
-  };
-
-  game.units.push(newUnit);
+  const reserve = getReserveForPlayer(game, playerId);
+  reserve.push({ ...pokemon });
   unit.hasMoved = true;
 
-  return { success: true, captured: true, newUnit, pokemon };
+  return { success: true, captured: true, pokemon };
 }
 
 /**
  * Check and execute end of turn (automatic)
  */
 export function checkTurnEnd(game: ServerGameState): { turnEnded: boolean; nextPlayer: Player; turn: number } {
-  const currentPlayerUnits = game.units.filter(u => u.owner === game.currentPlayer);
-  const allMoved = currentPlayerUnits.every(u => u.hasMoved);
+  const reserve = getReserveForPlayer(game, game.currentPlayer);
+  const credits = getCreditsForPlayer(game, game.currentPlayer);
+  const canStillAct = playerCanStillActWithDeploy(
+    game.map as GameMap,
+    game.units.map(unit => ({ owner: unit.owner, x: unit.x, y: unit.y, hasMoved: unit.hasMoved })),
+    reserve,
+    credits,
+    game.currentPlayer
+  );
 
-  if (!allMoved || currentPlayerUnits.length === 0) {
+  if (canStillAct) {
     return { turnEnded: false, nextPlayer: game.currentPlayer, turn: game.turn };
   }
 
@@ -737,31 +792,27 @@ function executeTurnEnd(game: ServerGameState): { turnEnded: boolean; nextPlayer
       u.currentHp = statusResult.newHp;
       u.status = statusResult.newStatus;
       u.statusTurns = statusResult.newStatusTurns;
-    }
-
-    // Pokemon Center heals HP and cures status
-    if (u.owner === nextPlayer && game.map[u.y][u.x] === TERRAIN.POKEMON_CENTER) {
-      const healAmount = Math.floor(u.template.hp * 0.2);
-      u.currentHp = Math.min(u.template.hp, u.currentHp + healAmount);
-      u.status = null;
-      u.statusTurns = 0;
+      if (statusResult.cantAct && u.currentHp > 0) {
+        u.hasMoved = true;
+      }
     }
   });
 
   // Remove dead units (from status damage)
   game.units = game.units.filter(u => u.currentHp > 0);
 
+  const turnIncome = calculateTurnIncome(
+    game.map as GameMap,
+    game.units.map(unit => ({ owner: unit.owner, x: unit.x, y: unit.y })),
+    nextPlayer
+  );
+  const nextPlayerCredits = getCreditsForPlayer(game, nextPlayer) + turnIncome;
+  setCreditsForPlayer(game, nextPlayer, nextPlayerCredits);
+
   game.currentPlayer = nextPlayer;
   game.turn = newTurn;
 
-  // Check win condition
-  if (!game.units.some(u => u.owner === 'P1')) {
-    game.winner = 'P2';
-    game.status = 'finished';
-  } else if (!game.units.some(u => u.owner === 'P2')) {
-    game.winner = 'P1';
-    game.status = 'finished';
-  }
+  updateWinnerStatus(game);
 
   return { turnEnded: true, nextPlayer, turn: newTurn };
 }

@@ -10,6 +10,7 @@ import {
   Users,
   ChevronRight
 } from 'lucide-react';
+import { SHOWDOWN_SERVICE_ITEMS, getShowdownItemIconUrl } from '@poketactics/shared';
 import { useSFX } from '../hooks/useSFX';
 import type { Player } from '../types/game';
 
@@ -24,6 +25,8 @@ interface HeaderProps {
   movedCount?: number;
   totalCount?: number;
   gamePhase?: string;
+  creditsP1?: number;
+  creditsP2?: number;
 }
 
 /**
@@ -40,7 +43,9 @@ export function Header({
   isMultiplayer,
   movedCount = 0,
   totalCount = 0,
-  gamePhase = 'SELECT'
+  gamePhase = 'SELECT',
+  creditsP1 = 0,
+  creditsP2 = 0
 }: HeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -50,6 +55,8 @@ export function Header({
   const isBlue = currentPlayer === 'P1';
   const allMoved = movedCount === totalCount && totalCount > 0;
   const progress = totalCount > 0 ? (movedCount / totalCount) * 100 : 0;
+  const activeCredits = currentPlayer === 'P1' ? creditsP1 : creditsP2;
+  const creditIcon = getShowdownItemIconUrl(SHOWDOWN_SERVICE_ITEMS.credits.id);
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -167,6 +174,11 @@ export function Header({
               <span className="text-[9px] text-slate-400 font-mono">{movedCount}/{totalCount}</span>
             </div>
           )}
+
+          <div className="hidden sm:flex items-center gap-1.5 px-2 py-1 bg-slate-800 rounded-full border border-slate-700">
+            <img src={creditIcon} alt="" className="w-3.5 h-3.5 object-contain" />
+            <span className="text-[10px] text-amber-300 font-mono">{activeCredits}</span>
+          </div>
         </div>
 
         {/* Right: Menu button */}

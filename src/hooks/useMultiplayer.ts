@@ -29,6 +29,10 @@ export interface ClientGameState {
   myPlayer: Player;
   status: 'waiting' | 'playing' | 'finished';
   winner: Player | null;
+  baseReserveP1: PokemonTemplate[];
+  baseReserveP2: PokemonTemplate[];
+  creditsP1: number;
+  creditsP2: number;
   visibility: {
     visible: boolean[][];
     explored: boolean[][];
@@ -37,7 +41,8 @@ export interface ClientGameState {
 
 export type ActionResult =
   | { type: 'move'; unitId: string; x: number; y: number; success: boolean; encounter?: { pokemon: PokemonTemplate; spawnPos: { x: number; y: number } } }
-  | { type: 'attack'; attackerId: string; defenderId: string; damage: number; counterDamage: number; attackerDied: boolean; defenderDied: boolean; evolution?: { unitId: string; newTemplate: PokemonTemplate } }
+  | { type: 'attack'; attackerId: string; defenderId: string; moveId: string; counterMoveId?: string; damage: number; counterDamage: number; attackerDied: boolean; defenderDied: boolean; evolution?: { unitId: string; newTemplate: PokemonTemplate } }
+  | { type: 'deploy'; player: Player; templateId: number; unitId: string; x: number; y: number }
   | { type: 'capture'; unitId: string; success: boolean; newUnit?: ClientUnit; pokemon?: PokemonTemplate }
   | { type: 'wait'; unitId: string }
   | { type: 'turn-end'; nextPlayer: Player; turn: number };
@@ -59,7 +64,8 @@ interface UseMultiplayerReturn {
 
   // Game actions (server-authoritative)
   sendMove: (unitId: string, x: number, y: number) => void;
-  sendAttack: (attackerId: string, defenderId: string) => void;
+  sendAttack: (attackerId: string, defenderId: string, moveId?: string) => void;
+  sendDeploy: (templateId: number) => void;
   sendWait: (unitId: string) => void;
   sendCapture: (unitId: string, success?: boolean) => void;
   sendEndTurn: () => void;
@@ -220,9 +226,14 @@ export function useMultiplayer(): UseMultiplayerReturn {
     socketRef.current.emit('action-move', { unitId, x, y });
   }, []);
 
-  const sendAttack = useCallback((attackerId: string, defenderId: string) => {
+  const sendAttack = useCallback((attackerId: string, defenderId: string, moveId?: string) => {
     if (!socketRef.current?.connected) return;
-    socketRef.current.emit('action-attack', { attackerId, defenderId });
+    socketRef.current.emit('action-attack', { attackerId, defenderId, moveId });
+  }, []);
+
+  const sendDeploy = useCallback((templateId: number) => {
+    if (!socketRef.current?.connected) return;
+    socketRef.current.emit('action-deploy', { templateId });
   }, []);
 
   const sendWait = useCallback((unitId: string) => {
@@ -268,6 +279,7 @@ export function useMultiplayer(): UseMultiplayerReturn {
     startGame,
     sendMove,
     sendAttack,
+    sendDeploy,
     sendWait,
     sendCapture,
     sendEndTurn,

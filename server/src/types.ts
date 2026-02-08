@@ -39,6 +39,10 @@ export interface ServerGameState {
   currentPlayer: Player;
   status: 'waiting' | 'playing' | 'finished';
   winner: Player | null;
+  baseReserveP1: PokemonTemplate[];
+  baseReserveP2: PokemonTemplate[];
+  creditsP1: number;
+  creditsP2: number;
   // Fog of war tracking per player
   exploredP1: boolean[][];
   exploredP2: boolean[][];
@@ -69,6 +73,10 @@ export interface ClientGameState {
   myPlayer: Player;
   status: 'waiting' | 'playing' | 'finished';
   winner: Player | null;
+  baseReserveP1: PokemonTemplate[];
+  baseReserveP2: PokemonTemplate[];
+  creditsP1: number;
+  creditsP2: number;
   visibility: {
     visible: boolean[][];
     explored: boolean[][];
@@ -127,6 +135,7 @@ export interface ClientToServerEvents {
   'draft-pick': (data: { pokemonId: number }) => void;
   'action-move': (data: { unitId: string; x: number; y: number }) => void;
   'action-attack': (data: { attackerId: string; defenderId: string; moveId?: string }) => void;
+  'action-deploy': (data: { templateId: number }) => void;
   'action-wait': (data: { unitId: string }) => void;
   'action-capture': (data: { unitId: string; success?: boolean }) => void;
   'action-end-turn': () => void;
@@ -136,7 +145,8 @@ export interface ClientToServerEvents {
 // Action results sent to clients
 export type ActionResult =
   | { type: 'move'; unitId: string; x: number; y: number; success: boolean; encounter?: { pokemon: PokemonTemplate; spawnPos: Position } }
-  | { type: 'attack'; attackerId: string; defenderId: string; damage: number; counterDamage: number; attackerDied: boolean; defenderDied: boolean; evolution?: { unitId: string; newTemplate: PokemonTemplate } }
+  | { type: 'attack'; attackerId: string; defenderId: string; moveId: string; counterMoveId?: string; damage: number; counterDamage: number; attackerDied: boolean; defenderDied: boolean; evolution?: { unitId: string; newTemplate: PokemonTemplate } }
+  | { type: 'deploy'; player: Player; templateId: number; unitId: string; x: number; y: number }
   | { type: 'capture'; unitId: string; success: boolean; newUnit?: ClientUnit; pokemon?: PokemonTemplate }
   | { type: 'wait'; unitId: string }
   | { type: 'turn-end'; nextPlayer: Player; turn: number };
