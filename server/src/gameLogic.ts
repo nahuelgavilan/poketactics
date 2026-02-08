@@ -21,7 +21,11 @@ import {
   STARTING_CREDITS,
   calculateDeployCost,
   applyPokemonCenterService,
-  calculateTurnIncome,
+  applyPokeMartService,
+  createInitialCenterOwners,
+  captureCenter,
+  getCenterOwner,
+  calculateTurnIncomeByCenters,
   playerCanStillActWithDeploy
 } from '@poketactics/shared';
 
@@ -47,6 +51,7 @@ export function createGameState(): ServerGameState {
     baseReserveP2: p2Team.map(p => ({ ...p })),
     creditsP1: STARTING_CREDITS,
     creditsP2: STARTING_CREDITS,
+    centerOwners: createInitialCenterOwners(map as GameMap),
     exploredP1: emptyExplored.map(row => [...row]),
     exploredP2: emptyExplored.map(row => [...row])
   };
@@ -140,6 +145,7 @@ export function createGameStateWithTeams(p1Team: PokemonTemplate[], p2Team: Poke
     baseReserveP2: p2Team.map(p => ({ ...p })),
     creditsP1: STARTING_CREDITS,
     creditsP2: STARTING_CREDITS,
+    centerOwners: createInitialCenterOwners(map as GameMap),
     exploredP1: emptyExplored.map(row => [...row]),
     exploredP2: emptyExplored.map(row => [...row])
   };
@@ -255,6 +261,7 @@ export function getClientState(game: ServerGameState, player: Player): ClientGam
     baseReserveP2: game.baseReserveP2.map(p => ({ ...p })),
     creditsP1: game.creditsP1,
     creditsP2: game.creditsP2,
+    centerOwners: { ...game.centerOwners },
     visibility
   };
 }
@@ -679,9 +686,40 @@ export function executeWait(game: ServerGameState, playerId: Player, unitId: str
 
   applyBerryBush(unit, game);
 
-  if (game.map[unit.y]?.[unit.x] === TERRAIN.POKEMON_CENTER) {
+  const terrain = game.map[unit.y]?.[unit.x];
+
+  if (terrain === TERRAIN.POKEMON_CENTER) {
+    const ownerBeforeCapture = getCenterOwner(game.centerOwners, unit.x, unit.y);
+    if (ownerBeforeCapture !== playerId) {
+      game.centerOwners = captureCenter(game.centerOwners, unit.x, unit.y, playerId);
+    }
+
+    // Healing is only available when the center already belongs to the acting player.
+    // If it was neutral/enemy, this action captures it but does not heal in the same wait.
+    if (ownerBeforeCapture === playerId) {
+      const credits = getCreditsForPlayer(game, playerId);
+      const service = applyPokemonCenterService({
+        template: unit.template,
+        currentHp: unit.currentHp,
+        pp: unit.pp,
+        status: unit.status,
+        statusTurns: unit.statusTurns,
+        availableCredits: credits
+      });
+
+      if (service.creditsSpent > 0) {
+        unit.currentHp = service.newHp;
+        unit.pp = service.newPp;
+        unit.status = service.newStatus;
+        unit.statusTurns = service.newStatusTurns;
+        setCreditsForPlayer(game, playerId, credits - service.creditsSpent);
+      }
+    }
+  }
+
+  if (terrain === TERRAIN.RUINS) {
     const credits = getCreditsForPlayer(game, playerId);
-    const service = applyPokemonCenterService({
+    const service = applyPokeMartService({
       template: unit.template,
       currentHp: unit.currentHp,
       pp: unit.pp,
@@ -801,9 +839,9 @@ function executeTurnEnd(game: ServerGameState): { turnEnded: boolean; nextPlayer
   // Remove dead units (from status damage)
   game.units = game.units.filter(u => u.currentHp > 0);
 
-  const turnIncome = calculateTurnIncome(
+  const turnIncome = calculateTurnIncomeByCenters(
     game.map as GameMap,
-    game.units.map(unit => ({ owner: unit.owner, x: unit.x, y: unit.y })),
+    game.centerOwners,
     nextPlayer
   );
   const nextPlayerCredits = getCreditsForPlayer(game, nextPlayer) + turnIncome;

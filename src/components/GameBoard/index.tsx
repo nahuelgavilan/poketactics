@@ -9,6 +9,7 @@ import type { GameMap, Unit, Position, AttackTarget, Player, VisibilityMap } fro
 interface GameBoardProps {
   map: GameMap;
   units: Unit[];
+  centerOwners?: Record<string, Player | null>;
   selectedUnit: Unit | null;
   moveRange: Position[];
   attackRange: AttackTarget[];
@@ -28,6 +29,7 @@ interface GameBoardProps {
 export function GameBoard({
   map,
   units,
+  centerOwners = {},
   selectedUnit,
   moveRange,
   attackRange,
@@ -151,6 +153,7 @@ export function GameBoard({
                   x={x}
                   y={y}
                   terrain={terrain}
+                  centerOwner={terrain === TERRAIN.POKEMON_CENTER ? (centerOwners[`${x},${y}`] ?? null) : null}
                   unit={visibleUnit}
                   isSelected={isSelected}
                   canMove={canMoveTo}

@@ -33,6 +33,7 @@ export interface ClientGameState {
   baseReserveP2: PokemonTemplate[];
   creditsP1: number;
   creditsP2: number;
+  centerOwners: Record<string, Player | null>;
   visibility: {
     visible: boolean[][];
     explored: boolean[][];

@@ -11,11 +11,19 @@ import {
   STARTING_CREDITS,
   calculateDeployCost,
   applyPokemonCenterService,
-  calculateTurnIncome,
+  applyPokeMartService,
+  createInitialCenterOwners,
+  captureCenter,
+  getCenterOwner,
+  calculateTurnIncomeByCenters,
   playerCanStillActWithDeploy,
   CENTER_REPAIR_COST_PER_HP,
   CENTER_RESUPPLY_COST_PER_PP,
-  CENTER_STATUS_CURE_COST
+  CENTER_STATUS_CURE_COST,
+  POKEMART_MAX_POTION_COST,
+  POKEMART_ELIXIR_COST,
+  POKEMART_FULL_HEAL_COST,
+  SHOWDOWN_SERVICE_ITEMS
 } from '@poketactics/shared';
 import type {
   GameState,
@@ -56,6 +64,7 @@ interface UseGameStateReturn {
   baseReserveP2: PokemonTemplate[];
   creditsP1: number;
   creditsP2: number;
+  centerOwners: Record<string, Player | null>;
   deployBase: Position | null;
 
   // Multiplayer state
@@ -127,6 +136,7 @@ interface MultiplayerGameState {
   baseReserveP2: PokemonTemplate[];
   creditsP1: number;
   creditsP2: number;
+  centerOwners: Record<string, Player | null>;
   visibility: {
     visible: boolean[][];
     explored: boolean[][];
@@ -161,6 +171,7 @@ export function useGameState(): UseGameStateReturn {
   const [baseReserveP2, setBaseReserveP2] = useState<PokemonTemplate[]>([]);
   const [creditsP1, setCreditsP1] = useState(STARTING_CREDITS);
   const [creditsP2, setCreditsP2] = useState(STARTING_CREDITS);
+  const [centerOwners, setCenterOwners] = useState<Record<string, Player | null>>({});
   const [deployBase, setDeployBase] = useState<Position | null>(null);
 
   // Track if unit has moved this action (for action menu state)
@@ -266,6 +277,7 @@ export function useGameState(): UseGameStateReturn {
     setBaseReserveP2(p2Team);
     setCreditsP1(STARTING_CREDITS);
     setCreditsP2(STARTING_CREDITS);
+    setCenterOwners(createInitialCenterOwners(newMap));
     setTurn(1);
     setCurrentPlayer('P1');
     setGameState('playing');
@@ -296,6 +308,7 @@ export function useGameState(): UseGameStateReturn {
     setBaseReserveP2([...p2Team]);
     setCreditsP1(STARTING_CREDITS);
     setCreditsP2(STARTING_CREDITS);
+    setCenterOwners(createInitialCenterOwners(newMap));
     setTurn(1);
     setCurrentPlayer('P1');
     setGameState('playing');
@@ -327,6 +340,7 @@ export function useGameState(): UseGameStateReturn {
     setBaseReserveP2(p2Team);
     setCreditsP1(STARTING_CREDITS);
     setCreditsP2(STARTING_CREDITS);
+    setCenterOwners(createInitialCenterOwners(customMap));
     setTurn(1);
     setCurrentPlayer('P1');
     setGameState('playing');
@@ -352,6 +366,7 @@ export function useGameState(): UseGameStateReturn {
     setBaseReserveP2([]);
     setCreditsP1(STARTING_CREDITS);
     setCreditsP2(STARTING_CREDITS);
+    setCenterOwners({});
     setGameState('playing');
     setGamePhase('SELECT');
     resetSelection();
@@ -365,6 +380,7 @@ export function useGameState(): UseGameStateReturn {
     setBaseReserveP2(state.baseReserveP2 ?? []);
     setCreditsP1(state.creditsP1 ?? STARTING_CREDITS);
     setCreditsP2(state.creditsP2 ?? STARTING_CREDITS);
+    setCenterOwners(state.centerOwners ?? createInitialCenterOwners(state.map));
     setTurn(state.turn);
     setCurrentPlayer(state.currentPlayer);
     setMyPlayer(state.myPlayer);
@@ -909,9 +925,9 @@ export function useGameState(): UseGameStateReturn {
     const aliveUnits = updatedUnits.filter(u => u.currentHp > 0);
     setUnits(aliveUnits);
 
-    const turnIncome = calculateTurnIncome(
+    const turnIncome = calculateTurnIncomeByCenters(
       map,
-      aliveUnits.map(unit => ({ owner: unit.owner, x: unit.x, y: unit.y })),
+      centerOwners,
       nextPlayer
     );
     const nextCredits = getCreditsForPlayer(nextPlayer) + turnIncome;
@@ -940,6 +956,7 @@ export function useGameState(): UseGameStateReturn {
     turn,
     addLog,
     map,
+    centerOwners,
     resolveWinner,
     baseReserveP1,
     baseReserveP2,
@@ -1027,8 +1044,18 @@ export function useGameState(): UseGameStateReturn {
       return;
     }
 
-    // Paid service on Pokémon Center (repair + PP + status cure)
-    if (map[movedUnit.y]?.[movedUnit.x] === TERRAIN.POKEMON_CENTER) {
+    const terrain = map[movedUnit.y]?.[movedUnit.x];
+
+    if (terrain === TERRAIN.POKEMON_CENTER) {
+      const ownerBeforeCapture = getCenterOwner(centerOwners, movedUnit.x, movedUnit.y);
+
+      if (ownerBeforeCapture !== currentPlayer) {
+        setCenterOwners(prev => captureCenter(prev, movedUnit.x, movedUnit.y, currentPlayer));
+        addLog(`🏥 Centro Pokémon capturado por ${currentPlayer === 'P1' ? 'Jugador 1' : 'Jugador 2'}.`);
+        waitUnit(movedUnit.uid, nextUnits);
+        return;
+      }
+
       const currentCredits = getCreditsForPlayer(currentPlayer);
       const service = applyPokemonCenterService({
         template: movedUnit.template,
@@ -1069,6 +1096,45 @@ export function useGameState(): UseGameStateReturn {
       }
     }
 
+    if (terrain === TERRAIN.RUINS) {
+      const currentCredits = getCreditsForPlayer(currentPlayer);
+      const service = applyPokeMartService({
+        template: movedUnit.template,
+        currentHp: movedUnit.currentHp,
+        pp: movedUnit.pp,
+        status: movedUnit.status,
+        statusTurns: movedUnit.statusTurns,
+        availableCredits: currentCredits
+      });
+
+      if (service.creditsSpent > 0) {
+        const servicedUnit: Unit = {
+          ...movedUnit,
+          currentHp: service.newHp,
+          pp: service.newPp,
+          status: service.newStatus,
+          statusTurns: service.newStatusTurns
+        };
+        const servicedUnits = nextUnits.map(u => u.uid === movedUnit.uid ? servicedUnit : u);
+        setUnits(servicedUnits);
+        setCreditsForPlayer(currentPlayer, currentCredits - service.creditsSpent);
+
+        if (service.purchasedItemId === SHOWDOWN_SERVICE_ITEMS.shopPotion.id) {
+          addLog(`🧪 Pokétienda: ${servicedUnit.template.name} compró Max Potion (-${POKEMART_MAX_POTION_COST} créditos).`);
+        } else if (service.purchasedItemId === SHOWDOWN_SERVICE_ITEMS.shopElixir.id) {
+          addLog(`🔋 Pokétienda: ${servicedUnit.template.name} compró Elixir (-${POKEMART_ELIXIR_COST} créditos).`);
+        } else if (service.purchasedItemId === SHOWDOWN_SERVICE_ITEMS.shopFullHeal.id) {
+          addLog(`🩹 Pokétienda: ${servicedUnit.template.name} compró Full Heal (-${POKEMART_FULL_HEAL_COST} créditos).`);
+        }
+
+        const nextCredits = currentPlayer === 'P1'
+          ? { creditsP1: currentCredits - service.creditsSpent }
+          : { creditsP2: currentCredits - service.creditsSpent };
+        waitUnit(servicedUnit.uid, servicedUnits, nextCredits);
+        return;
+      }
+    }
+
     // Mark unit as done
     waitUnit(movedUnit.uid, nextUnits);
   }, [
@@ -1082,7 +1148,8 @@ export function useGameState(): UseGameStateReturn {
     addLog,
     getCreditsForPlayer,
     currentPlayer,
-    setCreditsForPlayer
+    setCreditsForPlayer,
+    centerOwners
   ]);
 
   // Move selection: player picked a move → initiate battle
@@ -1405,6 +1472,7 @@ export function useGameState(): UseGameStateReturn {
     baseReserveP2,
     creditsP1,
     creditsP2,
+    centerOwners,
     deployBase,
 
     // Multiplayer state

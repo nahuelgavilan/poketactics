@@ -4,12 +4,13 @@ import { getIconSprite } from '../../utils/sprites';
 import { SHOWDOWN_SERVICE_ITEMS, getShowdownItemIconUrl } from '@poketactics/shared';
 import { PathSegment } from './PathSegment';
 import type { BridgeDir } from '../../utils/mapGenerator';
-import type { TerrainType, Unit, Position } from '../../types/game';
+import type { TerrainType, Unit, Position, Player } from '../../types/game';
 
 interface TileProps {
   x: number;
   y: number;
   terrain: TerrainType;
+  centerOwner?: Player | null;
   unit: Unit | undefined;
   isSelected: boolean;
   canMove: boolean;
@@ -454,6 +455,7 @@ export function Tile({
   x,
   y,
   terrain,
+  centerOwner = null,
   unit,
   isSelected,
   canMove,
@@ -523,6 +525,36 @@ export function Tile({
               src={getShowdownItemIconUrl(SHOWDOWN_SERVICE_ITEMS.resupply.id)}
               alt=""
               className="absolute top-1 right-1 w-4 h-4 opacity-80 pointer-events-none drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]"
+            />
+            {centerOwner && (
+              <div
+                className={`
+                  absolute bottom-1 left-1 px-1 rounded text-[8px] font-black leading-tight
+                  border border-black/40 shadow-md
+                  ${centerOwner === 'P1' ? 'bg-blue-500/90 text-white' : 'bg-red-500/90 text-white'}
+                `}
+              >
+                {centerOwner}
+              </div>
+            )}
+          </>
+        )}
+        {terrain === TERRAIN.RUINS && (
+          <>
+            <img
+              src={getShowdownItemIconUrl(SHOWDOWN_SERVICE_ITEMS.shop.id)}
+              alt=""
+              className="absolute top-1 left-1 w-4 h-4 opacity-85 pointer-events-none drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]"
+            />
+            <img
+              src={getShowdownItemIconUrl(SHOWDOWN_SERVICE_ITEMS.shopPotion.id)}
+              alt=""
+              className="absolute top-1 right-1 w-4 h-4 opacity-80 pointer-events-none drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]"
+            />
+            <img
+              src={getShowdownItemIconUrl(SHOWDOWN_SERVICE_ITEMS.shopFullHeal.id)}
+              alt=""
+              className="absolute bottom-1 left-1 w-3.5 h-3.5 opacity-75 pointer-events-none drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]"
             />
           </>
         )}

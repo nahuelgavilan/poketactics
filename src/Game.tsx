@@ -49,6 +49,7 @@ export default function Game() {
     baseReserveP2,
     creditsP1,
     creditsP2,
+    centerOwners,
     deployBase,
     // Multiplayer state
     myPlayer,
@@ -580,6 +581,7 @@ export default function Game() {
         baseReserveP2: serverState.baseReserveP2 ?? [],
         creditsP1: serverState.creditsP1,
         creditsP2: serverState.creditsP2,
+        centerOwners: serverState.centerOwners ?? {},
         visibility: serverState.visibility
       });
     };
@@ -602,6 +604,7 @@ export default function Game() {
         baseReserveP2: serverState.baseReserveP2 ?? [],
         creditsP1: serverState.creditsP1,
         creditsP2: serverState.creditsP2,
+        centerOwners: serverState.centerOwners ?? {},
         visibility: serverState.visibility
       });
     };
@@ -790,6 +793,7 @@ export default function Game() {
             <GameBoard
               map={map}
               units={units}
+              centerOwners={centerOwners}
               selectedUnit={selectedUnit}
               moveRange={moveRange}
               attackRange={attackRange}
@@ -989,6 +993,7 @@ export default function Game() {
         {selectedTerrain && gameState === 'playing' && !selectedUnit && (
           <TerrainInfoPanel
             terrain={selectedTerrain.terrain}
+            centerOwner={selectedTerrain.terrain === TERRAIN.POKEMON_CENTER ? (centerOwners[`${selectedTerrain.x},${selectedTerrain.y}`] ?? null) : null}
             onClose={() => setSelectedTerrain(null)}
           />
         )}

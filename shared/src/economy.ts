@@ -33,6 +33,22 @@ export const SHOWDOWN_SERVICE_ITEMS = {
     id: 'ultra-ball',
     name: 'Ultra Ball',
   },
+  shop: {
+    id: 'rare-candy',
+    name: 'Rare Candy',
+  },
+  shopPotion: {
+    id: 'max-potion',
+    name: 'Max Potion',
+  },
+  shopElixir: {
+    id: 'elixir',
+    name: 'Elixir',
+  },
+  shopFullHeal: {
+    id: 'full-heal',
+    name: 'Full Heal',
+  },
 } as const;
 
 export function getShowdownItemIconUrl(itemId: string): string {
@@ -72,6 +88,46 @@ export function calculateTurnIncome(currentMap: GameMap, units: { owner: Player;
   ).length;
 
   income += centerControlCount * CENTER_CONTROL_INCOME;
+
+  return income;
+}
+
+export type CenterOwners = Record<string, Player | null>;
+
+export function getCenterKey(x: number, y: number): string {
+  return `${x},${y}`;
+}
+
+export function createInitialCenterOwners(currentMap: GameMap): CenterOwners {
+  const owners: CenterOwners = {};
+  for (let y = 0; y < currentMap.length; y++) {
+    for (let x = 0; x < (currentMap[0]?.length ?? 0); x++) {
+      if (currentMap[y][x] === TERRAIN.POKEMON_CENTER) {
+        owners[getCenterKey(x, y)] = null;
+      }
+    }
+  }
+  return owners;
+}
+
+export function getCenterOwner(centerOwners: CenterOwners, x: number, y: number): Player | null {
+  return centerOwners[getCenterKey(x, y)] ?? null;
+}
+
+export function captureCenter(centerOwners: CenterOwners, x: number, y: number, player: Player): CenterOwners {
+  return {
+    ...centerOwners,
+    [getCenterKey(x, y)]: player
+  };
+}
+
+export function calculateTurnIncomeByCenters(currentMap: GameMap, centerOwners: CenterOwners, player: Player): number {
+  const baseTile = getPlayerBaseTile(currentMap, player);
+  const hasBase = !!baseTile;
+  let income = hasBase ? BASE_TURN_INCOME : 0;
+
+  const controlledCenters = Object.values(centerOwners).filter(owner => owner === player).length;
+  income += controlledCenters * CENTER_CONTROL_INCOME;
 
   return income;
 }
@@ -149,6 +205,123 @@ export function applyPokemonCenterService(input: CenterServiceInput): CenterServ
   };
 }
 
+export const POKEMART_MAX_POTION_COST = 180;
+export const POKEMART_ELIXIR_COST = 170;
+export const POKEMART_FULL_HEAL_COST = 130;
+export const POKEMART_MAX_POTION_RATIO = 0.35;
+export const POKEMART_ELIXIR_TOTAL_PP = 4;
+
+export interface PokeMartServiceInput {
+  template: PokemonTemplate;
+  currentHp: number;
+  pp: number[];
+  status: StatusEffect | null;
+  statusTurns: number;
+  availableCredits: number;
+}
+
+export interface PokeMartServiceResult {
+  newHp: number;
+  newPp: number[];
+  newStatus: StatusEffect | null;
+  newStatusTurns: number;
+  healedHp: number;
+  restoredPp: number;
+  curedStatus: boolean;
+  creditsSpent: number;
+  purchasedItemId: string | null;
+}
+
+export function applyPokeMartService(input: PokeMartServiceInput): PokeMartServiceResult {
+  let newHp = input.currentHp;
+  const newPp = [...input.pp];
+  let newStatus = input.status;
+  let newStatusTurns = input.statusTurns;
+
+  const missingHp = Math.max(0, input.template.hp - input.currentHp);
+  const totalMissingPp = input.template.moves.reduce((sum, move, i) => sum + Math.max(0, move.pp - (newPp[i] ?? 0)), 0);
+
+  // 1) Full Heal first for tactical reliability against status-locks.
+  if (newStatus && input.availableCredits >= POKEMART_FULL_HEAL_COST) {
+    newStatus = null;
+    newStatusTurns = 0;
+    return {
+      newHp,
+      newPp,
+      newStatus,
+      newStatusTurns,
+      healedHp: 0,
+      restoredPp: 0,
+      curedStatus: true,
+      creditsSpent: POKEMART_FULL_HEAL_COST,
+      purchasedItemId: SHOWDOWN_SERVICE_ITEMS.shopFullHeal.id
+    };
+  }
+
+  // 2) Max Potion for pressured units.
+  const healThreshold = Math.ceil(input.template.hp * 0.2);
+  if (missingHp >= healThreshold && input.availableCredits >= POKEMART_MAX_POTION_COST) {
+    const healAmount = Math.min(missingHp, Math.ceil(input.template.hp * POKEMART_MAX_POTION_RATIO));
+    newHp += healAmount;
+    return {
+      newHp,
+      newPp,
+      newStatus,
+      newStatusTurns,
+      healedHp: healAmount,
+      restoredPp: 0,
+      curedStatus: false,
+      creditsSpent: POKEMART_MAX_POTION_COST,
+      purchasedItemId: SHOWDOWN_SERVICE_ITEMS.shopPotion.id
+    };
+  }
+
+  // 3) Elixir for action economy.
+  if (totalMissingPp > 0 && input.availableCredits >= POKEMART_ELIXIR_COST) {
+    let ppToRestore = POKEMART_ELIXIR_TOTAL_PP;
+    let restoredPp = 0;
+
+    for (let i = 0; i < input.template.moves.length; i++) {
+      if (ppToRestore <= 0) break;
+      const move = input.template.moves[i];
+      const current = newPp[i] ?? 0;
+      const missing = Math.max(0, move.pp - current);
+      if (missing <= 0) continue;
+
+      const restore = Math.min(missing, ppToRestore);
+      newPp[i] = current + restore;
+      restoredPp += restore;
+      ppToRestore -= restore;
+    }
+
+    if (restoredPp > 0) {
+      return {
+        newHp,
+        newPp,
+        newStatus,
+        newStatusTurns,
+        healedHp: 0,
+        restoredPp,
+        curedStatus: false,
+        creditsSpent: POKEMART_ELIXIR_COST,
+        purchasedItemId: SHOWDOWN_SERVICE_ITEMS.shopElixir.id
+      };
+    }
+  }
+
+  return {
+    newHp,
+    newPp,
+    newStatus,
+    newStatusTurns,
+    healedHp: 0,
+    restoredPp: 0,
+    curedStatus: false,
+    creditsSpent: 0,
+    purchasedItemId: null
+  };
+}
+
 function getPlayerBaseTile(currentMap: GameMap, player: Player): { x: number; y: number } | null {
   const bases: { x: number; y: number }[] = [];
 
@@ -215,6 +388,15 @@ export function getTerrainEconomyEntity(terrain: TerrainType): {
       description: `Repara/PP por coste (${SHOWDOWN_SERVICE_ITEMS.repair.name} + ${SHOWDOWN_SERVICE_ITEMS.resupply.name})`,
       primaryItemId: SHOWDOWN_SERVICE_ITEMS.repair.id,
       secondaryItemId: SHOWDOWN_SERVICE_ITEMS.resupply.id,
+    };
+  }
+
+  if (terrain === TERRAIN.RUINS) {
+    return {
+      label: 'Pokétienda',
+      description: `${SHOWDOWN_SERVICE_ITEMS.shopPotion.name} / ${SHOWDOWN_SERVICE_ITEMS.shopElixir.name} / ${SHOWDOWN_SERVICE_ITEMS.shopFullHeal.name}`,
+      primaryItemId: SHOWDOWN_SERVICE_ITEMS.shop.id,
+      secondaryItemId: SHOWDOWN_SERVICE_ITEMS.shopPotion.id,
     };
   }
 

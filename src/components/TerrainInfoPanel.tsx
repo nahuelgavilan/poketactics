@@ -5,13 +5,17 @@ import {
   CENTER_REPAIR_COST_PER_HP,
   CENTER_RESUPPLY_COST_PER_PP,
   CENTER_STATUS_CURE_COST,
+  POKEMART_MAX_POTION_COST,
+  POKEMART_ELIXIR_COST,
+  POKEMART_FULL_HEAL_COST,
   getShowdownItemIconUrl,
   getTerrainEconomyEntity
 } from '@poketactics/shared';
-import type { TerrainType } from '../types/game';
+import type { TerrainType, Player } from '../types/game';
 
 interface TerrainInfoPanelProps {
   terrain: TerrainType;
+  centerOwner?: Player | null;
   onClose: () => void;
 }
 
@@ -69,7 +73,7 @@ const TERRAIN_STYLES: Record<number, { gradient: string; border: string; icon: s
   }
 };
 
-export function TerrainInfoPanel({ terrain, onClose }: TerrainInfoPanelProps) {
+export function TerrainInfoPanel({ terrain, centerOwner = null, onClose }: TerrainInfoPanelProps) {
   const props = TERRAIN_PROPS[terrain];
   const style = TERRAIN_STYLES[terrain] || TERRAIN_STYLES[TERRAIN.GRASS];
 
@@ -188,13 +192,23 @@ export function TerrainInfoPanel({ terrain, onClose }: TerrainInfoPanelProps) {
                       {economyEntity.description}
                     </div>
                     {terrain === TERRAIN.POKEMON_CENTER && (
-                      <div className="mt-1 text-[10px] text-amber-200/80">
-                        Reparar: {CENTER_REPAIR_COST_PER_HP} c/HP · PP: {CENTER_RESUPPLY_COST_PER_PP} c/PP · Estado: {CENTER_STATUS_CURE_COST}
-                      </div>
+                      <>
+                        <div className="mt-1 text-[10px] text-amber-200/80">
+                          Reparar: {CENTER_REPAIR_COST_PER_HP} c/HP · PP: {CENTER_RESUPPLY_COST_PER_PP} c/PP · Estado: {CENTER_STATUS_CURE_COST}
+                        </div>
+                        <div className="mt-1 text-[10px] text-amber-200/80">
+                          Propiedad: {centerOwner ? `Jugador ${centerOwner === 'P1' ? '1' : '2'}` : 'Neutral (se captura con Esperar)'}
+                        </div>
+                      </>
                     )}
                     {terrain === TERRAIN.BASE && (
                       <div className="mt-1 text-[10px] text-amber-200/80">
                         Ingreso fijo por turno: +{BASE_TURN_INCOME}
+                      </div>
+                    )}
+                    {terrain === TERRAIN.RUINS && (
+                      <div className="mt-1 text-[10px] text-amber-200/80">
+                        Max Potion: {POKEMART_MAX_POTION_COST} · Elixir: {POKEMART_ELIXIR_COST} · Full Heal: {POKEMART_FULL_HEAL_COST}
                       </div>
                     )}
                   </div>

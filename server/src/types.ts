@@ -43,6 +43,7 @@ export interface ServerGameState {
   baseReserveP2: PokemonTemplate[];
   creditsP1: number;
   creditsP2: number;
+  centerOwners: Record<string, Player | null>;
   // Fog of war tracking per player
   exploredP1: boolean[][];
   exploredP2: boolean[][];
@@ -77,6 +78,7 @@ export interface ClientGameState {
   baseReserveP2: PokemonTemplate[];
   creditsP1: number;
   creditsP2: number;
+  centerOwners: Record<string, Player | null>;
   visibility: {
     visible: boolean[][];
     explored: boolean[][];
