@@ -44,7 +44,7 @@ function TerrainDecoration({ texture }: { texture?: string }) {
     case 'forest':
       return (
         <div className="absolute inset-0 rounded-2xl overflow-hidden">
-          <div className="absolute inset-0 bg-black/20" />
+          <div className="absolute inset-0 bg-[#4c3b24]/18" />
           <div className="absolute w-[60%] h-[60%] rounded-full bg-green-900/40 -top-[10%] -left-[10%]" />
         </div>
       );
@@ -136,7 +136,7 @@ function VSTile({ unit, terrain, isAttacker }: { unit: Unit; terrain: TerrainTyp
         <div className={`
           absolute -top-2 -right-2 w-7 h-7 rounded-full z-20
           flex items-center justify-center
-          text-white text-xs font-black
+          text-[#f8f0dd] text-xs font-black
           border-2 border-white/60 shadow-lg
           ${isAttacker ? 'bg-blue-500' : 'bg-red-500'}
         `}>
@@ -147,21 +147,21 @@ function VSTile({ unit, terrain, isAttacker }: { unit: Unit; terrain: TerrainTyp
       {/* Stats panel */}
       <div className={`
         relative px-4 py-2 rounded-xl
-        bg-slate-900/90 border-2 shadow-xl
-        ${isAttacker ? 'border-blue-500/50' : 'border-red-500/50'}
+        bg-[#f8efd9]/95 border-2 shadow-xl
+        ${isAttacker ? 'border-sky-600/45' : 'border-rose-600/45'}
       `}>
         {/* Name */}
-        <div className="text-white font-bold text-sm md:text-base text-center mb-2">
+        <div className="text-[#2b3640] font-bold text-sm md:text-base text-center mb-2">
           {unit.template.name}
         </div>
 
         {/* HP Bar */}
         <div className="w-32 md:w-40">
-          <div className="flex justify-between text-xs text-slate-400 mb-1">
+          <div className="flex justify-between text-xs text-[#6c563b] mb-1">
             <span>HP</span>
             <span>{unit.currentHp}/{unit.template.hp}</span>
           </div>
-          <div className="h-2.5 bg-slate-700 rounded-full overflow-hidden">
+          <div className="h-2.5 bg-[#d7c59f] rounded-full overflow-hidden border border-amber-900/20">
             <div
               className={`h-full bg-gradient-to-r ${hpColor} transition-all duration-300`}
               style={{ width: `${hpPercent}%` }}
@@ -173,15 +173,15 @@ function VSTile({ unit, terrain, isAttacker }: { unit: Unit; terrain: TerrainTyp
         <div className="flex justify-between mt-2 text-xs">
           <div className="flex items-center gap-1">
             <span className="text-orange-400">ATK</span>
-            <span className="text-white font-bold">{unit.template.atk}</span>
+            <span className="text-[#2b3640] font-bold">{unit.template.atk}</span>
           </div>
           <div className="flex items-center gap-1">
             <span className="text-cyan-400">DEF</span>
-            <span className="text-white font-bold">{unit.template.def}</span>
+            <span className="text-[#2b3640] font-bold">{unit.template.def}</span>
           </div>
           <div className="flex items-center gap-1">
             <span className="text-purple-400">MOV</span>
-            <span className="text-white font-bold">{unit.template.mov}</span>
+            <span className="text-[#2b3640] font-bold">{unit.template.mov}</span>
           </div>
         </div>
 
@@ -190,7 +190,7 @@ function VSTile({ unit, terrain, isAttacker }: { unit: Unit; terrain: TerrainTyp
           {unit.template.types.map((type) => (
             <span
               key={type}
-              className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-slate-700 text-slate-300"
+              className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-[#ead9b5] text-[#5f4d37] border border-amber-900/20"
             >
               {type}
             </span>
@@ -274,7 +274,7 @@ export function BattleZoomTransition({ attacker, defender, map, onComplete }: Ba
   })), []);
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950 overflow-hidden">
+    <div className="fixed inset-0 z-50 bg-[#e8deca] overflow-hidden">
 
       {/* === BOARD ZOOM PHASE === */}
       {showBoard && (
@@ -349,7 +349,7 @@ export function BattleZoomTransition({ attacker, defender, map, onComplete }: Ba
       {showVS && (
         <div className="absolute inset-0 z-20 animate-fade-in">
           {/* Background */}
-          <div className="absolute inset-0 bg-gradient-to-b from-slate-900 via-slate-950 to-black" />
+          <div className="absolute inset-0 bg-gradient-to-b from-[#f7edd6] via-[#e8dcc2] to-[#ddd0b2]" />
 
           {/* Animated background pattern */}
           <div className="absolute inset-0 opacity-10">
@@ -505,7 +505,7 @@ export function BattleZoomTransition({ attacker, defender, map, onComplete }: Ba
               y="0"
               width="100"
               height="100"
-              fill="#0f172a"
+              fill="#e5d9be"
               mask="url(#spiralMask)"
             />
 
@@ -547,7 +547,7 @@ export function BattleZoomTransition({ attacker, defender, map, onComplete }: Ba
 
       {/* Black screen after wipe */}
       {(phase === 'black' || phase === 'done') && (
-        <div className="absolute inset-0 bg-slate-950 z-30" />
+        <div className="absolute inset-0 bg-[#e5d9be] z-30" />
       )}
 
       <style>{`

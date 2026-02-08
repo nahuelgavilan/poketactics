@@ -34,7 +34,7 @@ export function EvolutionCinematic({ evolutionData, onComplete }: EvolutionCinem
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#e8deca] overflow-hidden">
       {/* Animated background */}
       <div className="absolute inset-0">
         {/* Radial gradient pulse */}
@@ -45,7 +45,7 @@ export function EvolutionCinematic({ evolutionData, onComplete }: EvolutionCinem
               : 'opacity-0'
           }`}
           style={{
-            background: 'radial-gradient(circle, rgba(255,255,255,0.3) 0%, rgba(59,130,246,0.2) 40%, transparent 70%)'
+            background: 'radial-gradient(circle, rgba(255,255,255,0.45) 0%, rgba(56,189,248,0.2) 40%, transparent 70%)'
           }}
         />
 
@@ -55,7 +55,7 @@ export function EvolutionCinematic({ evolutionData, onComplete }: EvolutionCinem
             {[...Array(20)].map((_, i) => (
               <div
                 key={i}
-                className="absolute w-2 h-2 bg-white rounded-full animate-ping"
+                className="absolute w-2 h-2 bg-amber-300 rounded-full animate-ping"
                 style={{
                   left: `${Math.random() * 100}%`,
                   top: `${Math.random() * 100}%`,
@@ -74,7 +74,7 @@ export function EvolutionCinematic({ evolutionData, onComplete }: EvolutionCinem
         <div className={`mb-8 transition-all duration-500 ${
           phase === 'intro' ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-10'
         }`}>
-          <div className="flex items-center gap-3 text-white">
+          <div className="flex items-center gap-3 text-[#2b3640]">
             <Sparkles className="w-8 h-8 text-yellow-400 animate-pulse" />
             <span className="text-3xl font-bold uppercase tracking-wider">¡Está evolucionando!</span>
             <Sparkles className="w-8 h-8 text-yellow-400 animate-pulse" />
@@ -131,8 +131,8 @@ export function EvolutionCinematic({ evolutionData, onComplete }: EvolutionCinem
             : 'opacity-0 translate-y-10'
         }`}>
           <div className="text-center">
-            <div className="text-gray-400 text-sm mb-1">{fromTemplate.name} →</div>
-            <div className="text-4xl font-black text-white uppercase tracking-wider">
+            <div className="text-[#6c563b] text-sm mb-1">{fromTemplate.name} →</div>
+            <div className="text-4xl font-black text-[#2b3640] uppercase tracking-wider">
               {toTemplate.name}
             </div>
           </div>
@@ -144,7 +144,7 @@ export function EvolutionCinematic({ evolutionData, onComplete }: EvolutionCinem
             ? 'opacity-100 translate-y-0'
             : 'opacity-0 translate-y-10'
         }`}>
-          <div className="bg-slate-900/90 backdrop-blur rounded-2xl p-6 border border-slate-700">
+          <div className="bg-[#f8efd9]/95 rounded-2xl p-6 border-2 border-amber-900/25 shadow-[0_8px_22px_rgba(95,77,55,0.15)]">
             <div className="flex items-center gap-2 mb-4 text-emerald-400">
               <TrendingUp className="w-5 h-5" />
               <span className="font-bold uppercase text-sm">Stats mejorados</span>
@@ -152,22 +152,22 @@ export function EvolutionCinematic({ evolutionData, onComplete }: EvolutionCinem
 
             <div className="grid grid-cols-3 gap-4 text-center">
               <div>
-                <div className="text-gray-400 text-xs uppercase">HP</div>
-                <div className="text-white font-bold">{toTemplate.hp}</div>
+                <div className="text-[#6c563b] text-xs uppercase">HP</div>
+                <div className="text-[#2b3640] font-bold">{toTemplate.hp}</div>
                 <div className="text-emerald-400 text-sm font-bold">
                   {statDiff(fromTemplate.hp, toTemplate.hp)}
                 </div>
               </div>
               <div>
-                <div className="text-gray-400 text-xs uppercase">ATK</div>
-                <div className="text-white font-bold">{toTemplate.atk}</div>
+                <div className="text-[#6c563b] text-xs uppercase">ATK</div>
+                <div className="text-[#2b3640] font-bold">{toTemplate.atk}</div>
                 <div className="text-emerald-400 text-sm font-bold">
                   {statDiff(fromTemplate.atk, toTemplate.atk)}
                 </div>
               </div>
               <div>
-                <div className="text-gray-400 text-xs uppercase">DEF</div>
-                <div className="text-white font-bold">{toTemplate.def}</div>
+                <div className="text-[#6c563b] text-xs uppercase">DEF</div>
+                <div className="text-[#2b3640] font-bold">{toTemplate.def}</div>
                 <div className="text-emerald-400 text-sm font-bold">
                   {statDiff(fromTemplate.def, toTemplate.def)}
                 </div>
@@ -176,29 +176,29 @@ export function EvolutionCinematic({ evolutionData, onComplete }: EvolutionCinem
 
             <div className="grid grid-cols-4 gap-4 mt-4 text-center">
               <div>
-                <div className="text-gray-400 text-xs uppercase">SpA</div>
-                <div className="text-white font-bold">{toTemplate.spa}</div>
+                <div className="text-[#6c563b] text-xs uppercase">SpA</div>
+                <div className="text-[#2b3640] font-bold">{toTemplate.spa}</div>
                 <div className="text-emerald-400 text-sm font-bold">
                   {statDiff(fromTemplate.spa, toTemplate.spa)}
                 </div>
               </div>
               <div>
-                <div className="text-gray-400 text-xs uppercase">SpD</div>
-                <div className="text-white font-bold">{toTemplate.spd}</div>
+                <div className="text-[#6c563b] text-xs uppercase">SpD</div>
+                <div className="text-[#2b3640] font-bold">{toTemplate.spd}</div>
                 <div className="text-emerald-400 text-sm font-bold">
                   {statDiff(fromTemplate.spd, toTemplate.spd)}
                 </div>
               </div>
               <div>
-                <div className="text-gray-400 text-xs uppercase">SPE</div>
-                <div className="text-white font-bold">{toTemplate.spe}</div>
+                <div className="text-[#6c563b] text-xs uppercase">SPE</div>
+                <div className="text-[#2b3640] font-bold">{toTemplate.spe}</div>
                 <div className="text-emerald-400 text-sm font-bold">
                   {statDiff(fromTemplate.spe, toTemplate.spe)}
                 </div>
               </div>
               <div>
-                <div className="text-gray-400 text-xs uppercase">MOV</div>
-                <div className="text-white font-bold">{toTemplate.mov}</div>
+                <div className="text-[#6c563b] text-xs uppercase">MOV</div>
+                <div className="text-[#2b3640] font-bold">{toTemplate.mov}</div>
                 <div className="text-emerald-400 text-sm font-bold">
                   {statDiff(fromTemplate.mov, toTemplate.mov)}
                 </div>
@@ -207,9 +207,9 @@ export function EvolutionCinematic({ evolutionData, onComplete }: EvolutionCinem
 
             {/* New move */}
             {fromTemplate.moves[0]?.name !== toTemplate.moves[0]?.name && (
-              <div className="mt-4 pt-4 border-t border-slate-700 text-center">
-                <div className="text-gray-400 text-xs uppercase mb-1">Nuevo Movimiento</div>
-                <div className="text-yellow-400 font-bold">{toTemplate.moves[0]?.name}</div>
+              <div className="mt-4 pt-4 border-t border-amber-900/25 text-center">
+                <div className="text-[#6c563b] text-xs uppercase mb-1">Nuevo Movimiento</div>
+                <div className="text-amber-700 font-bold">{toTemplate.moves[0]?.name}</div>
               </div>
             )}
           </div>

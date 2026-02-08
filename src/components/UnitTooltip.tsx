@@ -22,10 +22,13 @@ export function UnitTooltip({ unit, screenX, screenY, isEnemy = false }: UnitToo
   const TOOLTIP_WIDTH = 192;
   const TOOLTIP_HEIGHT = 188;
   const margin = 12;
+  // Keep tooltip above bottom mobile controls to avoid overlap when tapping lower tiles.
+  const reservedBottomSpace = window.innerWidth < 900 ? 120 : 16;
   const rawLeft = screenX > window.innerWidth * 0.7 ? screenX - TOOLTIP_WIDTH - 16 : screenX + 16;
   const rawTop = screenY > window.innerHeight * 0.6 ? screenY - TOOLTIP_HEIGHT - 16 : screenY + 16;
   const left = Math.min(window.innerWidth - TOOLTIP_WIDTH - margin, Math.max(margin, rawLeft));
-  const top = Math.min(window.innerHeight - TOOLTIP_HEIGHT - margin, Math.max(margin, rawTop));
+  const maxTop = Math.max(margin, window.innerHeight - TOOLTIP_HEIGHT - margin - reservedBottomSpace);
+  const top = Math.min(maxTop, Math.max(margin, rawTop));
 
   return (
     <div

@@ -1052,7 +1052,7 @@ export default function Game() {
       {/* In multiplayer, there's no "pass the phone" screen */}
       {gameState === 'transition' && !isInMultiplayerGame.current && (
         <div
-          className="fixed inset-0 z-40 bg-slate-950"
+          className="fixed inset-0 z-40 bg-[#e2d8c1]"
           style={{
             // Force synchronous paint - no animation delay
             willChange: 'auto',

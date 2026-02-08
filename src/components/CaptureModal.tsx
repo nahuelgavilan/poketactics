@@ -97,12 +97,12 @@ function StatBar({ label, value, maxValue, color }: { label: string; value: numb
   return (
     <div className="flex items-center gap-2">
       <span
-        className="w-10 text-[10px] font-bold text-slate-400"
+        className="w-10 text-[10px] font-bold text-[#6c563b]"
         style={{ fontFamily: "'Press Start 2P', monospace" }}
       >
         {label}
       </span>
-      <div className="flex-1 h-3 bg-slate-800 rounded-sm overflow-hidden border border-slate-700 relative">
+      <div className="flex-1 h-3 bg-[#d7c59f] rounded-sm overflow-hidden border border-amber-900/25 relative">
         <div
           className="h-full transition-all duration-1000 ease-out relative"
           style={{
@@ -122,14 +122,14 @@ function StatBar({ label, value, maxValue, color }: { label: string; value: numb
           {[1, 2, 3, 4].map(i => (
             <div
               key={i}
-              className="h-full border-r border-slate-700/60"
+              className="h-full border-r border-amber-900/25"
               style={{ left: `${i * 20}%`, position: 'absolute', width: '1px' }}
             />
           ))}
         </div>
       </div>
       <span
-        className="w-8 text-[10px] font-bold text-white text-right"
+        className="w-8 text-[10px] font-bold text-[#2b3640] text-right"
         style={{ fontFamily: "'Press Start 2P', monospace" }}
       >
         {displayValue}
@@ -170,12 +170,12 @@ export function CaptureModal({ pokemon, player, onComplete }: CaptureModalProps)
       <div
         className="absolute inset-0 animate-bg-pulse"
         style={{
-          background: `radial-gradient(ellipse at center, ${typeColors.glow} 0%, #0a0a0a 60%)`,
+          background: `radial-gradient(ellipse at center, ${typeColors.glow} 0%, #ded2b8 64%)`,
         }}
       />
 
       {/* Vignette overlay */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_40%,rgba(0,0,0,0.7)_100%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_45%,rgba(95,77,55,0.26)_100%)]" />
 
       {/* CRT Scanlines */}
       <div
@@ -249,15 +249,15 @@ export function CaptureModal({ pokemon, player, onComplete }: CaptureModalProps)
 
         {/* GBA-style frame */}
         <div
-          className="relative bg-gradient-to-b from-slate-800 via-slate-850 to-slate-900 rounded-xl overflow-hidden"
+          className="relative bg-gradient-to-b from-[#f8efd9] via-[#f1e4c9] to-[#e9d8b4] rounded-xl overflow-hidden"
           style={{
             border: '6px solid',
             borderColor: `${typeColors.primary} ${typeColors.secondary} ${typeColors.secondary} ${typeColors.primary}`,
-            boxShadow: `0 0 30px ${typeColors.glow}, inset 0 0 30px rgba(0,0,0,0.5)`,
+            boxShadow: `0 0 26px ${typeColors.glow}, inset 0 0 20px rgba(95,77,55,0.12)`,
           }}
         >
           {/* Inner border */}
-          <div className="absolute inset-2 border-2 border-slate-600/30 rounded-lg pointer-events-none" />
+          <div className="absolute inset-2 border-2 border-amber-900/20 rounded-lg pointer-events-none" />
 
           {/* Header with title */}
           <div
@@ -320,10 +320,10 @@ export function CaptureModal({ pokemon, player, onComplete }: CaptureModalProps)
           {/* Pokemon name and types */}
           <div className="text-center px-6 pb-4">
             <h3
-              className="text-2xl sm:text-3xl font-black text-white uppercase mb-3"
+              className="text-2xl sm:text-3xl font-black text-[#2b3640] uppercase mb-3"
               style={{
                 fontFamily: "'Press Start 2P', monospace",
-                textShadow: `2px 2px 0 ${typeColors.secondary}, 4px 4px 0 #000`,
+                textShadow: `1px 1px 0 rgba(255,255,255,0.65)`,
               }}
             >
               {pokemon.name}
@@ -364,8 +364,8 @@ export function CaptureModal({ pokemon, player, onComplete }: CaptureModalProps)
             phase === 'stats' || phase === 'ready' ? 'opacity-100' : 'opacity-0'
           }`}>
             <div
-              className="bg-slate-900/80 rounded-lg p-4 border-2 border-slate-700"
-              style={{ boxShadow: 'inset 0 2px 10px rgba(0,0,0,0.5)' }}
+              className="bg-[#f5ead0] rounded-lg p-4 border-2 border-amber-900/25"
+              style={{ boxShadow: 'inset 0 1px 6px rgba(95,77,55,0.12)' }}
             >
               {/* 6 Stats in 2 columns */}
               <div className="grid grid-cols-2 gap-x-4 gap-y-2">
@@ -378,30 +378,30 @@ export function CaptureModal({ pokemon, player, onComplete }: CaptureModalProps)
               </div>
 
               {/* Ability */}
-              <div className="mt-3 pt-3 border-t border-slate-700">
+              <div className="mt-3 pt-3 border-t border-amber-900/25">
                 <div className="flex items-center gap-2">
                   <span
-                    className="text-[8px] text-slate-500 uppercase"
+                    className="text-[8px] text-[#6c563b] uppercase"
                     style={{ fontFamily: "'Press Start 2P', monospace" }}
                   >
                     Habilidad:
                   </span>
                   <span
-                    className="text-[9px] font-bold text-white"
+                    className="text-[9px] font-bold text-[#2b3640]"
                     style={{ fontFamily: "'Press Start 2P', monospace" }}
                   >
                     {pokemon.ability?.name ?? '—'}
                   </span>
                 </div>
                 {pokemon.ability?.description && (
-                  <p className="text-[8px] text-slate-400 mt-1">{pokemon.ability.description}</p>
+                  <p className="text-[8px] text-[#7b6750] mt-1">{pokemon.ability.description}</p>
                 )}
               </div>
 
               {/* 4 Moves in 2x2 grid */}
-              <div className="mt-3 pt-3 border-t border-slate-700">
+              <div className="mt-3 pt-3 border-t border-amber-900/25">
                 <span
-                  className="text-[8px] text-slate-500 uppercase block mb-2"
+                  className="text-[8px] text-[#6c563b] uppercase block mb-2"
                   style={{ fontFamily: "'Press Start 2P', monospace" }}
                 >
                   Movimientos
@@ -415,7 +415,7 @@ export function CaptureModal({ pokemon, player, onComplete }: CaptureModalProps)
                         className="rounded px-2 py-1.5 border-l-2"
                         style={{
                           borderColor: moveColor.primary,
-                          background: 'rgba(15,23,42,0.6)',
+                          background: 'rgba(236,223,195,0.8)',
                         }}
                       >
                         <div className="flex items-center gap-1 mb-0.5">
@@ -423,7 +423,7 @@ export function CaptureModal({ pokemon, player, onComplete }: CaptureModalProps)
                             {move.category === 'physical' ? '⚔️' : move.category === 'special' ? '✨' : '🛡️'}
                           </span>
                           <span
-                            className="text-[8px] font-bold text-white truncate"
+                            className="text-[8px] font-bold text-[#2b3640] truncate"
                             style={{ fontFamily: "'Press Start 2P', monospace" }}
                           >
                             {move.name}
@@ -437,11 +437,11 @@ export function CaptureModal({ pokemon, player, onComplete }: CaptureModalProps)
                             {move.type.toUpperCase()}
                           </span>
                           {move.power > 0 ? (
-                            <span className="text-[8px] text-slate-400 font-mono">{move.power}pw</span>
+                            <span className="text-[8px] text-[#7b6750] font-mono">{move.power}pw</span>
                           ) : move.effect ? (
-                            <span className="text-[8px] text-slate-400 font-mono capitalize">{move.effect}</span>
+                            <span className="text-[8px] text-[#7b6750] font-mono capitalize">{move.effect}</span>
                           ) : null}
-                          <span className="text-[8px] text-slate-500 font-mono ml-auto">Rng {move.range}</span>
+                          <span className="text-[8px] text-[#8c785d] font-mono ml-auto">Rng {move.range}</span>
                         </div>
                       </div>
                     );

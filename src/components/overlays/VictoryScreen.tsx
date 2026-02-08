@@ -97,27 +97,27 @@ export function VictoryScreen({ winner, onPlayAgain, stats }: VictoryScreenProps
         {/* Base gradient */}
         <div className={`absolute inset-0 ${
           isBlue
-            ? 'bg-gradient-to-br from-blue-950 via-slate-950 to-indigo-950'
-            : 'bg-gradient-to-br from-red-950 via-slate-950 to-orange-950'
+            ? 'bg-gradient-to-br from-[#f8efe0] via-[#efe4cf] to-[#dbe9ee]'
+            : 'bg-gradient-to-br from-[#f8efe0] via-[#efe4cf] to-[#f0dfd8]'
         }`} />
 
         {/* Radial glow */}
         <div className={`absolute inset-0 ${
           isBlue
-            ? 'bg-[radial-gradient(ellipse_at_center,rgba(59,130,246,0.2)_0%,transparent_60%)]'
-            : 'bg-[radial-gradient(ellipse_at_center,rgba(239,68,68,0.2)_0%,transparent_60%)]'
+            ? 'bg-[radial-gradient(ellipse_at_center,rgba(14,116,144,0.12)_0%,transparent_62%)]'
+            : 'bg-[radial-gradient(ellipse_at_center,rgba(190,24,93,0.11)_0%,transparent_62%)]'
         }`} />
 
         {/* Animated glow orbs */}
-        <div className={`absolute top-1/4 left-1/4 w-96 h-96 rounded-full blur-[150px] animate-pulse ${
-          isBlue ? 'bg-blue-500/30' : 'bg-red-500/30'
+        <div className={`absolute top-1/4 left-1/4 w-96 h-96 rounded-full blur-[140px] animate-pulse ${
+          isBlue ? 'bg-sky-400/20' : 'bg-rose-400/20'
         }`} />
         <div className={`absolute bottom-1/4 right-1/4 w-72 h-72 rounded-full blur-[120px] animate-pulse ${
-          isBlue ? 'bg-cyan-500/25' : 'bg-orange-500/25'
+          isBlue ? 'bg-cyan-400/18' : 'bg-orange-400/18'
         }`} style={{ animationDelay: '1s' }} />
 
         {/* Vignette */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_40%,rgba(0,0,0,0.8)_100%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_52%,rgba(95,77,55,0.22)_100%)]" />
       </div>
 
       {/* === CONFETTI === */}
@@ -190,11 +190,11 @@ export function VictoryScreen({ winner, onPlayAgain, stats }: VictoryScreenProps
 
           {/* Trophy circle */}
           <div className={`p-6 rounded-full ${
-            isBlue ? 'bg-blue-500/20 border-2 border-blue-400/40' : 'bg-red-500/20 border-2 border-red-400/40'
+            isBlue ? 'bg-sky-100/90 border-2 border-sky-400/40' : 'bg-rose-100/90 border-2 border-rose-400/40'
           }`}>
             <Trophy
               className="w-20 h-20 md:w-24 md:h-24 text-yellow-400"
-              style={{ filter: 'drop-shadow(0 0 30px rgba(250,204,21,0.6))' }}
+              style={{ filter: 'drop-shadow(0 0 18px rgba(250,204,21,0.45))' }}
             />
           </div>
 
@@ -209,8 +209,8 @@ export function VictoryScreen({ winner, onPlayAgain, stats }: VictoryScreenProps
           phase === 'reveal' || phase === 'celebrate' || phase === 'ready' ? 'opacity-100' : 'opacity-0'
         }`}>
           <span
-            className="text-lg md:text-xl text-yellow-400 font-bold uppercase tracking-[0.3em]"
-            style={{ fontFamily: '"Press Start 2P", monospace', textShadow: '0 0 20px rgba(250,204,21,0.5)' }}
+            className="text-lg md:text-xl text-amber-700 font-bold uppercase tracking-[0.3em]"
+            style={{ fontFamily: '"Press Start 2P", monospace', textShadow: '1px 1px 0 rgba(255,255,255,0.55)' }}
           >
             Victoria
           </span>
@@ -223,10 +223,10 @@ export function VictoryScreen({ winner, onPlayAgain, stats }: VictoryScreenProps
           }`}
           style={{
             fontFamily: '"Press Start 2P", monospace',
-            color: isBlue ? '#60A5FA' : '#F87171',
+            color: isBlue ? '#0b6b8a' : '#be185d',
             textShadow: isBlue
-              ? '0 0 60px rgba(96,165,250,0.8), 0 4px 0 rgba(30,64,175,1), 0 8px 0 rgba(0,0,0,0.3)'
-              : '0 0 60px rgba(248,113,113,0.8), 0 4px 0 rgba(153,27,27,1), 0 8px 0 rgba(0,0,0,0.3)',
+              ? '0 0 30px rgba(56,189,248,0.45), 0 3px 0 rgba(14,116,144,0.35)'
+              : '0 0 30px rgba(251,113,133,0.42), 0 3px 0 rgba(190,24,93,0.3)',
           }}
         >
           {isBlue ? 'AZUL' : 'ROJO'}
@@ -234,7 +234,7 @@ export function VictoryScreen({ winner, onPlayAgain, stats }: VictoryScreenProps
 
         {/* Player indicator */}
         <p
-          className="text-xl md:text-2xl text-white font-bold mb-8"
+          className="text-xl md:text-2xl text-[#2b3640] font-bold mb-8"
           style={{ fontFamily: '"Press Start 2P", monospace', fontSize: 'clamp(12px, 3vw, 18px)' }}
         >
           JUGADOR {winner === 'P1' ? '1' : '2'} GANA
@@ -243,10 +243,10 @@ export function VictoryScreen({ winner, onPlayAgain, stats }: VictoryScreenProps
         {/* Victory message */}
         <div className={`inline-block px-6 py-3 rounded-xl mb-4 ${
           isBlue
-            ? 'bg-blue-500/15 border-2 border-blue-400/30'
-            : 'bg-red-500/15 border-2 border-red-400/30'
+            ? 'bg-sky-100 border-2 border-sky-400/35'
+            : 'bg-rose-100 border-2 border-rose-400/35'
         }`}>
-          <p className={`text-sm ${isBlue ? 'text-blue-300' : 'text-red-300'}`}>
+          <p className={`text-sm ${isBlue ? 'text-sky-800' : 'text-rose-800'}`}>
             Has eliminado a todo el equipo rival
           </p>
         </div>
@@ -263,8 +263,8 @@ export function VictoryScreen({ winner, onPlayAgain, stats }: VictoryScreenProps
                 flex items-center gap-2 mx-auto px-4 py-2 rounded-lg
                 text-sm font-bold transition-all duration-300
                 ${isBlue
-                  ? 'bg-blue-900/50 hover:bg-blue-800/50 text-blue-300 border border-blue-500/30'
-                  : 'bg-red-900/50 hover:bg-red-800/50 text-red-300 border border-red-500/30'
+                  ? 'bg-sky-100 hover:bg-sky-200 text-sky-900 border border-sky-600/35'
+                  : 'bg-rose-100 hover:bg-rose-200 text-rose-900 border border-rose-600/35'
                 }
               `}
             >
@@ -276,32 +276,32 @@ export function VictoryScreen({ winner, onPlayAgain, stats }: VictoryScreenProps
             {showStats && (
               <div className={`
                 mt-4 p-4 rounded-xl max-w-md mx-auto
-                bg-slate-900/80 backdrop-blur-md border
-                ${isBlue ? 'border-blue-500/30' : 'border-red-500/30'}
+                bg-[#f8efd9]/95 border-2 shadow-[0_8px_20px_rgba(95,77,55,0.16)]
+                ${isBlue ? 'border-sky-600/35' : 'border-rose-600/35'}
                 animate-stats-reveal
               `}>
                 {/* Quick summary */}
                 <div className="grid grid-cols-3 gap-3 mb-4">
                   {battleDuration && (
-                    <div className="text-center p-2 bg-slate-800/50 rounded-lg">
-                      <Clock className="w-4 h-4 mx-auto mb-1 text-slate-400" />
-                      <span className="text-lg font-mono font-bold text-white">{battleDuration}</span>
-                      <span className="block text-[10px] text-slate-500 uppercase">Duración</span>
+                    <div className="text-center p-2 bg-[#f1e4c9] border border-amber-900/25 rounded-lg">
+                      <Clock className="w-4 h-4 mx-auto mb-1 text-[#6c563b]" />
+                      <span className="text-lg font-mono font-bold text-[#2b3640]">{battleDuration}</span>
+                      <span className="block text-[10px] text-[#7b6750] uppercase">Duración</span>
                     </div>
                   )}
-                  <div className="text-center p-2 bg-slate-800/50 rounded-lg">
+                  <div className="text-center p-2 bg-[#f1e4c9] border border-amber-900/25 rounded-lg">
                     <Target className="w-4 h-4 mx-auto mb-1 text-red-400" />
-                    <span className="text-lg font-mono font-bold text-white">
+                    <span className="text-lg font-mono font-bold text-[#2b3640]">
                       {winner === 'P1' ? stats.p1.totalKills : stats.p2.totalKills}
                     </span>
-                    <span className="block text-[10px] text-slate-500 uppercase">KOs</span>
+                    <span className="block text-[10px] text-[#7b6750] uppercase">KOs</span>
                   </div>
-                  <div className="text-center p-2 bg-slate-800/50 rounded-lg">
+                  <div className="text-center p-2 bg-[#f1e4c9] border border-amber-900/25 rounded-lg">
                     <Swords className="w-4 h-4 mx-auto mb-1 text-orange-400" />
-                    <span className="text-lg font-mono font-bold text-white">
+                    <span className="text-lg font-mono font-bold text-[#2b3640]">
                       {winner === 'P1' ? stats.p1.totalDamageDealt : stats.p2.totalDamageDealt}
                     </span>
-                    <span className="block text-[10px] text-slate-500 uppercase">Daño</span>
+                    <span className="block text-[10px] text-[#7b6750] uppercase">Daño</span>
                   </div>
                 </div>
 
@@ -309,7 +309,7 @@ export function VictoryScreen({ winner, onPlayAgain, stats }: VictoryScreenProps
                 {mvpInfo && (
                   <div className={`
                     flex items-center gap-3 p-3 rounded-lg
-                    ${isBlue ? 'bg-blue-950/50 border border-blue-500/30' : 'bg-red-950/50 border border-red-500/30'}
+                    ${isBlue ? 'bg-sky-100 border border-sky-600/30' : 'bg-rose-100 border border-rose-600/30'}
                   `}>
                     <div className="relative">
                       <img
@@ -321,10 +321,10 @@ export function VictoryScreen({ winner, onPlayAgain, stats }: VictoryScreenProps
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
-                        <span className="text-yellow-400 text-xs font-bold uppercase">MVP</span>
-                        <span className="text-white font-bold">{mvpInfo.name}</span>
+                        <span className="text-amber-700 text-xs font-bold uppercase">MVP</span>
+                        <span className="text-[#2b3640] font-bold">{mvpInfo.name}</span>
                       </div>
-                      <div className="flex gap-3 text-xs text-slate-400 mt-1">
+                      <div className="flex gap-3 text-xs text-[#7b6750] mt-1">
                         <span>{mvpInfo.damage} daño</span>
                         <span>{mvpInfo.kills} KOs</span>
                       </div>
@@ -334,24 +334,24 @@ export function VictoryScreen({ winner, onPlayAgain, stats }: VictoryScreenProps
 
                 {/* Additional stats */}
                 <div className="grid grid-cols-2 gap-2 mt-3 text-xs">
-                  <div className="flex items-center justify-between p-2 bg-slate-800/30 rounded">
-                    <span className="text-slate-400">Capturas</span>
+                  <div className="flex items-center justify-between p-2 bg-[#f1e4c9] border border-amber-900/20 rounded">
+                    <span className="text-[#6c563b]">Capturas</span>
                     <span className="font-bold text-emerald-400">
                       {winner === 'P1' ? stats.p1.totalCaptures : stats.p2.totalCaptures}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between p-2 bg-slate-800/30 rounded">
-                    <span className="text-slate-400">Evoluciones</span>
+                  <div className="flex items-center justify-between p-2 bg-[#f1e4c9] border border-amber-900/20 rounded">
+                    <span className="text-[#6c563b]">Evoluciones</span>
                     <span className="font-bold text-purple-400">
                       {winner === 'P1' ? stats.p1.totalEvolutions : stats.p2.totalEvolutions}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between p-2 bg-slate-800/30 rounded">
-                    <span className="text-slate-400">Turnos</span>
-                    <span className="font-bold text-slate-300">{stats.totalTurns}</span>
+                  <div className="flex items-center justify-between p-2 bg-[#f1e4c9] border border-amber-900/20 rounded">
+                    <span className="text-[#6c563b]">Turnos</span>
+                    <span className="font-bold text-[#2b3640]">{stats.totalTurns}</span>
                   </div>
-                  <div className="flex items-center justify-between p-2 bg-slate-800/30 rounded">
-                    <span className="text-slate-400">Bajas propias</span>
+                  <div className="flex items-center justify-between p-2 bg-[#f1e4c9] border border-amber-900/20 rounded">
+                    <span className="text-[#6c563b]">Bajas propias</span>
                     <span className="font-bold text-red-400">
                       {winner === 'P1' ? stats.p1.totalDeaths : stats.p2.totalDeaths}
                     </span>
@@ -373,8 +373,8 @@ export function VictoryScreen({ winner, onPlayAgain, stats }: VictoryScreenProps
               font-bold text-lg transition-all duration-300
               hover:scale-105 active:scale-95
               ${isBlue
-                ? 'bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white shadow-[0_0_30px_rgba(59,130,246,0.4)]'
-                : 'bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 text-white shadow-[0_0_30px_rgba(239,68,68,0.4)]'
+                ? 'bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-400 hover:to-sky-500 text-white border-2 border-sky-900/40 shadow-[0_4px_0_rgba(0,0,0,0.2)]'
+                : 'bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-400 hover:to-rose-500 text-white border-2 border-rose-900/40 shadow-[0_4px_0_rgba(0,0,0,0.2)]'
               }
             `}
             style={{ fontFamily: '"Press Start 2P", monospace', fontSize: '11px' }}
@@ -385,7 +385,7 @@ export function VictoryScreen({ winner, onPlayAgain, stats }: VictoryScreenProps
 
           <button
             onClick={() => window.location.reload()}
-            className="group flex items-center justify-center gap-3 px-8 py-4 rounded-xl font-bold text-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 transition-all duration-300 hover:scale-105 active:scale-95 border border-slate-600/50"
+            className="group flex items-center justify-center gap-3 px-8 py-4 rounded-xl font-bold text-lg bg-[#f3e6cb] hover:bg-[#f7edd6] text-[#5f4d37] transition-all duration-300 hover:scale-105 active:scale-95 border-2 border-amber-900/35"
             style={{ fontFamily: '"Press Start 2P", monospace', fontSize: '11px' }}
           >
             <Home className="w-5 h-5" />
@@ -398,9 +398,9 @@ export function VictoryScreen({ winner, onPlayAgain, stats }: VictoryScreenProps
       <div className={`absolute bottom-4 left-1/2 -translate-x-1/2 transition-all duration-700 ${
         phase === 'ready' ? 'opacity-100' : 'opacity-0'
       }`}>
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900/60 border border-slate-700/50 backdrop-blur-sm">
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#f7edd6] border border-amber-900/30">
           <span
-            className="text-[8px] font-bold tracking-wider text-slate-500 uppercase"
+            className="text-[8px] font-bold tracking-wider text-[#6c563b] uppercase"
             style={{ fontFamily: '"Press Start 2P", monospace' }}
           >
             v{VERSION}

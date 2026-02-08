@@ -66,20 +66,20 @@ export function AudioLoadingScreen({ onComplete }: AudioLoadingScreenProps) {
           >
             <div className="space-y-4">
               <div className="flex items-center justify-center gap-3">
-                <div className="w-9 h-9 rounded-sm border border-slate-600 bg-slate-900/85 flex items-center justify-center">
+                <div className="w-9 h-9 rounded-sm border-2 border-amber-900/45 bg-[#f6edd8] flex items-center justify-center">
                   {loadingState.isComplete ? (
-                    <Volume2 className="w-5 h-5 text-emerald-300" />
+                    <Volume2 className="w-5 h-5 text-emerald-700" />
                   ) : (
-                    <Loader2 className="w-5 h-5 text-amber-300 animate-spin" />
+                    <Loader2 className="w-5 h-5 text-amber-700 animate-spin" />
                   )}
                 </div>
-                <p className="text-[10px] uppercase tracking-[0.14em] text-slate-200" style={{ fontFamily: '"Press Start 2P", monospace' }}>
+                <p className="text-[10px] uppercase tracking-[0.14em] text-[#493a29]" style={{ fontFamily: '"Press Start 2P", monospace' }}>
                   {loadingState.isComplete ? 'Sound bank ready' : 'Caching audio assets'}
                 </p>
               </div>
 
-              <div className="border border-slate-700 rounded-sm bg-slate-950/70 p-2">
-                <div className="h-4 border-2 border-slate-700 bg-slate-900 rounded-sm overflow-hidden">
+              <div className="border-2 border-amber-900/35 rounded-sm bg-[#f7edd6] p-2">
+                <div className="h-4 border-2 border-amber-900/35 bg-[#ebdcc0] rounded-sm overflow-hidden">
                   <div
                     className="h-full bg-gradient-to-r from-amber-600 via-amber-400 to-yellow-300 transition-all duration-300 relative"
                     style={{ width: `${progress}%` }}
@@ -88,16 +88,16 @@ export function AudioLoadingScreen({ onComplete }: AudioLoadingScreenProps) {
                   </div>
                 </div>
                 <div className="mt-2 flex items-center justify-between">
-                  <span className="text-[8px] uppercase tracking-[0.1em] text-slate-300" style={{ fontFamily: '"Press Start 2P", monospace' }}>
+                  <span className="text-[8px] uppercase tracking-[0.1em] text-[#6e573a]" style={{ fontFamily: '"Press Start 2P", monospace' }}>
                     Progress
                   </span>
-                  <span className="text-[9px] uppercase tracking-[0.12em] text-amber-200" style={{ fontFamily: '"Press Start 2P", monospace' }}>
+                  <span className="text-[9px] uppercase tracking-[0.12em] text-amber-800" style={{ fontFamily: '"Press Start 2P", monospace' }}>
                     {progress}%
                   </span>
                 </div>
               </div>
 
-              <div className="border border-slate-700 bg-slate-950/70 rounded-sm p-3 space-y-2">
+              <div className="border-2 border-amber-900/35 bg-[#f7edd6] rounded-sm p-3 space-y-2">
                 <MenuStatRow label="Loaded" value={`${loadingState.loaded}`} />
                 <MenuStatRow label="Total" value={`${loadingState.total}`} />
                 <MenuStatRow label="Failed" value={`${loadingState.failed.length}`} />

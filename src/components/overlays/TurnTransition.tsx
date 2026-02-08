@@ -38,13 +38,13 @@ export function TurnTransition({ currentPlayer, onConfirm }: TurnTransitionProps
   return (
     <div className="fixed inset-0 z-50 overflow-hidden">
       {/* SOLID OPAQUE BACKGROUND - Never reveals game state */}
-      <div className="absolute inset-0 bg-slate-950" />
+      <div className="absolute inset-0 bg-[#e2d8c1]" />
 
       {/* Diagonal design overlay - purely decorative, on top of opaque bg */}
       <div className="absolute inset-0">
         {/* Top section - darker */}
         <div
-          className="absolute inset-0 bg-slate-900"
+          className="absolute inset-0 bg-[#f5ecd9]"
           style={{
             clipPath: 'polygon(0 0, 100% 0, 100% 35%, 0 55%)'
           }}
@@ -52,7 +52,7 @@ export function TurnTransition({ currentPlayer, onConfirm }: TurnTransitionProps
 
         {/* Bottom section - player color */}
         <div
-          className={`absolute inset-0 ${isBlue ? 'bg-blue-950' : 'bg-red-950'}`}
+          className={`absolute inset-0 ${isBlue ? 'bg-sky-100' : 'bg-rose-100'}`}
           style={{
             clipPath: 'polygon(0 55%, 100% 35%, 100% 100%, 0 100%)'
           }}
@@ -60,7 +60,7 @@ export function TurnTransition({ currentPlayer, onConfirm }: TurnTransitionProps
 
         {/* Diagonal accent lines */}
         <div
-          className={`absolute inset-0 ${isBlue ? 'bg-blue-500' : 'bg-red-500'}`}
+          className={`absolute inset-0 ${isBlue ? 'bg-sky-500' : 'bg-rose-500'}`}
           style={{
             clipPath: 'polygon(0 54%, 100% 34%, 100% 36%, 0 56%)'
           }}
@@ -81,14 +81,14 @@ export function TurnTransition({ currentPlayer, onConfirm }: TurnTransitionProps
 
       {/* Animated diagonal stripes pattern */}
       <div
-        className="absolute inset-0 pointer-events-none opacity-[0.07]"
+        className="absolute inset-0 pointer-events-none opacity-[0.1]"
         style={{
           backgroundImage: `repeating-linear-gradient(
             -35deg,
             transparent,
             transparent 20px,
-            ${isBlue ? 'rgba(59,130,246,1)' : 'rgba(239,68,68,1)'} 20px,
-            ${isBlue ? 'rgba(59,130,246,1)' : 'rgba(239,68,68,1)'} 40px
+            ${isBlue ? 'rgba(14,116,144,1)' : 'rgba(190,24,93,1)'} 20px,
+            ${isBlue ? 'rgba(14,116,144,1)' : 'rgba(190,24,93,1)'} 40px
           )`,
           animation: 'stripes-move 20s linear infinite'
         }}
@@ -110,14 +110,14 @@ export function TurnTransition({ currentPlayer, onConfirm }: TurnTransitionProps
               className={`
                 relative w-20 h-20 md:w-28 md:h-28 mb-3
                 flex items-center justify-center
-                ${isBlue ? 'text-blue-400' : 'text-red-400'}
+                ${isBlue ? 'text-sky-700' : 'text-rose-700'}
               `}
             >
               {/* Outer glow */}
               <div
                 className={`
                   absolute inset-0 rounded-full blur-2xl
-                  ${isBlue ? 'bg-blue-500/50' : 'bg-red-500/50'}
+                  ${isBlue ? 'bg-sky-400/40' : 'bg-rose-400/40'}
                   animate-pulse
                 `}
               />
@@ -127,8 +127,8 @@ export function TurnTransition({ currentPlayer, onConfirm }: TurnTransitionProps
                 className={`
                   absolute inset-3 rounded-xl rotate-45
                   ${isBlue
-                    ? 'bg-gradient-to-br from-blue-500 to-blue-700 border-[3px] border-blue-300'
-                    : 'bg-gradient-to-br from-red-500 to-red-700 border-[3px] border-red-300'
+                    ? 'bg-gradient-to-br from-sky-400 to-sky-600 border-[3px] border-sky-200'
+                    : 'bg-gradient-to-br from-rose-400 to-rose-600 border-[3px] border-rose-200'
                   }
                   shadow-[0_0_40px_rgba(0,0,0,0.5),inset_0_2px_10px_rgba(255,255,255,0.2)]
                 `}
@@ -148,18 +148,18 @@ export function TurnTransition({ currentPlayer, onConfirm }: TurnTransitionProps
 
             {/* Player title */}
             <div className="text-center">
-              <div className="text-slate-500 text-xs uppercase tracking-[0.3em] mb-2 font-medium">
+              <div className="text-[#5f4d37] text-xs uppercase tracking-[0.3em] mb-2 font-medium">
                 Turno de
               </div>
               <h2
                 className={`
                   text-4xl md:text-5xl lg:text-6xl font-black uppercase tracking-tight
-                  ${isBlue ? 'text-blue-400' : 'text-red-400'}
+                  ${isBlue ? 'text-sky-700' : 'text-rose-700'}
                 `}
                 style={{
                   textShadow: isBlue
-                    ? '0 4px 0 #1e3a8a, 0 0 60px rgba(59,130,246,0.6)'
-                    : '0 4px 0 #7f1d1d, 0 0 60px rgba(239,68,68,0.6)'
+                    ? '0 3px 0 rgba(14,116,144,0.35), 0 0 30px rgba(56,189,248,0.42)'
+                    : '0 3px 0 rgba(190,24,93,0.35), 0 0 30px rgba(251,113,133,0.4)'
                 }}
               >
                 Jugador {nextPlayer === 'P1' ? '1' : '2'}
@@ -167,7 +167,7 @@ export function TurnTransition({ currentPlayer, onConfirm }: TurnTransitionProps
               <div
                 className={`
                   mt-3 text-base md:text-lg font-bold uppercase tracking-widest
-                  ${isBlue ? 'text-blue-300/70' : 'text-red-300/70'}
+                  ${isBlue ? 'text-sky-800/70' : 'text-rose-800/70'}
                 `}
               >
                 {isBlue ? '— Equipo Azul —' : '— Equipo Rojo —'}
@@ -186,10 +186,10 @@ export function TurnTransition({ currentPlayer, onConfirm }: TurnTransitionProps
             <div className="text-center mb-4">
               <div className={`
                 inline-flex items-center gap-2 px-4 py-2 rounded-full
-                ${isBlue ? 'bg-blue-900/50 border border-blue-700/50' : 'bg-red-900/50 border border-red-700/50'}
+                ${isBlue ? 'bg-sky-100 border border-sky-700/35' : 'bg-rose-100 border border-rose-700/35'}
               `}>
-                <div className={`w-2 h-2 rounded-full animate-pulse ${isBlue ? 'bg-blue-400' : 'bg-red-400'}`} />
-                <p className="text-slate-400 text-sm">
+                <div className={`w-2 h-2 rounded-full animate-pulse ${isBlue ? 'bg-sky-600' : 'bg-rose-600'}`} />
+                <p className="text-[#5f4d37] text-sm">
                   Pasa el dispositivo al otro jugador
                 </p>
               </div>
@@ -238,8 +238,8 @@ export function TurnTransition({ currentPlayer, onConfirm }: TurnTransitionProps
                   font-bold text-base md:text-lg uppercase tracking-wide
                   transition-colors
                   ${isBlue
-                    ? 'bg-gradient-to-r from-blue-100 to-blue-50 text-blue-900 group-hover:from-blue-200 group-hover:to-blue-100'
-                    : 'bg-gradient-to-r from-red-100 to-red-50 text-red-900 group-hover:from-red-200 group-hover:to-red-100'
+                    ? 'bg-gradient-to-r from-sky-100 to-sky-50 text-sky-900 group-hover:from-sky-200 group-hover:to-sky-100'
+                    : 'bg-gradient-to-r from-rose-100 to-rose-50 text-rose-900 group-hover:from-rose-200 group-hover:to-rose-100'
                   }
                 `}
               >
@@ -255,10 +255,10 @@ export function TurnTransition({ currentPlayer, onConfirm }: TurnTransitionProps
       </div>
 
       {/* Decorative corners */}
-      <div className={`absolute top-6 left-6 w-12 h-12 border-l-2 border-t-2 ${isBlue ? 'border-blue-700/50' : 'border-red-700/50'}`} />
-      <div className={`absolute top-6 right-6 w-12 h-12 border-r-2 border-t-2 ${isBlue ? 'border-blue-700/50' : 'border-red-700/50'}`} />
-      <div className={`absolute bottom-6 left-6 w-12 h-12 border-l-2 border-b-2 ${isBlue ? 'border-blue-700/50' : 'border-red-700/50'}`} />
-      <div className={`absolute bottom-6 right-6 w-12 h-12 border-r-2 border-b-2 ${isBlue ? 'border-blue-700/50' : 'border-red-700/50'}`} />
+      <div className={`absolute top-6 left-6 w-12 h-12 border-l-2 border-t-2 ${isBlue ? 'border-sky-700/40' : 'border-rose-700/40'}`} />
+      <div className={`absolute top-6 right-6 w-12 h-12 border-r-2 border-t-2 ${isBlue ? 'border-sky-700/40' : 'border-rose-700/40'}`} />
+      <div className={`absolute bottom-6 left-6 w-12 h-12 border-l-2 border-b-2 ${isBlue ? 'border-sky-700/40' : 'border-rose-700/40'}`} />
+      <div className={`absolute bottom-6 right-6 w-12 h-12 border-r-2 border-b-2 ${isBlue ? 'border-sky-700/40' : 'border-rose-700/40'}`} />
 
       {/* Animation keyframes */}
       <style>{`

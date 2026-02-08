@@ -156,23 +156,23 @@ export function MapEditor({ onPlay, onBack }: MapEditorProps) {
   )));
 
   return (
-    <div className="fixed inset-0 z-50 bg-[#030305] flex flex-col select-none overflow-hidden">
+    <div className="fixed inset-0 z-50 flex flex-col select-none overflow-hidden bg-[linear-gradient(160deg,#ece4d3_0%,#d9cfb9_100%)]">
       {/* Top bar */}
-      <div className="flex items-center justify-between px-3 py-2 bg-slate-900/90 border-b border-slate-700/50">
+      <div className="flex items-center justify-between px-3 py-2 bg-gradient-to-r from-amber-700 via-amber-600 to-amber-700 border-b-2 border-amber-900 shadow-[0_2px_0_rgba(0,0,0,0.2)]">
         <button
           onClick={handleBack}
-          className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 transition-colors"
+          className="flex items-center gap-1.5 px-2 py-1.5 rounded-sm border-2 border-amber-900 bg-gradient-to-b from-amber-50 to-amber-100 hover:from-amber-100 hover:to-amber-200 transition-colors shadow-[2px_2px_0_rgba(0,0,0,0.2)]"
         >
-          <ArrowLeft className="w-4 h-4 text-slate-300" />
-          <span className="text-[8px] text-slate-300 font-bold hidden sm:inline"
+          <ArrowLeft className="w-4 h-4 text-amber-900" />
+          <span className="text-[8px] text-amber-900 font-bold hidden sm:inline"
             style={{ fontFamily: '"Press Start 2P", monospace' }}>
             Volver
           </span>
         </button>
 
         <h2
-          className="text-[10px] md:text-xs text-amber-400 tracking-wide"
-          style={{ fontFamily: '"Press Start 2P", monospace', textShadow: '1px 1px 0 #000' }}
+          className="text-[10px] md:text-xs text-amber-100 tracking-wide"
+          style={{ fontFamily: '"Press Start 2P", monospace', textShadow: '1px 1px 0 rgba(0,0,0,0.45)' }}
         >
           Editor de Mapa
         </h2>
@@ -180,22 +180,22 @@ export function MapEditor({ onPlay, onBack }: MapEditorProps) {
         <div className="flex gap-2">
           <button
             onClick={handleRandomize}
-            className="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-blue-800/80 hover:bg-blue-700/80 border border-blue-600/40 transition-colors"
+            className="flex items-center gap-1 px-2 py-1.5 rounded-sm border-2 border-sky-900/70 bg-gradient-to-b from-sky-100 to-sky-200 hover:from-sky-200 hover:to-sky-300 transition-colors"
             title="Aleatorio"
           >
-            <Shuffle className="w-3.5 h-3.5 text-blue-300" />
-            <span className="text-[7px] text-blue-300 font-bold hidden sm:inline"
+            <Shuffle className="w-3.5 h-3.5 text-sky-900" />
+            <span className="text-[7px] text-sky-900 font-bold hidden sm:inline"
               style={{ fontFamily: '"Press Start 2P", monospace' }}>
               Aleatorio
             </span>
           </button>
           <button
             onClick={handleClear}
-            className="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-red-900/80 hover:bg-red-800/80 border border-red-600/40 transition-colors"
+            className="flex items-center gap-1 px-2 py-1.5 rounded-sm border-2 border-rose-900/70 bg-gradient-to-b from-rose-100 to-rose-200 hover:from-rose-200 hover:to-rose-300 transition-colors"
             title="Limpiar"
           >
-            <Trash2 className="w-3.5 h-3.5 text-red-300" />
-            <span className="text-[7px] text-red-300 font-bold hidden sm:inline"
+            <Trash2 className="w-3.5 h-3.5 text-rose-900" />
+            <span className="text-[7px] text-rose-900 font-bold hidden sm:inline"
               style={{ fontFamily: '"Press Start 2P", monospace' }}>
               Limpiar
             </span>
@@ -204,16 +204,16 @@ export function MapEditor({ onPlay, onBack }: MapEditorProps) {
       </div>
 
       {/* Size strip */}
-      <div className="flex items-center justify-center gap-2 px-3 py-1.5 bg-slate-950/80">
+      <div className="flex items-center justify-center gap-2 px-3 py-2 bg-[#f6edd8] border-b-2 border-amber-900/30">
         {MAP_SIZES.map((size, idx) => (
           <button
             key={size.label}
             onClick={() => handleSizeChange(idx)}
             className={`
-              px-3 py-1 rounded-lg text-[9px] font-bold transition-all duration-150
+              px-3 py-1 rounded-sm text-[9px] font-bold transition-all duration-150 border-2
               ${idx === sizeIndex
-                ? 'bg-amber-500 text-white shadow-md shadow-amber-500/30'
-                : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+                ? 'bg-amber-500 text-amber-50 border-amber-900 shadow-[2px_2px_0_rgba(0,0,0,0.2)]'
+                : 'bg-[#efe1c4] text-[#5f4d37] border-amber-900/40 hover:bg-[#f5e8cf]'
               }
             `}
             style={{ fontFamily: '"Press Start 2P", monospace' }}
@@ -224,10 +224,10 @@ export function MapEditor({ onPlay, onBack }: MapEditorProps) {
       </div>
 
       {/* Grid area - scrollable */}
-      <div className="flex-1 overflow-auto flex items-center justify-center p-2">
+      <div className="flex-1 overflow-auto flex items-center justify-center p-2 bg-[radial-gradient(circle_at_top,rgba(255,244,219,0.7),transparent_55%)]">
         <div
           ref={gridRef}
-          className="grid gap-px"
+          className="grid gap-px p-1 rounded-sm border-2 border-amber-900/40 bg-[#ead9b5]"
           style={{
             gridTemplateColumns: `repeat(${width}, ${tileSize}px)`,
             touchAction: 'none',
@@ -261,7 +261,7 @@ export function MapEditor({ onPlay, onBack }: MapEditorProps) {
       </div>
 
       {/* Bottom palette */}
-      <div className="bg-slate-900/95 border-t border-slate-700/50 px-2 py-2">
+      <div className="bg-[#f6edd8] border-t-2 border-amber-900/40 px-2 py-2">
         <div className="flex gap-1.5 overflow-x-auto justify-center">
           {TERRAIN_LIST.map(({ id, key }) => {
             const theme = TERRAIN_THEME[id] || TERRAIN_THEME[TERRAIN.GRASS];
@@ -275,8 +275,8 @@ export function MapEditor({ onPlay, onBack }: MapEditorProps) {
                   flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-lg
                   transition-all duration-100 flex-shrink-0
                   ${isActive
-                    ? 'bg-amber-500/30 border-2 border-amber-400 shadow-md shadow-amber-500/20 scale-105'
-                    : 'bg-slate-800/80 border-2 border-transparent hover:border-slate-600'
+                    ? 'bg-amber-200/70 border-2 border-amber-700 shadow-[2px_2px_0_rgba(0,0,0,0.18)] scale-105'
+                    : 'bg-[#eee2c7] border-2 border-transparent hover:border-amber-900/40'
                   }
                 `}
               >
@@ -286,7 +286,7 @@ export function MapEditor({ onPlay, onBack }: MapEditorProps) {
                   <TerrainDecoration texture={theme.texture} />
                 </div>
                 <span
-                  className={`text-[6px] md:text-[7px] leading-tight ${isActive ? 'text-amber-300' : 'text-slate-500'}`}
+                  className={`text-[6px] md:text-[7px] leading-tight ${isActive ? 'text-amber-800' : 'text-[#76654f]'}`}
                   style={{ fontFamily: '"Press Start 2P", monospace' }}
                 >
                   {props?.name?.split(' ')[0] ?? key}
@@ -300,10 +300,10 @@ export function MapEditor({ onPlay, onBack }: MapEditorProps) {
       {/* Floating play button */}
       <button
         onClick={handlePlay}
-        className="absolute bottom-20 right-4 flex items-center gap-2 px-5 py-3 rounded-xl
-          bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500
-          border border-amber-400/50 shadow-xl shadow-amber-500/30
-          transition-all duration-150 active:scale-95 z-20"
+        className="absolute bottom-20 right-4 flex items-center gap-2 px-5 py-3 rounded-sm
+          bg-gradient-to-b from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500
+          border-[3px] border-amber-900 shadow-[3px_3px_0_rgba(0,0,0,0.28)]
+          transition-all duration-150 active:translate-y-[1px] z-20"
       >
         <Play className="w-5 h-5 text-white" fill="white" />
         <span

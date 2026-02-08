@@ -40,8 +40,8 @@ export function TurnControls({
         <div className="
           px-3 py-1.5 md:px-4 md:py-2 rounded-lg
           text-[10px] md:text-xs font-bold uppercase tracking-wide
-          bg-amber-900/90 border border-amber-500/50 text-amber-300
-          backdrop-blur-sm shadow-lg
+          bg-[#f4e8cc] border-2 border-amber-800/50 text-amber-900
+          shadow-[2px_2px_0_rgba(0,0,0,0.2)]
         ">
           <span className="animate-pulse">Esperando rival...</span>
         </div>
@@ -56,8 +56,8 @@ export function TurnControls({
         <div className="
           px-2 py-1 md:px-3 md:py-1.5 rounded-lg
           text-[10px] md:text-xs font-bold uppercase tracking-wide
-          bg-slate-800/90 border border-slate-600 text-slate-300
-          backdrop-blur-sm shadow-lg
+          bg-[#f4e8cc] border-2 border-amber-800/40 text-[#5f4d37]
+          shadow-[2px_2px_0_rgba(0,0,0,0.18)]
         ">
           Selecciona unidad
         </div>
@@ -67,8 +67,8 @@ export function TurnControls({
         <div className="
           px-2 py-1 md:px-3 md:py-1.5 rounded-lg
           text-[10px] md:text-xs font-bold uppercase tracking-wide
-          bg-blue-900/90 border border-blue-500/50 text-blue-300
-          backdrop-blur-sm shadow-lg shadow-blue-500/20
+          bg-sky-100 border-2 border-sky-700/45 text-sky-900
+          shadow-[2px_2px_0_rgba(0,0,0,0.18)]
         ">
           Elige destino
         </div>
@@ -78,8 +78,8 @@ export function TurnControls({
         <div className="
           px-2 py-1 md:px-3 md:py-1.5 rounded-lg
           text-[10px] md:text-xs font-bold uppercase tracking-wide
-          bg-red-900/90 border border-red-500/50 text-red-300
-          backdrop-blur-sm shadow-lg shadow-red-500/30
+          bg-rose-100 border-2 border-rose-700/45 text-rose-900
+          shadow-[2px_2px_0_rgba(0,0,0,0.18)]
         ">
           Elige objetivo
         </div>

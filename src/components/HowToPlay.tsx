@@ -210,7 +210,7 @@ function CaptureRingPreview() {
 function SlideObjetivo() {
   return (
     <div className="space-y-4">
-      <p className="text-slate-300 leading-relaxed text-sm">
+      <p className="text-[#465666] leading-relaxed text-sm">
         <span className="text-amber-400 font-bold">PokéTactics</span> es un juego táctico por turnos inspirado en{' '}
         <span className="text-blue-400 font-semibold">Fire Emblem</span> y{' '}
         <span className="text-red-400 font-semibold">Advance Wars</span>.
@@ -218,11 +218,11 @@ function SlideObjetivo() {
 
       {/* GBA-style info box */}
       <div
-        className="bg-gradient-to-b from-slate-800 to-slate-900 rounded-lg p-4"
+        className="bg-gradient-to-b from-[#f8efd9] to-[#eadab8] rounded-lg p-4"
         style={{
           border: '3px solid',
-          borderColor: '#475569 #1E293B #1E293B #475569',
-          boxShadow: 'inset 0 2px 10px rgba(0,0,0,0.5)',
+          borderColor: '#8f6637 #5e4323 #5e4323 #8f6637',
+          boxShadow: 'inset 0 2px 10px rgba(95,77,55,0.12)',
         }}
       >
         <div className="flex items-center gap-2 mb-2">
@@ -234,7 +234,7 @@ function SlideObjetivo() {
             Objetivo
           </span>
         </div>
-        <p className="text-sm text-white">
+        <p className="text-sm text-[#2b3640]">
           Elimina a todos los Pokémon del equipo rival para ganar la batalla.
         </p>
       </div>
@@ -320,8 +320,8 @@ function SlideMovimiento() {
         <div className="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0 mt-0.5">
           <span className="text-[10px] font-bold text-white">1</span>
         </div>
-        <p className="text-slate-300 text-sm">
-          <span className="text-white font-semibold">Toca tu Pokémon</span> para ver su rango de movimiento en{' '}
+        <p className="text-[#465666] text-sm">
+          <span className="text-[#2b3640] font-semibold">Toca tu Pokémon</span> para ver su rango de movimiento en{' '}
           <span className="text-blue-400 font-semibold">azul</span>.
         </p>
       </div>
@@ -330,8 +330,8 @@ function SlideMovimiento() {
       <div
         className="grid grid-cols-5 gap-0.5 p-2 rounded-lg"
         style={{
-          background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)',
-          border: '3px solid #334155',
+          background: 'linear-gradient(135deg, #f8efd9 0%, #eadab8 100%)',
+          border: '3px solid #8f6637',
           boxShadow: 'inset 0 2px 10px rgba(0,0,0,0.5)',
         }}
       >
@@ -366,8 +366,8 @@ function SlideMovimiento() {
         <div className="w-5 h-5 rounded-full bg-amber-500 flex items-center justify-center flex-shrink-0 mt-0.5">
           <span className="text-[10px] font-bold text-black">2</span>
         </div>
-        <p className="text-slate-300 text-sm">
-          <span className="text-white font-semibold">Toca el destino</span> para ver el camino con{' '}
+        <p className="text-[#465666] text-sm">
+          <span className="text-[#2b3640] font-semibold">Toca el destino</span> para ver el camino con{' '}
           <span className="text-red-400 font-semibold">flechas rojas</span>.
         </p>
       </div>
@@ -378,7 +378,7 @@ function SlideMovimiento() {
 function SlideMenuAccion() {
   return (
     <div className="space-y-3">
-      <p className="text-slate-300 text-sm">
+      <p className="text-[#465666] text-sm">
         Al elegir destino, aparece el <span className="text-amber-400 font-semibold">menú de acción</span> junto al tile:
       </p>
 
@@ -386,8 +386,8 @@ function SlideMenuAccion() {
       <div
         className="relative rounded-xl overflow-visible p-4"
         style={{
-          background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)',
-          border: '3px solid #334155',
+          background: 'linear-gradient(135deg, #f8efd9 0%, #eadab8 100%)',
+          border: '3px solid #8f6637',
         }}
       >
         {/* Layout: tile with Pikachu + menu next to it */}
@@ -451,17 +451,17 @@ function SlideMenuAccion() {
         <div className="p-2 rounded-lg bg-red-500/10 border border-red-500/20">
           <Swords className="w-4 h-4 text-red-400 mx-auto mb-1" />
           <div className="text-[10px] font-bold text-red-300">ATACAR</div>
-          <div className="text-[8px] text-slate-500">Si hay enemigos</div>
+          <div className="text-[8px] text-[#7b6750]">Si hay enemigos</div>
         </div>
         <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
           <Hand className="w-4 h-4 text-emerald-400 mx-auto mb-1" />
           <div className="text-[10px] font-bold text-emerald-300">ESPERAR</div>
-          <div className="text-[8px] text-slate-500">Confirmar</div>
+          <div className="text-[8px] text-[#7b6750]">Confirmar</div>
         </div>
-        <div className="p-2 rounded-lg bg-slate-500/10 border border-slate-500/20">
+        <div className="p-2 rounded-lg bg-[#efe1c4] border border-amber-900/20">
           <Undo2 className="w-4 h-4 text-slate-400 mx-auto mb-1" />
-          <div className="text-[10px] font-bold text-slate-300">CANCELAR</div>
-          <div className="text-[8px] text-slate-500">Volver atrás</div>
+          <div className="text-[10px] font-bold text-[#465666]">CANCELAR</div>
+          <div className="text-[8px] text-[#7b6750]">Volver atrás</div>
         </div>
       </div>
     </div>
@@ -471,7 +471,7 @@ function SlideMenuAccion() {
 function SlideCombate() {
   return (
     <div className="space-y-3">
-      <p className="text-slate-300 text-sm">
+      <p className="text-[#465666] text-sm">
         Pulsa <span className="text-red-400 font-semibold">Atacar</span> y las casillas <span className="text-red-400 font-semibold">rojas</span> mostrarán enemigos en rango.
       </p>
 
@@ -479,8 +479,8 @@ function SlideCombate() {
       <div
         className="relative rounded-xl overflow-hidden"
         style={{
-          background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)',
-          border: '3px solid #334155',
+          background: 'linear-gradient(135deg, #f8efd9 0%, #eadab8 100%)',
+          border: '3px solid #8f6637',
         }}
       >
         {/* Mini game board showing attack scenario */}
@@ -546,14 +546,14 @@ function SlideCombate() {
           <Zap className="w-4 h-4 text-green-400" />
           <div>
             <div className="text-[10px] font-bold text-green-300">×2 Súper efectivo</div>
-            <div className="text-[8px] text-slate-500">Agua → Fuego</div>
+            <div className="text-[8px] text-[#7b6750]">Agua → Fuego</div>
           </div>
         </div>
         <div className="flex items-center gap-2 p-2 rounded-lg bg-red-500/10 border border-red-500/20">
           <Shield className="w-4 h-4 text-red-400" />
           <div>
             <div className="text-[10px] font-bold text-red-300">×0.5 Poco efectivo</div>
-            <div className="text-[8px] text-slate-500">Fuego → Agua</div>
+            <div className="text-[8px] text-[#7b6750]">Fuego → Agua</div>
           </div>
         </div>
       </div>
@@ -564,8 +564,8 @@ function SlideCombate() {
 function SlideTerreno() {
   return (
     <div className="space-y-3">
-      <p className="text-slate-300 text-sm">
-        <span className="text-white font-semibold">Pulsa una casilla vacía</span> para ver sus stats. Cada terreno tiene efectos únicos:
+      <p className="text-[#465666] text-sm">
+        <span className="text-[#2b3640] font-semibold">Pulsa una casilla vacía</span> para ver sus stats. Cada terreno tiene efectos únicos:
       </p>
 
       <div className="grid grid-cols-2 gap-2">
@@ -578,7 +578,7 @@ function SlideTerreno() {
           { terrain: TERRAIN.POKEMON_CENTER, name: 'Centro Pokémon', effect: 'Cura 20%', color: 'pink' },
         ].map(({ terrain, name, effect, color }, i) => {
           const colors: Record<string, string> = {
-            slate: 'bg-slate-800/50 border-slate-600/30',
+            slate: 'bg-[#f1e4c9] border-amber-900/20',
             yellow: 'bg-yellow-500/10 border-yellow-500/30',
             green: 'bg-green-500/10 border-green-500/30',
             amber: 'bg-amber-500/10 border-amber-500/30',
@@ -586,7 +586,7 @@ function SlideTerreno() {
             pink: 'bg-pink-500/10 border-pink-500/30',
           };
           const textColors: Record<string, string> = {
-            slate: 'text-slate-300',
+            slate: 'text-[#465666]',
             yellow: 'text-yellow-400',
             green: 'text-green-400',
             amber: 'text-amber-400',
@@ -604,7 +604,7 @@ function SlideTerreno() {
               </div>
               <div className="min-w-0">
                 <div className={`text-[10px] font-bold ${textColors[color]}`}>{name}</div>
-                <div className="text-[9px] text-slate-500">{effect}</div>
+                <div className="text-[9px] text-[#7b6750]">{effect}</div>
               </div>
             </div>
           );
@@ -630,7 +630,7 @@ function SlideTerreno() {
 function SlideCaptura() {
   return (
     <div className="space-y-3">
-      <p className="text-slate-300 text-sm">
+      <p className="text-[#465666] text-sm">
         En la <span className="text-yellow-400 font-semibold">Hierba Alta</span> puedes capturar Pokémon salvajes.
       </p>
 
@@ -638,9 +638,9 @@ function SlideCaptura() {
       <div
         className="relative p-4 rounded-xl overflow-hidden"
         style={{
-          background: 'radial-gradient(ellipse at center, rgba(34,197,94,0.15) 0%, #0a0a0a 60%)',
+          background: 'radial-gradient(ellipse at center, rgba(34,197,94,0.18) 0%, #e6dcc5 62%)',
           border: '3px solid #166534',
-          boxShadow: 'inset 0 0 30px rgba(0,0,0,0.5)',
+          boxShadow: 'inset 0 0 20px rgba(95,77,55,0.12)',
         }}
       >
         <div className="flex items-center justify-around">
@@ -679,14 +679,14 @@ function SlideCaptura() {
           <Target className="w-4 h-4 text-amber-400" />
           <div className="flex-1">
             <div className="text-[10px] font-bold text-amber-300">3 intentos con el anillo</div>
-            <div className="text-[8px] text-slate-500">Más cerca del centro = más probabilidad</div>
+            <div className="text-[8px] text-[#7b6750]">Más cerca del centro = más probabilidad</div>
           </div>
         </div>
         <div className="flex items-center gap-2 p-2 rounded-lg bg-red-500/10 border border-red-500/20">
           <Swords className="w-4 h-4 text-red-400" />
           <div className="flex-1">
             <div className="text-[10px] font-bold text-red-300">Ataca para debilitar</div>
-            <div className="text-[8px] text-slate-500">Menos HP = captura más fácil</div>
+            <div className="text-[8px] text-[#7b6750]">Menos HP = captura más fácil</div>
           </div>
         </div>
       </div>
@@ -766,7 +766,7 @@ export function HowToPlay({ onClose }: HowToPlayProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden">
       {/* Background */}
-      <div className="absolute inset-0 bg-black/88 backdrop-blur-md" />
+      <div className="absolute inset-0 bg-[rgba(83,63,33,0.34)]" />
 
       {/* Ambient glow */}
       <div
@@ -802,10 +802,10 @@ export function HowToPlay({ onClose }: HowToPlayProps) {
         <div
           className="relative rounded-sm overflow-hidden"
           style={{
-            background: 'linear-gradient(180deg, #142629 0%, #0f1d20 100%)',
+            background: 'linear-gradient(180deg, #f8efd9 0%, #eadab8 100%)',
             border: '4px solid',
             borderColor: '#8b551f #5a3414 #5a3414 #8b551f',
-            boxShadow: `0 0 60px ${slide.color.from}22, inset 0 0 30px rgba(0,0,0,0.5)`,
+            boxShadow: `0 0 48px ${slide.color.from}18, inset 0 0 16px rgba(95,77,55,0.12)`,
           }}
         >
           <div className="absolute inset-[2px] border border-amber-300/30 rounded-[2px] pointer-events-none" />
@@ -827,9 +827,9 @@ export function HowToPlay({ onClose }: HowToPlayProps) {
             {/* Close button */}
             <button
               onClick={onClose}
-              className="absolute top-3 right-3 p-2 bg-black/24 hover:bg-black/44 rounded-sm border border-white/20 transition-colors z-10"
+              className="absolute top-3 right-3 p-2 bg-[#f6edd8]/90 hover:bg-[#f8f1df] rounded-sm border border-amber-900/25 transition-colors z-10"
             >
-              <X className="w-4 h-4 text-white/80" />
+              <X className="w-4 h-4 text-[#5f4d37]" />
             </button>
 
             <div className="relative flex items-center gap-3">
@@ -837,7 +837,7 @@ export function HowToPlay({ onClose }: HowToPlayProps) {
                 className="p-2.5 rounded-xl"
                 style={{
                   background: 'rgba(255,255,255,0.2)',
-                  boxShadow: '0 2px 10px rgba(0,0,0,0.2)',
+                  boxShadow: '0 2px 8px rgba(95,77,55,0.2)',
                 }}
               >
                 <Icon className="w-6 h-6 text-white" />
@@ -862,7 +862,7 @@ export function HowToPlay({ onClose }: HowToPlayProps) {
             </div>
 
             {/* Progress bar */}
-            <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/30">
+            <div className="absolute bottom-0 left-0 right-0 h-1 bg-amber-900/25">
               <div
                 className="h-full bg-white/50 transition-all duration-500 ease-out"
                 style={{ width: `${((currentSlide + 1) / TUTORIAL_SLIDES.length) * 100}%` }}
@@ -897,8 +897,8 @@ export function HowToPlay({ onClose }: HowToPlayProps) {
                   font-bold text-xs uppercase tracking-wide
                   transition-all duration-200
                   ${currentSlide === 0
-                    ? 'text-amber-100/35 cursor-not-allowed'
-                    : 'text-amber-100/75 hover:text-white hover:bg-[#1b3338]/70'
+                    ? 'text-amber-900/30 cursor-not-allowed'
+                    : 'text-amber-900/70 hover:text-amber-950 hover:bg-amber-200/70'
                   }
                 `}
               >
@@ -954,7 +954,7 @@ export function HowToPlay({ onClose }: HowToPlayProps) {
                   className="
                     group flex items-center gap-2 px-4 py-2.5 rounded-xl
                     font-bold text-xs uppercase tracking-wide
-                    bg-[#1b3338] hover:bg-[#224046]
+                    bg-gradient-to-r from-amber-700 to-amber-600 hover:from-amber-600 hover:to-amber-500
                     text-white
                     transition-all duration-200
                     hover:scale-105 active:scale-95

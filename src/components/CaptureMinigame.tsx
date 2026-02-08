@@ -503,14 +503,14 @@ export function CaptureMinigame({
 
       {/* === BACKGROUND === */}
       <div className={`absolute inset-0 transition-opacity duration-1000 ${phase === 'flash' ? 'opacity-0' : 'opacity-100'}`}>
-        <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-[#0a0a15] to-slate-950" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#f8efd9] via-[#eadab8] to-[#d9cfb9]" />
         <div
           className="absolute inset-0 opacity-30"
           style={{ background: `radial-gradient(ellipse at 50% 30%, ${typeColor.glow} 0%, transparent 60%)` }}
         />
-        <div className="absolute bottom-0 left-0 right-0 h-2/5 bg-gradient-to-t from-emerald-950/50 via-emerald-900/20 to-transparent" />
+        <div className="absolute bottom-0 left-0 right-0 h-2/5 bg-gradient-to-t from-emerald-200/55 via-emerald-100/25 to-transparent" />
         {/* Vignette */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_40%,rgba(0,0,0,0.7)_100%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_45%,rgba(95,77,55,0.25)_100%)]" />
         {/* CRT Scanlines */}
         <div
           className="absolute inset-0 pointer-events-none opacity-40"
@@ -662,16 +662,16 @@ export function CaptureMinigame({
             {/* Wild Pokemon Info Panel */}
             <div className="absolute top-4 left-4 right-4 md:left-auto md:right-8 md:w-72">
               <div
-                className="rounded-2xl p-3 backdrop-blur-sm"
+                className="rounded-2xl p-3"
                 style={{
-                  background: `linear-gradient(135deg, ${typeColor.dark}ee 0%, #0a0a15ee 100%)`,
+                  background: 'linear-gradient(135deg, rgba(248,239,217,0.96) 0%, rgba(233,216,180,0.98) 100%)',
                   border: `3px solid ${typeColor.primary}`,
-                  boxShadow: `0 0 30px ${typeColor.glow}, inset 0 1px 0 ${typeColor.primary}40`,
+                  boxShadow: `0 0 24px ${typeColor.glow}, inset 0 1px 0 rgba(255,255,255,0.35)`,
                 }}
               >
                 <div className="flex items-center justify-between mb-2">
                   <span
-                    className="text-sm font-bold text-white uppercase tracking-wide"
+                    className="text-sm font-bold text-[#2b3640] uppercase tracking-wide"
                     style={{ fontFamily: '"Press Start 2P", monospace' }}
                   >
                     {pokemon.name}
@@ -695,8 +695,8 @@ export function CaptureMinigame({
                 {/* HP Bar - GBA Style */}
                 <div className="relative">
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-bold text-yellow-400" style={{ fontFamily: '"Press Start 2P", monospace' }}>HP</span>
-                    <div className="flex-1 h-5 rounded-full bg-slate-900 border-2 border-slate-700 overflow-hidden relative">
+                    <span className="text-[10px] font-bold text-amber-700" style={{ fontFamily: '"Press Start 2P", monospace' }}>HP</span>
+                    <div className="flex-1 h-5 rounded-full bg-[#d7c59f] border-2 border-amber-900/25 overflow-hidden relative">
                       <div
                         className={`absolute inset-y-0 left-0 transition-all duration-700 ease-out ${hpPercentage > 50 ? 'bg-gradient-to-r from-emerald-500 via-emerald-400 to-lime-400' :
                           hpPercentage > 25 ? 'bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-400' :
@@ -707,7 +707,7 @@ export function CaptureMinigame({
                         <div className="absolute inset-0 bg-gradient-to-b from-white/30 to-transparent h-1/2" />
                       </div>
                       <div className="absolute inset-0 flex items-center justify-end pr-2">
-                        <span className="text-[9px] font-bold text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]" style={{ fontFamily: '"Press Start 2P", monospace' }}>
+                        <span className="text-[9px] font-bold text-[#2b3640]" style={{ fontFamily: '"Press Start 2P", monospace' }}>
                           {wildHp}/{pokemon.hp}
                         </span>
                       </div>
@@ -717,7 +717,7 @@ export function CaptureMinigame({
 
                 {/* Capture Chance */}
                 <div className="mt-2 flex items-center justify-between">
-                  <span className="text-[8px] text-slate-400">CAPTURA</span>
+                  <span className="text-[8px] text-[#6c563b]">CAPTURA</span>
                   <div className="flex items-center gap-1">
                     <div className={`w-2 h-2 rounded-full ${estimatedTotalChance >= 50 ? 'bg-emerald-400' : estimatedTotalChance >= 30 ? 'bg-amber-400' : 'bg-red-400'} animate-pulse`} />
                     <span
@@ -848,27 +848,27 @@ export function CaptureMinigame({
             <div className="absolute bottom-0 left-0 right-0 p-4 animate-[slide-up_0.4s_ease-out_forwards]">
               {/* Stats Bar */}
               <div className="flex justify-center gap-4 mb-3">
-                <div className="px-3 py-1.5 rounded-lg bg-slate-900/80 border border-slate-700">
-                  <span className="text-[8px] text-slate-500 block">BASE</span>
-                  <span className="text-[11px] font-bold text-white" style={{ fontFamily: '"Press Start 2P", monospace' }}>{baseRate}%</span>
+                <div className="px-3 py-1.5 rounded-lg bg-[#f3e6cb] border border-amber-900/25">
+                  <span className="text-[8px] text-[#7b6750] block">BASE</span>
+                  <span className="text-[11px] font-bold text-[#2b3640]" style={{ fontFamily: '"Press Start 2P", monospace' }}>{baseRate}%</span>
                 </div>
-                <div className="px-3 py-1.5 rounded-lg bg-slate-900/80 border border-slate-700">
-                  <span className="text-[8px] text-slate-500 block">HP BONUS</span>
+                <div className="px-3 py-1.5 rounded-lg bg-[#f3e6cb] border border-amber-900/25">
+                  <span className="text-[8px] text-[#7b6750] block">HP BONUS</span>
                   <span className={`text-[11px] font-bold ${hpBonus > 0 ? 'text-emerald-400' : 'text-slate-400'}`} style={{ fontFamily: '"Press Start 2P", monospace' }}>+{hpBonus}%</span>
                 </div>
-                <div className="px-3 py-1.5 rounded-lg bg-slate-900/80 border border-slate-700">
-                  <span className="text-[8px] text-slate-500 block">RINGS</span>
-                  <span className="text-[11px] font-bold text-slate-400" style={{ fontFamily: '"Press Start 2P", monospace' }}>+?%</span>
+                <div className="px-3 py-1.5 rounded-lg bg-[#f3e6cb] border border-amber-900/25">
+                  <span className="text-[8px] text-[#7b6750] block">RINGS</span>
+                  <span className="text-[11px] font-bold text-[#7b6750]" style={{ fontFamily: '"Press Start 2P", monospace' }}>+?%</span>
                 </div>
               </div>
 
               {/* Action Buttons Panel */}
               <div
-                className="rounded-2xl p-4 backdrop-blur-md"
+                className="rounded-2xl p-4"
                 style={{
-                  background: 'linear-gradient(180deg, rgba(20,20,40,0.95) 0%, rgba(10,10,25,0.98) 100%)',
+                  background: 'linear-gradient(180deg, rgba(248,239,217,0.98) 0%, rgba(233,216,180,0.98) 100%)',
                   border: `3px solid ${typeColor.primary}60`,
-                  boxShadow: `0 -10px 40px ${typeColor.glow}, inset 0 1px 0 rgba(255,255,255,0.1)`,
+                  boxShadow: `0 -8px 24px ${typeColor.glow}, inset 0 1px 0 rgba(255,255,255,0.3)`,
                 }}
               >
                 {/* Main row: Attack + Capture + Flee + Info */}
@@ -881,7 +881,7 @@ export function CaptureMinigame({
                     onMouseLeave={() => setHoveredButton(null)}
                     className={`relative group rounded-xl overflow-hidden transition-all duration-200 ${hasAttacked ? 'opacity-40 cursor-not-allowed' : 'hover:scale-105 active:scale-95'}`}
                     style={{
-                      background: hasAttacked ? '#1a1a2e' : 'linear-gradient(180deg, #dc2626 0%, #991b1b 50%, #7f1d1d 100%)',
+                      background: hasAttacked ? '#d8cab0' : 'linear-gradient(180deg, #dc2626 0%, #991b1b 50%, #7f1d1d 100%)',
                       boxShadow: hasAttacked ? 'none' : '0 6px 0 #450a0a, inset 0 1px 0 rgba(255,255,255,0.2)',
                     }}
                   >
@@ -931,8 +931,8 @@ export function CaptureMinigame({
                     onMouseLeave={() => setHoveredButton(null)}
                     className="relative group rounded-xl overflow-hidden transition-all duration-200 hover:scale-105 active:scale-95"
                     style={{
-                      background: 'linear-gradient(180deg, #475569 0%, #334155 50%, #1e293b 100%)',
-                      boxShadow: '0 6px 0 #0f172a, inset 0 1px 0 rgba(255,255,255,0.1)',
+                      background: 'linear-gradient(180deg, #8a6f50 0%, #73593f 50%, #5d4733 100%)',
+                      boxShadow: '0 6px 0 #463424, inset 0 1px 0 rgba(255,255,255,0.15)',
                     }}
                   >
                     <div className="px-4 py-4 flex flex-col items-center gap-2">
@@ -953,7 +953,7 @@ export function CaptureMinigame({
                 {/* Info toggle button */}
                 <button
                   onClick={() => setShowInfoOverlay(v => !v)}
-                  className="mt-3 w-full py-2 rounded-lg text-[9px] font-bold uppercase tracking-wider text-slate-400 hover:text-white bg-slate-800/50 hover:bg-slate-700/50 border border-slate-700 transition-all"
+                  className="mt-3 w-full py-2 rounded-lg text-[9px] font-bold uppercase tracking-wider text-[#6c563b] hover:text-[#2b3640] bg-[#f3e6cb] hover:bg-[#f8efd9] border border-amber-900/25 transition-all"
                   style={{ fontFamily: '"Press Start 2P", monospace' }}
                 >
                   {showInfoOverlay ? 'Ocultar Info' : 'Ver Info Pokémon'}
@@ -964,18 +964,18 @@ export function CaptureMinigame({
 
           {/* === MOVE SELECT OVERLAY === */}
           {isMoveSelect && (
-            <div className="absolute inset-0 z-40 flex items-end justify-center bg-black/50 backdrop-blur-sm animate-[fade-in_0.2s_ease-out]">
+            <div className="absolute inset-0 z-40 flex items-end justify-center bg-[rgba(83,63,33,0.3)] animate-[fade-in_0.2s_ease-out]">
               <div className="w-full max-w-md p-4 pb-6 animate-[slide-up_0.3s_ease-out]">
                 <div
-                  className="rounded-2xl p-4 backdrop-blur-md"
+                  className="rounded-2xl p-4"
                   style={{
-                    background: 'linear-gradient(180deg, rgba(20,20,40,0.98) 0%, rgba(10,10,25,0.99) 100%)',
+                    background: 'linear-gradient(180deg, rgba(248,239,217,0.98) 0%, rgba(233,216,180,0.99) 100%)',
                     border: `3px solid ${typeColor.primary}60`,
-                    boxShadow: `0 -10px 40px ${typeColor.glow}, inset 0 1px 0 rgba(255,255,255,0.1)`,
+                    boxShadow: `0 -8px 24px ${typeColor.glow}, inset 0 1px 0 rgba(255,255,255,0.25)`,
                   }}
                 >
                   <div className="text-center mb-3">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider" style={{ fontFamily: '"Press Start 2P", monospace' }}>
+                    <span className="text-[10px] font-bold text-[#6c563b] uppercase tracking-wider" style={{ fontFamily: '"Press Start 2P", monospace' }}>
                       Elegir Movimiento
                     </span>
                   </div>
@@ -998,8 +998,8 @@ export function CaptureMinigame({
                           }`}
                           style={{
                             background: isUsable
-                              ? `linear-gradient(135deg, ${moveTypeColor.dark}cc 0%, #0a0a15ee 100%)`
-                              : '#1a1a2e',
+                              ? 'linear-gradient(135deg, rgba(243,230,203,0.98) 0%, rgba(233,216,180,0.98) 100%)'
+                              : '#d8cab0',
                             border: `2px solid ${isUsable ? moveTypeColor.primary + '80' : '#333'}`,
                           }}
                         >
@@ -1012,7 +1012,7 @@ export function CaptureMinigame({
                               <span className="text-[10px]">
                                 {move.category === 'physical' ? '⚔️' : move.category === 'special' ? '✨' : '🛡️'}
                               </span>
-                              <span className="text-[10px] font-bold text-white truncate" style={{ fontFamily: '"Press Start 2P", monospace' }}>
+                              <span className="text-[10px] font-bold text-[#2b3640] truncate" style={{ fontFamily: '"Press Start 2P", monospace' }}>
                                 {move.name}
                               </span>
                               {isStab && hasPP && (
@@ -1027,10 +1027,10 @@ export function CaptureMinigame({
                                 {move.type.toUpperCase()}
                               </span>
                               {move.power > 0 && (
-                                <span className="text-[9px] text-slate-400 font-mono">Pow {move.power}</span>
+                                <span className="text-[9px] text-[#7b6750] font-mono">Pow {move.power}</span>
                               )}
                               <span className={`text-[9px] font-mono font-bold ${
-                                !hasPP ? 'text-red-400' : localPP[i] <= 1 ? 'text-amber-400' : 'text-slate-300'
+                                !hasPP ? 'text-red-400' : localPP[i] <= 1 ? 'text-amber-600' : 'text-[#5f4d37]'
                               }`}>
                                 {localPP[i]}/{move.pp}
                               </span>
@@ -1044,7 +1044,7 @@ export function CaptureMinigame({
                   {/* Cancel */}
                   <button
                     onClick={handleCancelMoveSelect}
-                    className="mt-3 w-full py-2 rounded-lg text-[9px] font-bold uppercase tracking-wider text-slate-400 hover:text-white bg-slate-800/50 hover:bg-slate-700/50 border border-slate-700 transition-all"
+                    className="mt-3 w-full py-2 rounded-lg text-[9px] font-bold uppercase tracking-wider text-[#6c563b] hover:text-[#2b3640] bg-[#f3e6cb] hover:bg-[#f8efd9] border border-amber-900/25 transition-all"
                     style={{ fontFamily: '"Press Start 2P", monospace' }}
                   >
                     Cancelar
@@ -1056,19 +1056,19 @@ export function CaptureMinigame({
 
           {/* === INFO OVERLAY — Wild Pokemon stats/moves/ability === */}
           {showInfoOverlay && phase === 'battle' && (
-            <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/70 backdrop-blur-sm animate-[fade-in_0.2s_ease-out]" onClick={() => setShowInfoOverlay(false)}>
+            <div className="absolute inset-0 z-40 flex items-center justify-center bg-[rgba(83,63,33,0.38)] animate-[fade-in_0.2s_ease-out]" onClick={() => setShowInfoOverlay(false)}>
               <div className="w-full max-w-sm mx-4 animate-[result-pop_0.3s_ease-out]" onClick={e => e.stopPropagation()}>
                 <div
                   className="rounded-xl p-4 overflow-hidden"
                   style={{
-                    background: `linear-gradient(180deg, ${typeColor.dark}ee 0%, #0a0a15f0 100%)`,
+                    background: 'linear-gradient(180deg, rgba(248,239,217,0.98) 0%, rgba(233,216,180,0.99) 100%)',
                     border: `3px solid ${typeColor.primary}`,
                     boxShadow: `0 0 30px ${typeColor.glow}`,
                   }}
                 >
                   {/* Header */}
                   <div className="flex items-center justify-between mb-3">
-                    <span className="text-sm font-bold text-white uppercase" style={{ fontFamily: '"Press Start 2P", monospace' }}>
+                    <span className="text-sm font-bold text-[#2b3640] uppercase" style={{ fontFamily: '"Press Start 2P", monospace' }}>
                       {pokemon.name}
                     </span>
                     <div className="flex gap-1">
@@ -1082,12 +1082,12 @@ export function CaptureMinigame({
                   </div>
 
                   {/* Ability */}
-                  <div className="mb-3 px-2 py-1.5 rounded bg-slate-800/60 border border-slate-700">
-                    <span className="text-[8px] text-slate-500 block">HABILIDAD</span>
-                    <span className="text-[10px] font-bold text-white" style={{ fontFamily: '"Press Start 2P", monospace' }}>
+                  <div className="mb-3 px-2 py-1.5 rounded bg-[#f3e6cb] border border-amber-900/20">
+                    <span className="text-[8px] text-[#7b6750] block">HABILIDAD</span>
+                    <span className="text-[10px] font-bold text-[#2b3640]" style={{ fontFamily: '"Press Start 2P", monospace' }}>
                       {pokemon.ability.name}
                     </span>
-                    <span className="text-[8px] text-slate-400 block mt-0.5">{pokemon.ability.description}</span>
+                    <span className="text-[8px] text-[#7b6750] block mt-0.5">{pokemon.ability.description}</span>
                   </div>
 
                   {/* 6-Stat Grid */}
@@ -1101,13 +1101,13 @@ export function CaptureMinigame({
                       { label: 'SPE', value: pokemon.spe, color: '#F59E0B' },
                     ].map(stat => (
                       <div key={stat.label} className="flex items-center gap-1.5">
-                        <span className="w-8 text-[8px] font-bold text-slate-400" style={{ fontFamily: '"Press Start 2P", monospace' }}>
+                        <span className="w-8 text-[8px] font-bold text-[#6c563b]" style={{ fontFamily: '"Press Start 2P", monospace' }}>
                           {stat.label}
                         </span>
-                        <div className="flex-1 h-2 bg-slate-800 rounded-sm overflow-hidden">
+                        <div className="flex-1 h-2 bg-[#d7c59f] rounded-sm overflow-hidden">
                           <div className="h-full rounded-sm" style={{ width: `${Math.min(100, (stat.value / 200) * 100)}%`, background: stat.color }} />
                         </div>
-                        <span className="w-6 text-[8px] font-bold text-white text-right" style={{ fontFamily: '"Press Start 2P", monospace' }}>
+                        <span className="w-6 text-[8px] font-bold text-[#2b3640] text-right" style={{ fontFamily: '"Press Start 2P", monospace' }}>
                           {stat.value}
                         </span>
                       </div>
@@ -1116,17 +1116,17 @@ export function CaptureMinigame({
 
                   {/* Moves */}
                   <div className="space-y-1">
-                    <span className="text-[8px] text-slate-500 font-bold">MOVIMIENTOS</span>
+                    <span className="text-[8px] text-[#7b6750] font-bold">MOVIMIENTOS</span>
                     {pokemon.moves.map(move => {
                       const mColor = TYPE_COLORS[move.type] || TYPE_COLORS.normal;
                       return (
-                        <div key={move.id} className="flex items-center gap-2 px-2 py-1 rounded bg-slate-800/40 border-l-2" style={{ borderColor: mColor.primary }}>
+                        <div key={move.id} className="flex items-center gap-2 px-2 py-1 rounded bg-[#f3e6cb] border-l-2" style={{ borderColor: mColor.primary }}>
                           <span className="text-[10px]">{move.category === 'physical' ? '⚔️' : move.category === 'special' ? '✨' : '🛡️'}</span>
-                          <span className="text-[9px] font-bold text-white flex-1 truncate">{move.name}</span>
+                          <span className="text-[9px] font-bold text-[#2b3640] flex-1 truncate">{move.name}</span>
                           <span className="text-[7px] px-1 py-0.5 rounded text-white font-bold" style={{ background: mColor.primary }}>
                             {move.type.toUpperCase()}
                           </span>
-                          {move.power > 0 && <span className="text-[8px] text-slate-400 font-mono">{move.power}</span>}
+                          {move.power > 0 && <span className="text-[8px] text-[#7b6750] font-mono">{move.power}</span>}
                         </div>
                       );
                     })}
@@ -1135,7 +1135,7 @@ export function CaptureMinigame({
                   {/* Close */}
                   <button
                     onClick={() => setShowInfoOverlay(false)}
-                    className="mt-3 w-full py-2 rounded-lg text-[9px] font-bold uppercase text-slate-400 hover:text-white bg-slate-800/50 border border-slate-700 transition-all"
+                    className="mt-3 w-full py-2 rounded-lg text-[9px] font-bold uppercase text-[#6c563b] hover:text-[#2b3640] bg-[#f3e6cb] border border-amber-900/25 transition-all"
                     style={{ fontFamily: '"Press Start 2P", monospace' }}
                   >
                     Cerrar
@@ -1153,7 +1153,7 @@ export function CaptureMinigame({
             >
               {/* Premium ring background */}
               <div className="absolute inset-0" style={{
-                background: `radial-gradient(ellipse at 50% 50%, ${typeColor.dark}40 0%, #0a0a0f 60%)`,
+                background: `radial-gradient(ellipse at 50% 50%, ${typeColor.glow}35 0%, #e3d7bd 62%)`,
               }} />
               {/* Scanlines for ring phase */}
               <div
@@ -1161,7 +1161,7 @@ export function CaptureMinigame({
                 style={{ background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.15) 2px, rgba(0,0,0,0.15) 4px)' }}
               />
               {/* Vignette */}
-              <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_30%,rgba(0,0,0,0.8)_100%)]" />
+              <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_35%,rgba(95,77,55,0.3)_100%)]" />
               {/* Ambient particles for ring phase */}
               <div className="absolute inset-0 pointer-events-none overflow-hidden">
                 {[...Array(10)].map((_, i) => (
@@ -1202,7 +1202,7 @@ export function CaptureMinigame({
 
               {/* Ring counter */}
               <div className="absolute top-16 left-1/2 -translate-x-1/2">
-                <span className="text-white/60 text-sm font-bold">
+                <span className="text-[#5f4d37] text-sm font-bold">
                   RING {currentRingIndex + 1} / 3
                 </span>
               </div>
@@ -1226,7 +1226,7 @@ export function CaptureMinigame({
                 <div
                   className="w-64 h-64 md:w-80 md:h-80 rounded-full relative overflow-hidden"
                   style={{
-                    background: '#1a1a2e',
+                    background: '#f1e4c9',
                     border: `3px solid ${typeColor.primary}`,
                     boxShadow: `0 0 40px ${typeColor.glow}`,
                   }}
@@ -1394,7 +1394,7 @@ export function CaptureMinigame({
                       style={{ border: `2px solid ${typeColor.primary}40` }}
                     />
                     <div
-                      className="text-white text-lg font-bold animate-pulse"
+                      className="text-[#2b3640] text-lg font-bold animate-pulse"
                       style={{
                         fontFamily: '"Press Start 2P", monospace',
                         textShadow: `0 0 20px ${typeColor.glow}`,
@@ -1403,7 +1403,7 @@ export function CaptureMinigame({
                       TAP!
                     </div>
                   </div>
-                  <div className="text-white/50 text-xs mt-4">
+                  <div className="text-[#6c563b] text-xs mt-4">
                     Tap when the ring is smallest
                   </div>
                 </div>
@@ -1413,7 +1413,7 @@ export function CaptureMinigame({
 
           {/* === THROW ANIMATION WITH SHOWDOWN SPRITE === */}
           {phase === 'throw' && (
-            <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-[#080810] to-slate-950 z-30 overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-b from-[#f8efd9] via-[#eadab8] to-[#d9cfb9] z-30 overflow-hidden">
               {/* Pokeball throw arc with Showdown sprite */}
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="animate-[throw-arc_1s_cubic-bezier(0.22,0.61,0.36,1)_forwards]">
@@ -1475,7 +1475,7 @@ export function CaptureMinigame({
 
           {/* === POKEBALL CAPTURE ANIMATION WITH SHOWDOWN SPRITE === */}
           {phase === 'shaking' && (
-            <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-[#080810] to-slate-950 z-30 overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-b from-[#f8efd9] via-[#eadab8] to-[#d9cfb9] z-30 overflow-hidden">
               {/* Subtle ambient glow with tension pulse */}
               <div
                 className="absolute inset-0 animate-[tension-pulse_0.7s_ease-in-out_infinite]"
@@ -1662,7 +1662,7 @@ export function CaptureMinigame({
 
           {/* === RESULT === */}
           {phase === 'result' && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/85 z-30">
+            <div className="absolute inset-0 flex items-center justify-center bg-[rgba(83,63,33,0.48)] z-30">
               <div className="text-center animate-[result-pop_0.6s_cubic-bezier(0.34,1.56,0.64,1)_forwards]">
                 {captureSuccess ? (
                   <>
@@ -1735,7 +1735,7 @@ export function CaptureMinigame({
                     >
                       ¡CAPTURADO!
                     </h2>
-                    <p className="text-base text-white mb-2" style={{ fontFamily: '"Press Start 2P", monospace' }}>
+                    <p className="text-base text-[#2b3640] mb-2" style={{ fontFamily: '"Press Start 2P", monospace' }}>
                       {pokemon.name}
                     </p>
                     <p className="text-sm text-emerald-300" style={{ fontFamily: '"Press Start 2P", monospace' }}>
@@ -1783,7 +1783,7 @@ export function CaptureMinigame({
                     >
                       ¡ESCAPÓ!
                     </h2>
-                    <p className="text-base text-slate-400" style={{ fontFamily: '"Press Start 2P", monospace' }}>
+                    <p className="text-base text-[#6c563b]" style={{ fontFamily: '"Press Start 2P", monospace' }}>
                       {pokemon.name} se liberó
                     </p>
                   </>
