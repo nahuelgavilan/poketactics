@@ -1,5 +1,5 @@
-/* Import Google Fonts for retro feel */
-@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+/* Premium typography */
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Manrope:wght@400;600;700;800&family=Orbitron:wght@500;700;900&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -7,6 +7,9 @@
 
 /* Root variables */
 :root {
+  --font-display: "Orbitron", sans-serif;
+  --font-ui: "Manrope", sans-serif;
+  --font-data: "JetBrains Mono", monospace;
   --color-p1: #3b82f6;
   --color-p2: #ef4444;
   --color-accent: #facc15;
@@ -23,12 +26,28 @@ html {
 }
 
 body {
-  background-color: #0f172a;
+  background:
+    radial-gradient(circle at 18% 16%, rgba(37, 99, 235, 0.22), transparent 40%),
+    radial-gradient(circle at 84% 10%, rgba(251, 191, 36, 0.18), transparent 34%),
+    radial-gradient(circle at 76% 84%, rgba(239, 68, 68, 0.18), transparent 40%),
+    linear-gradient(160deg, #060a12 0%, #0a1220 45%, #0d1626 100%);
   color: #f1f5f9;
-  font-family: system-ui, -apple-system, sans-serif;
+  font-family: var(--font-ui);
   overscroll-behavior: none;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+.font-ui {
+  font-family: var(--font-ui);
+}
+
+.font-data {
+  font-family: var(--font-data);
 }
 
 /* Prevent pull-to-refresh on mobile */
@@ -393,9 +412,9 @@ button:focus-visible,
   background-clip: text;
 }
 
-/* Press Start 2P font utility */
+/* Display font utility */
 .font-pixel {
-  font-family: 'Press Start 2P', system-ui, sans-serif;
+  font-family: var(--font-display);
 }
 
 /* Scanline effect */

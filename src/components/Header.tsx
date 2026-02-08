@@ -90,18 +90,19 @@ export function Header({
   };
 
   return (
-    <header className="w-full bg-slate-900 border-b-2 border-slate-700 shadow-lg z-40 safe-area-pt shrink-0">
-      <div className="max-w-5xl mx-auto px-2 py-1.5 md:px-4 md:py-2 flex justify-between items-center gap-2">
+    <header className="relative z-40 w-full shrink-0 safe-area-pt border-b border-slate-500/30 bg-gradient-to-r from-slate-950/95 via-slate-900/95 to-slate-950/95 shadow-[0_8px_28px_rgba(0,0,0,0.45)] backdrop-blur-xl">
+      <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(90deg,transparent,rgba(148,163,184,0.15),transparent)] opacity-30" />
+      <div className="max-w-6xl mx-auto px-2 py-1.5 md:px-4 md:py-2.5 flex justify-between items-center gap-2">
 
         {/* Left: Logo */}
         <div className="flex items-center gap-2 min-w-0">
-          <h1 className="text-sm md:text-lg font-black italic tracking-tight flex items-center gap-1.5">
-            <Swords className="w-4 h-4 md:w-5 md:h-5 text-amber-500 flex-shrink-0" />
+          <h1 className="font-display text-base md:text-xl tracking-[0.1em] flex items-center gap-1.5">
+            <Swords className="w-4 h-4 md:w-5 md:h-5 text-amber-400 flex-shrink-0" />
             <span className="hidden sm:inline">
-              <span className="text-white">POKÉ</span>
-              <span className="text-amber-400">TACTICS</span>
+              <span className="text-slate-100">POKE</span>
+              <span className="text-amber-300">TACTICS</span>
             </span>
-            <span className="sm:hidden text-amber-400">PT</span>
+            <span className="sm:hidden text-amber-300">PT</span>
           </h1>
         </div>
 
@@ -111,11 +112,11 @@ export function Header({
             // Multiplayer
             <div
               className={`
-                relative px-3 py-1 md:px-4 md:py-1.5 rounded-full font-bold text-[10px] md:text-xs
+                relative px-3 py-1 md:px-4 md:py-1.5 rounded-full font-display text-[10px] md:text-xs
                 border-2 transition-all duration-300 uppercase tracking-wide
                 ${isMyTurn
-                  ? 'bg-green-600 border-green-400 text-white shadow-[0_0_12px_rgba(34,197,94,0.4)]'
-                  : 'bg-amber-600/80 border-amber-500 text-white'
+                  ? 'bg-emerald-600 border-emerald-300 text-white shadow-[0_0_16px_rgba(16,185,129,0.45)]'
+                  : 'bg-amber-600/85 border-amber-300 text-white'
                 }
               `}
             >
@@ -128,10 +129,10 @@ export function Header({
               {/* P1 */}
               <div
                 className={`
-                  relative px-2 py-1 md:px-3 md:py-1 rounded-full font-bold text-[10px] md:text-xs
+                  relative px-2 py-1 md:px-3 md:py-1 rounded-full font-display text-[10px] md:text-xs
                   border-2 transition-all duration-200
                   ${currentPlayer === 'P1'
-                    ? 'bg-blue-600 border-blue-400 text-white shadow-[0_0_10px_rgba(59,130,246,0.4)] scale-105'
+                    ? 'bg-blue-600 border-blue-300 text-white shadow-[0_0_12px_rgba(59,130,246,0.45)] scale-105'
                     : 'bg-slate-800 border-slate-600 text-slate-500 scale-95'
                   }
                 `}
@@ -140,15 +141,15 @@ export function Header({
                 <span className="relative">P1</span>
               </div>
 
-              <span className="text-slate-600 text-[10px] font-bold">VS</span>
+              <span className="font-display text-slate-500 text-[11px]">VS</span>
 
               {/* P2 */}
               <div
                 className={`
-                  relative px-2 py-1 md:px-3 md:py-1 rounded-full font-bold text-[10px] md:text-xs
+                  relative px-2 py-1 md:px-3 md:py-1 rounded-full font-display text-[10px] md:text-xs
                   border-2 transition-all duration-200
                   ${currentPlayer === 'P2'
-                    ? 'bg-red-600 border-red-400 text-white shadow-[0_0_10px_rgba(239,68,68,0.4)] scale-105'
+                    ? 'bg-red-600 border-red-300 text-white shadow-[0_0_12px_rgba(239,68,68,0.45)] scale-105'
                     : 'bg-slate-800 border-slate-600 text-slate-500 scale-95'
                   }
                 `}
@@ -161,7 +162,7 @@ export function Header({
 
           {/* Progress mini-bar (only during SELECT and your turn) */}
           {isMyTurn && gamePhase === 'SELECT' && totalCount > 0 && (
-            <div className="hidden md:flex items-center gap-1.5 px-2 py-1 bg-slate-800 rounded-full border border-slate-700">
+            <div className="hidden md:flex items-center gap-1.5 px-2 py-1 bg-slate-900/90 rounded-full border border-slate-600/70">
               <Users className="w-3 h-3 text-slate-500" />
               <div className="w-12 h-1.5 bg-slate-700 rounded-full overflow-hidden">
                 <div
@@ -171,13 +172,13 @@ export function Header({
                   style={{ width: `${progress}%` }}
                 />
               </div>
-              <span className="text-[9px] text-slate-400 font-mono">{movedCount}/{totalCount}</span>
+              <span className="font-data text-[9px] text-slate-300">{movedCount}/{totalCount}</span>
             </div>
           )}
 
-          <div className="hidden sm:flex items-center gap-1.5 px-2 py-1 bg-slate-800 rounded-full border border-slate-700">
+          <div className="hidden sm:flex items-center gap-1.5 px-2 py-1 bg-slate-900/90 rounded-full border border-slate-600/70">
             <img src={creditIcon} alt="" className="w-3.5 h-3.5 object-contain" />
-            <span className="text-[10px] text-amber-300 font-mono">{activeCredits}</span>
+            <span className="font-data text-[10px] text-amber-300">{activeCredits}</span>
           </div>
         </div>
 
@@ -186,12 +187,12 @@ export function Header({
           <button
             onClick={toggleMenu}
             className={`
-              p-2 rounded-lg transition-all duration-200
+              p-2 rounded-xl transition-all duration-200
               ${menuOpen
-                ? 'bg-amber-600 text-white'
-                : 'bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white'
+                ? 'bg-amber-500 text-slate-950 shadow-[0_0_16px_rgba(251,191,36,0.35)]'
+                : 'bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white'
               }
-              border border-slate-700
+              border border-slate-600/80
             `}
           >
             {menuOpen ? <X size={18} /> : <Menu size={18} />}
@@ -205,37 +206,24 @@ export function Header({
               z-50
             ">
               {/* Menu container */}
-              <div className="
-                relative
-                bg-gradient-to-b from-amber-50 to-amber-100
-                border-[3px] border-amber-900
-                rounded-sm
-                shadow-[4px_4px_0_0_rgba(0,0,0,0.4)]
-                overflow-hidden
-                min-w-[180px]
-              ">
+              <div className="relative min-w-[200px] overflow-hidden rounded-xl border border-amber-300/55 bg-gradient-to-b from-slate-950/98 via-slate-900/98 to-slate-950/98 shadow-[0_18px_42px_rgba(0,0,0,0.55)]">
                 {/* Inner border */}
-                <div className="absolute inset-[2px] border border-amber-300 rounded-sm pointer-events-none" />
+                <div className="absolute inset-[4px] border border-amber-200/20 rounded-lg pointer-events-none" />
 
                 {/* Title bar */}
-                <div className="
-                  bg-gradient-to-r from-amber-700 via-amber-600 to-amber-700
-                  px-3 py-1.5
-                  border-b-2 border-amber-900
-                  flex items-center justify-between
-                ">
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-amber-100 drop-shadow-[1px_1px_0_rgba(0,0,0,0.5)]">
+                <div className="bg-gradient-to-r from-amber-500 via-orange-400 to-amber-500 px-3 py-2 border-b border-black/20 flex items-center justify-between shadow-[0_0_14px_rgba(251,191,36,0.35)]">
+                  <span className="font-display text-[10px] uppercase tracking-[0.16em] text-slate-950">
                     Menú
                   </span>
                   {isMyTurn && gamePhase === 'SELECT' && (
-                    <span className="text-[9px] font-bold text-amber-200">
+                    <span className="font-data text-[10px] text-slate-900/85">
                       {movedCount}/{totalCount}
                     </span>
                   )}
                 </div>
 
                 {/* Menu items */}
-                <div className="p-1.5 flex flex-col gap-1">
+                <div className="p-2 flex flex-col gap-1.5">
                   {/* End Turn - Primary action when it's your turn */}
                   {isMyTurn && onEndTurn && gamePhase === 'SELECT' && (
                     <MenuItem
@@ -251,7 +239,7 @@ export function Header({
 
                   {/* Separator if end turn shown */}
                   {isMyTurn && onEndTurn && gamePhase === 'SELECT' && (
-                    <div className="h-px bg-amber-300 my-1" />
+                    <div className="h-px bg-slate-500/40 my-0.5" />
                   )}
 
                   {/* How to Play */}
@@ -288,7 +276,7 @@ export function Header({
               </div>
 
               {/* Notch pointing up */}
-              <div className="absolute -top-2 right-3 w-0 h-0 border-l-[8px] border-r-[8px] border-b-[8px] border-l-transparent border-r-transparent border-b-amber-900" />
+              <div className="absolute -top-2 right-3 w-0 h-0 border-l-[8px] border-r-[8px] border-b-[8px] border-l-transparent border-r-transparent border-b-amber-400" />
             </div>
           )}
         </div>
@@ -358,10 +346,10 @@ interface MenuItemProps {
 
 function MenuItem({ icon, label, sublabel, onClick, variant, highlight, delay = 0 }: MenuItemProps) {
   const variantStyles = {
-    default: 'bg-gradient-to-r from-slate-100 to-slate-50 text-slate-700 hover:from-slate-200 hover:to-slate-100 border-slate-300',
-    blue: 'bg-gradient-to-r from-blue-100 to-blue-50 text-blue-900 hover:from-blue-200 hover:to-blue-100 border-blue-300',
-    red: 'bg-gradient-to-r from-red-100 to-red-50 text-red-900 hover:from-red-200 hover:to-red-100 border-red-300',
-    success: 'bg-gradient-to-r from-emerald-100 to-emerald-50 text-emerald-900 hover:from-emerald-200 hover:to-emerald-100 border-emerald-300'
+    default: 'bg-slate-900/85 text-slate-100 hover:bg-slate-800/95 border-slate-600/80',
+    blue: 'bg-blue-900/45 text-blue-100 hover:bg-blue-800/55 border-blue-300/55',
+    red: 'bg-red-900/45 text-red-100 hover:bg-red-800/55 border-red-300/55',
+    success: 'bg-emerald-900/45 text-emerald-100 hover:bg-emerald-800/55 border-emerald-300/55'
   };
 
   return (
@@ -370,21 +358,20 @@ function MenuItem({ icon, label, sublabel, onClick, variant, highlight, delay = 
       className={`
         group flex items-center gap-2 w-full
         px-3 py-2
-        text-left text-xs font-bold uppercase tracking-wide
-        border rounded-sm
+        text-left border rounded-lg
         transition-all duration-75
         active:translate-y-[1px]
         animate-menu-item
         ${variantStyles[variant]}
-        ${highlight ? 'ring-2 ring-amber-400 ring-offset-1 ring-offset-amber-100' : ''}
+        ${highlight ? 'ring-2 ring-amber-300/70 ring-offset-1 ring-offset-slate-900' : ''}
       `}
       style={{ animationDelay: `${delay * 30 + 50}ms` }}
     >
       {icon}
       <div className="flex-1 min-w-0">
-        <div className="drop-shadow-[0.5px_0.5px_0_rgba(255,255,255,0.8)]">{label}</div>
+        <div className="font-display text-[10px] uppercase tracking-[0.11em]">{label}</div>
         {sublabel && (
-          <div className="text-[9px] font-normal normal-case tracking-normal opacity-70 mt-0.5">
+          <div className="font-ui text-[11px] font-medium normal-case tracking-normal opacity-80 mt-0.5">
             {sublabel}
           </div>
         )}

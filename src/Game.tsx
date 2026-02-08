@@ -759,6 +759,18 @@ export default function Game() {
   const playerUnits = units.filter(u => u.owner === activePlayer);
   const activeReserve = activePlayer === 'P1' ? baseReserveP1 : baseReserveP2;
   const activeCredits = activePlayer === 'P1' ? creditsP1 : creditsP2;
+  const controlledCentersP1 = Object.values(centerOwners).filter(owner => owner === 'P1').length;
+  const controlledCentersP2 = Object.values(centerOwners).filter(owner => owner === 'P2').length;
+  const phaseLabelMap: Record<string, string> = {
+    SELECT: 'Seleccion',
+    MOVING: 'Movimiento',
+    ACTION_MENU: 'Accion',
+    ATTACKING: 'Objetivo',
+    MOVE_SELECT: 'Movimiento de ataque',
+    DEPLOY_SELECT: 'Despliegue',
+    WAITING: 'Espera',
+  };
+  const phaseLabel = phaseLabelMap[gamePhase] ?? gamePhase;
   const showMobileUnitPanel = !!selectedUnit
     && isMobile
     && gameState === 'playing'
@@ -767,7 +779,7 @@ export default function Game() {
     && gamePhase !== 'DEPLOY_SELECT';
 
   return (
-    <div className="fixed inset-0 bg-slate-900 text-slate-100 flex flex-col select-none overflow-hidden">
+    <div className="fixed inset-0 bg-[radial-gradient(circle_at_10%_12%,rgba(37,99,235,0.2),transparent_40%),radial-gradient(circle_at_92%_8%,rgba(251,191,36,0.16),transparent_33%),radial-gradient(circle_at_85%_90%,rgba(239,68,68,0.16),transparent_40%),linear-gradient(155deg,#04070d_0%,#0a1220_48%,#101a2a_100%)] text-slate-100 flex flex-col select-none overflow-hidden">
       {/* Header - compact with dropdown menu */}
       <Header
         currentPlayer={currentPlayer}
@@ -787,27 +799,62 @@ export default function Game() {
       {/* Main game area - scrollable container for larger boards */}
       {/* Hidden during transition to prevent flash (LOCAL GAME ONLY - multiplayer doesn't use transition screen) */}
       <main className={`flex-1 min-h-0 relative ${gameState === 'transition' && !isInMultiplayerGame.current ? 'invisible' : ''}`}>
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute inset-0 opacity-[0.14] bg-[linear-gradient(rgba(148,163,184,0.22)_1px,transparent_1px),linear-gradient(90deg,rgba(148,163,184,0.22)_1px,transparent_1px)] bg-[size:30px_30px]" />
+          <div className="absolute -top-24 left-[10%] w-[38%] h-[42%] rounded-full blur-3xl bg-blue-500/18" />
+          <div className="absolute -bottom-24 right-[12%] w-[34%] h-[40%] rounded-full blur-3xl bg-red-500/16" />
+          <div className="absolute inset-x-0 top-0 h-10 bg-gradient-to-b from-black/35 to-transparent" />
+          <div className="absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-black/45 to-transparent" />
+        </div>
+
+        <div className="pointer-events-none absolute left-3 top-3 hidden xl:flex flex-col gap-2 z-20">
+          <div className="rounded-xl border border-slate-500/35 bg-slate-950/78 backdrop-blur-xl px-3 py-2 shadow-[0_12px_30px_rgba(0,0,0,0.45)]">
+            <p className="font-display text-[10px] uppercase tracking-[0.13em] text-amber-200/90">Estado</p>
+            <p className="font-ui text-[13px] text-slate-100 mt-1">{phaseLabel}</p>
+          </div>
+          <div className="rounded-xl border border-slate-500/35 bg-slate-950/78 backdrop-blur-xl px-3 py-2 shadow-[0_12px_30px_rgba(0,0,0,0.45)]">
+            <p className="font-display text-[10px] uppercase tracking-[0.13em] text-cyan-200/90">Centros</p>
+            <p className="font-data text-[12px] text-blue-300 mt-1">P1 {controlledCentersP1}</p>
+            <p className="font-data text-[12px] text-red-300">P2 {controlledCentersP2}</p>
+          </div>
+        </div>
+
+        <div className="pointer-events-none absolute right-3 top-3 hidden xl:flex flex-col gap-2 z-20">
+          <div className="rounded-xl border border-slate-500/35 bg-slate-950/78 backdrop-blur-xl px-3 py-2 shadow-[0_12px_30px_rgba(0,0,0,0.45)]">
+            <p className="font-display text-[10px] uppercase tracking-[0.13em] text-emerald-200/90">Reserva</p>
+            <p className="font-data text-[12px] text-slate-100 mt-1">{activeReserve.length} disponibles</p>
+          </div>
+          <div className="rounded-xl border border-slate-500/35 bg-slate-950/78 backdrop-blur-xl px-3 py-2 shadow-[0_12px_30px_rgba(0,0,0,0.45)]">
+            <p className="font-display text-[10px] uppercase tracking-[0.13em] text-amber-200/90">Economia activa</p>
+            <p className="font-data text-[12px] text-amber-300 mt-1">{activeCredits} cr</p>
+          </div>
+        </div>
+
         {/* Scrollable board area */}
         <div ref={scrollRef} className="absolute inset-0 overflow-auto">
-          <div className="min-w-full min-h-full w-max flex items-center justify-center p-2 md:p-4">
-            <GameBoard
-              map={map}
-              units={units}
-              centerOwners={centerOwners}
-              selectedUnit={selectedUnit}
-              moveRange={moveRange}
-              attackRange={attackRange}
-              pendingPosition={pendingPosition}
-              onTileClick={handleTileClickWithTerrain}
-              isMobile={isMobile}
-              currentPlayer={fogPlayer}
-              visibility={visibility}
-              showActionMenu={gamePhase === 'ACTION_MENU' && !!pendingPosition}
-              canAttack={attackRange.length > 0}
-              onAttack={handleSelectAttack}
-              onWait={handleSelectWait}
-              onCancel={cancelAction}
-            />
+          <div className="min-w-full min-h-full w-max flex items-center justify-center p-2 md:p-5">
+            <div className="relative rounded-[26px] border border-slate-400/35 bg-slate-950/55 backdrop-blur-md p-2 md:p-4 shadow-[0_18px_44px_rgba(0,0,0,0.52)]">
+              <div className="pointer-events-none absolute inset-[6px] rounded-[20px] border border-slate-200/12" />
+              <div className="pointer-events-none absolute inset-x-5 top-0 h-[1px] bg-gradient-to-r from-transparent via-amber-200/70 to-transparent" />
+              <GameBoard
+                map={map}
+                units={units}
+                centerOwners={centerOwners}
+                selectedUnit={selectedUnit}
+                moveRange={moveRange}
+                attackRange={attackRange}
+                pendingPosition={pendingPosition}
+                onTileClick={handleTileClickWithTerrain}
+                isMobile={isMobile}
+                currentPlayer={fogPlayer}
+                visibility={visibility}
+                showActionMenu={gamePhase === 'ACTION_MENU' && !!pendingPosition}
+                canAttack={attackRange.length > 0}
+                onAttack={handleSelectAttack}
+                onWait={handleSelectWait}
+                onCancel={cancelAction}
+              />
+            </div>
           </div>
         </div>
 

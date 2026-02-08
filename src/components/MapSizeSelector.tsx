@@ -75,10 +75,10 @@ export function MapSizeSelector({ onSelect, onBack }: MapSizeSelectorProps) {
         <div className="w-full max-w-4xl flex flex-col gap-3 md:gap-4 animate-start-menu-slide-up">
           <button
             onClick={handleBack}
-            className="self-start inline-flex items-center gap-2 px-3 py-2 rounded-sm border border-slate-600 bg-slate-900/80 hover:bg-slate-800/95 transition-colors"
+            className="self-start inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-600 bg-slate-900/80 hover:bg-slate-800/95 transition-colors"
           >
             <ArrowLeft className="w-4 h-4 text-slate-100" />
-            <span className="text-[9px] uppercase tracking-[0.12em] text-slate-100" style={{ fontFamily: '"Press Start 2P", monospace' }}>
+            <span className="font-display text-[10px] uppercase tracking-[0.12em] text-slate-100">
               Volver
             </span>
           </button>
@@ -95,14 +95,14 @@ export function MapSizeSelector({ onSelect, onBack }: MapSizeSelectorProps) {
                   const isSelected = selected.label === size.label;
                   const accent = SIZE_ACCENT[size.label] || 'blue';
 
-                  return (
-                    <button
-                      key={size.label}
-                      onClick={() => handleSelect(size)}
-                      className={`relative p-3 rounded-sm border-[2px] transition-all duration-150 ${
-                        isSelected
-                          ? accent === 'green'
-                            ? 'bg-emerald-900/55 border-emerald-400/80 shadow-[0_0_22px_rgba(16,185,129,0.25)]'
+                    return (
+                      <button
+                        key={size.label}
+                        onClick={() => handleSelect(size)}
+                        className={`relative p-3 rounded-xl border-[2px] transition-all duration-150 ${
+                          isSelected
+                            ? accent === 'green'
+                              ? 'bg-emerald-900/55 border-emerald-400/80 shadow-[0_0_22px_rgba(16,185,129,0.25)]'
                             : accent === 'violet'
                             ? 'bg-violet-900/55 border-violet-400/80 shadow-[0_0_22px_rgba(139,92,246,0.25)]'
                             : 'bg-blue-900/55 border-blue-400/80 shadow-[0_0_22px_rgba(59,130,246,0.25)]'
@@ -111,23 +111,14 @@ export function MapSizeSelector({ onSelect, onBack }: MapSizeSelectorProps) {
                     >
                       <span className="pointer-events-none absolute inset-[2px] border border-white/10 rounded-[2px]" />
                       <div className="relative flex flex-col items-center gap-2">
-                        <span
-                          className={`text-lg ${isSelected ? 'text-white' : 'text-slate-400'}`}
-                          style={{ fontFamily: '"Press Start 2P", monospace' }}
-                        >
+                        <span className={`font-display text-2xl ${isSelected ? 'text-white' : 'text-slate-400'}`}>
                           {SIZE_LABELS[size.label] || size.label[0]}
                         </span>
                         <MiniGrid width={size.width} height={size.height} selected={isSelected} />
-                        <span
-                          className={`text-[8px] uppercase tracking-[0.12em] ${isSelected ? 'text-slate-100' : 'text-slate-400'}`}
-                          style={{ fontFamily: '"Press Start 2P", monospace' }}
-                        >
+                        <span className={`font-display text-[10px] uppercase tracking-[0.12em] ${isSelected ? 'text-slate-100' : 'text-slate-400'}`}>
                           {size.label}
                         </span>
-                        <span
-                          className={`text-[8px] uppercase tracking-[0.1em] ${isSelected ? 'text-slate-200' : 'text-slate-500'}`}
-                          style={{ fontFamily: '"Press Start 2P", monospace' }}
-                        >
+                        <span className={`font-data text-[11px] uppercase tracking-[0.08em] ${isSelected ? 'text-slate-200' : 'text-slate-500'}`}>
                           {size.width}x{size.height}
                         </span>
                       </div>
@@ -136,10 +127,10 @@ export function MapSizeSelector({ onSelect, onBack }: MapSizeSelectorProps) {
                 })}
               </div>
 
-              <div className="bg-slate-950/70 border border-slate-700 rounded-sm p-3 space-y-2">
+              <div className="bg-slate-950/70 border border-slate-700 rounded-xl p-3 space-y-2">
                 <div className="flex items-center gap-2">
                   <Grid2x2 className="w-4 h-4 text-amber-300" />
-                  <p className="text-[9px] uppercase tracking-[0.12em] text-amber-200" style={{ fontFamily: '"Press Start 2P", monospace' }}>
+                  <p className="font-display text-[10px] uppercase tracking-[0.12em] text-amber-200">
                     Seleccion actual
                   </p>
                 </div>
@@ -151,10 +142,7 @@ export function MapSizeSelector({ onSelect, onBack }: MapSizeSelectorProps) {
 
                 <div className="pt-2 flex items-center gap-2">
                   <Ruler className="w-4 h-4 text-slate-300" />
-                  <p
-                    className="text-[8px] uppercase tracking-[0.1em] text-slate-300"
-                    style={{ fontFamily: '"Press Start 2P", monospace' }}
-                  >
+                  <p className="font-ui text-[12px] tracking-[0.03em] text-slate-300">
                     Mas espacio = mas flanqueo y vision.
                   </p>
                 </div>

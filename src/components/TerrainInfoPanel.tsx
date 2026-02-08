@@ -93,8 +93,8 @@ export function TerrainInfoPanel({ terrain, centerOwner = null, onClose }: Terra
     >
       <div className={`
         relative overflow-hidden
-        bg-slate-950/95 backdrop-blur-xl rounded-xl
-        border-2 ${style.border} shadow-2xl
+        bg-slate-950/92 backdrop-blur-xl rounded-2xl
+        border ${style.border} shadow-[0_14px_34px_rgba(0,0,0,0.55)]
       `}>
         {/* Colored header bar */}
         <div className={`h-1 bg-gradient-to-r ${style.gradient}`} />
@@ -115,8 +115,8 @@ export function TerrainInfoPanel({ terrain, centerOwner = null, onClose }: Terra
             {/* Info */}
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between">
-                <h3 className="font-bold text-white text-sm">{props.name}</h3>
-                <span className="text-slate-600 text-[10px]">Toca para cerrar</span>
+                <h3 className="font-display text-white text-sm uppercase tracking-[0.1em]">{props.name}</h3>
+                <span className="font-ui text-slate-500 text-[11px]">Toca para cerrar</span>
               </div>
 
               {/* Stats row */}
