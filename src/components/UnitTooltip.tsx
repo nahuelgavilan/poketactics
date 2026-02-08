@@ -20,23 +20,29 @@ interface UnitTooltipProps {
 
 export function UnitTooltip({ unit, screenX, screenY, isEnemy = false }: UnitTooltipProps) {
   // Position tooltip above or below based on screen position
-  const isNearBottom = screenY > window.innerHeight * 0.6;
-  const isNearRight = screenX > window.innerWidth * 0.7;
+  const TOOLTIP_WIDTH = 192;
+  const TOOLTIP_HEIGHT = 188;
+  const margin = 12;
+  const rawLeft = screenX > window.innerWidth * 0.7 ? screenX - TOOLTIP_WIDTH - 16 : screenX + 16;
+  const rawTop = screenY > window.innerHeight * 0.6 ? screenY - TOOLTIP_HEIGHT - 16 : screenY + 16;
+  const left = Math.min(window.innerWidth - TOOLTIP_WIDTH - margin, Math.max(margin, rawLeft));
+  const top = Math.min(window.innerHeight - TOOLTIP_HEIGHT - margin, Math.max(margin, rawTop));
 
   return (
     <div
       className="fixed z-[100] pointer-events-none animate-fade-in"
       style={{
-        left: isNearRight ? screenX - 200 : screenX + 20,
-        top: isNearBottom ? screenY - 180 : screenY + 20,
+        left,
+        top,
       }}
     >
       <div className={`
-        w-48 bg-slate-900/95 backdrop-blur-sm rounded-xl border-2 shadow-2xl overflow-hidden
-        ${isEnemy ? 'border-red-500/50' : 'border-blue-500/50'}
+        relative w-48 bg-[#111f23]/95 backdrop-blur-sm rounded-sm border-[2px] shadow-2xl overflow-hidden
+        ${isEnemy ? 'border-rose-500/55 shadow-rose-900/25' : 'border-sky-500/55 shadow-sky-900/25'}
       `}>
+        <div className="absolute inset-[2px] border border-amber-300/25 rounded-[2px] pointer-events-none" />
         {/* Header */}
-        <div className={`px-3 py-2 ${isEnemy ? 'bg-red-900/50' : 'bg-blue-900/50'}`}>
+        <div className={`px-3 py-2 border-b border-amber-700/35 ${isEnemy ? 'bg-rose-950/55' : 'bg-sky-950/55'}`}>
           <div className="flex items-center gap-2">
             <img
               src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-viii/icons/${unit.template.id}.png`}
@@ -45,7 +51,7 @@ export function UnitTooltip({ unit, screenX, screenY, isEnemy = false }: UnitToo
               style={{ imageRendering: 'pixelated' }}
             />
             <div>
-              <div className="font-bold text-white text-sm">{unit.template.name}</div>
+              <div className="font-bold text-amber-50 text-sm">{unit.template.name}</div>
               <div className="flex gap-0.5">
                 {unit.template.types.map(type => (
                   <span key={type} className={`text-[8px] px-1 py-0.5 rounded text-white font-bold ${TYPE_COLORS[type]}`}>
@@ -62,13 +68,13 @@ export function UnitTooltip({ unit, screenX, screenY, isEnemy = false }: UnitToo
           {/* HP */}
           <div>
             <div className="flex items-center justify-between text-xs mb-1">
-              <div className="flex items-center gap-1 text-slate-400">
-                <Heart className="w-3 h-3 text-red-400" />
+              <div className="flex items-center gap-1 text-amber-100/75">
+                <Heart className="w-3 h-3 text-rose-300" />
                 <span>HP</span>
               </div>
-              <span className="font-mono text-white">{unit.currentHp}/{unit.template.hp}</span>
+              <span className="font-mono text-amber-50">{unit.currentHp}/{unit.template.hp}</span>
             </div>
-            <div className="h-1.5 bg-slate-700 rounded-full overflow-hidden">
+            <div className="h-1.5 bg-[#22363a] rounded-full overflow-hidden border border-black/30">
               <div
                 className={`h-full transition-all ${
                   unit.currentHp / unit.template.hp > 0.5 ? 'bg-green-500' :
@@ -81,25 +87,25 @@ export function UnitTooltip({ unit, screenX, screenY, isEnemy = false }: UnitToo
 
           {/* Stats grid */}
           <div className="grid grid-cols-2 gap-2 text-xs">
-            <div className="flex items-center gap-1.5 bg-slate-800/50 rounded px-2 py-1">
-              <Sword className="w-3 h-3 text-orange-400" />
-              <span className="text-slate-400">ATK</span>
-              <span className="text-white font-bold ml-auto">{unit.template.atk}</span>
+            <div className="flex items-center gap-1.5 bg-[#192b2f]/85 border border-amber-800/30 rounded px-2 py-1">
+              <Sword className="w-3 h-3 text-orange-300" />
+              <span className="text-amber-100/70">ATK</span>
+              <span className="text-amber-50 font-bold ml-auto">{unit.template.atk}</span>
             </div>
-            <div className="flex items-center gap-1.5 bg-slate-800/50 rounded px-2 py-1">
-              <Shield className="w-3 h-3 text-blue-400" />
-              <span className="text-slate-400">DEF</span>
-              <span className="text-white font-bold ml-auto">{unit.template.def}</span>
+            <div className="flex items-center gap-1.5 bg-[#192b2f]/85 border border-amber-800/30 rounded px-2 py-1">
+              <Shield className="w-3 h-3 text-sky-300" />
+              <span className="text-amber-100/70">DEF</span>
+              <span className="text-amber-50 font-bold ml-auto">{unit.template.def}</span>
             </div>
-            <div className="flex items-center gap-1.5 bg-slate-800/50 rounded px-2 py-1">
-              <Navigation className="w-3 h-3 text-green-400" />
-              <span className="text-slate-400">MOV</span>
-              <span className="text-white font-bold ml-auto">{unit.template.mov}</span>
+            <div className="flex items-center gap-1.5 bg-[#192b2f]/85 border border-amber-800/30 rounded px-2 py-1">
+              <Navigation className="w-3 h-3 text-emerald-300" />
+              <span className="text-amber-100/70">MOV</span>
+              <span className="text-amber-50 font-bold ml-auto">{unit.template.mov}</span>
             </div>
-            <div className="flex items-center gap-1.5 bg-slate-800/50 rounded px-2 py-1">
-              <Target className="w-3 h-3 text-purple-400" />
-              <span className="text-slate-400">RNG</span>
-              <span className="text-white font-bold ml-auto">{Math.max(...unit.template.moves.map(m => m.range))}</span>
+            <div className="flex items-center gap-1.5 bg-[#192b2f]/85 border border-amber-800/30 rounded px-2 py-1">
+              <Target className="w-3 h-3 text-violet-300" />
+              <span className="text-amber-100/70">RNG</span>
+              <span className="text-amber-50 font-bold ml-auto">{Math.max(...unit.template.moves.map(m => m.range))}</span>
             </div>
           </div>
 
@@ -107,10 +113,10 @@ export function UnitTooltip({ unit, screenX, screenY, isEnemy = false }: UnitToo
           {(() => {
             const firstAttack = unit.template.moves.find(m => m.category !== 'status') ?? unit.template.moves[0];
             return firstAttack ? (
-              <div className="bg-slate-800/50 rounded px-2 py-1.5">
+              <div className="bg-[#192b2f]/85 border border-amber-800/30 rounded px-2 py-1.5">
                 <div className="flex items-center gap-1.5 text-xs">
-                  <Zap className="w-3 h-3 text-yellow-400" />
-                  <span className="text-slate-300">{firstAttack.name}</span>
+                  <Zap className="w-3 h-3 text-amber-300" />
+                  <span className="text-amber-50">{firstAttack.name}</span>
                   <span className={`ml-auto text-[9px] px-1 py-0.5 rounded text-white font-bold ${TYPE_COLORS[firstAttack.type]}`}>
                     {firstAttack.type.slice(0, 3).toUpperCase()}
                   </span>
@@ -131,7 +137,7 @@ export function UnitTooltip({ unit, screenX, screenY, isEnemy = false }: UnitToo
 
           {/* Moved status */}
           {unit.hasMoved && (
-            <div className="text-center text-[10px] text-slate-500 italic">
+            <div className="text-center text-[10px] text-amber-100/55 italic">
               Ya se movió este turno
             </div>
           )}

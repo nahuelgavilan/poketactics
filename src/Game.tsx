@@ -780,7 +780,7 @@ export default function Game() {
     && gamePhase !== 'DEPLOY_SELECT';
 
   return (
-    <div className="fixed inset-0 bg-[radial-gradient(circle_at_15%_8%,rgba(37,99,235,0.22),transparent_34%),radial-gradient(circle_at_86%_90%,rgba(239,68,68,0.18),transparent_30%),#0f172a] text-slate-100 flex flex-col select-none overflow-hidden">
+    <div className="fixed inset-0 bg-[radial-gradient(circle_at_14%_8%,rgba(56,189,248,0.24),transparent_34%),radial-gradient(circle_at_84%_90%,rgba(190,94,69,0.2),transparent_30%),linear-gradient(160deg,#1a2b2d_0%,#0f1b1d_56%,#0d1516_100%)] text-slate-100 flex flex-col select-none overflow-hidden">
       {/* Header - compact with dropdown menu */}
       <Header
         currentPlayer={currentPlayer}
@@ -801,18 +801,18 @@ export default function Game() {
       {/* Hidden during transition to prevent flash (LOCAL GAME ONLY - multiplayer doesn't use transition screen) */}
       <main className={`flex-1 min-h-0 relative ${gameState === 'transition' && !isInMultiplayerGame.current ? 'invisible' : ''}`}>
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute inset-0 opacity-[0.08] bg-[linear-gradient(rgba(148,163,184,0.22)_1px,transparent_1px),linear-gradient(90deg,rgba(148,163,184,0.22)_1px,transparent_1px)] bg-[size:28px_28px]" />
+          <div className="absolute inset-0 opacity-[0.08] bg-[linear-gradient(rgba(171,186,182,0.25)_1px,transparent_1px),linear-gradient(90deg,rgba(171,186,182,0.25)_1px,transparent_1px)] bg-[size:28px_28px]" />
         </div>
 
         {/* Mobile tactical strip */}
         {gameState === 'playing' && (
           <div className="md:hidden absolute top-1 left-1 right-1 z-20 pointer-events-none">
-            <div className="bg-slate-950/92 border-2 border-amber-700 rounded-sm shadow-lg px-2 py-1">
+            <div className="bg-[#112126]/94 border-2 border-amber-700 rounded-sm shadow-lg px-2 py-1">
               <div className="text-[8px] uppercase tracking-[0.1em] text-amber-200 flex items-center justify-between" style={{ fontFamily: '"Press Start 2P", monospace' }}>
                 <span>{phaseLabel}</span>
                 <span>{activeCredits} CR</span>
               </div>
-              <div className="mt-1 text-[10px] text-slate-300 font-ui flex items-center justify-between">
+              <div className="mt-1 text-[10px] text-amber-50/90 font-ui flex items-center justify-between">
                 <span>Unidades: {activeUnitsLeft}</span>
                 <span>Centros {controlledCentersP1}-{controlledCentersP2}</span>
               </div>
@@ -823,13 +823,13 @@ export default function Game() {
         {/* Desktop tactical strip */}
         {gameState === 'playing' && (
           <div className="hidden md:block absolute top-3 left-3 z-20 pointer-events-none">
-            <div className="bg-slate-950/90 border-[3px] border-amber-700 rounded-sm shadow-[4px_4px_0_0_rgba(0,0,0,0.35)] px-3 py-2 min-w-[230px]">
+            <div className="bg-[#102024]/92 border-[3px] border-amber-700 rounded-sm shadow-[4px_4px_0_0_rgba(0,0,0,0.35)] px-3 py-2 min-w-[230px]">
               <div className="absolute inset-[2px] border border-amber-300/30 rounded-[2px] pointer-events-none" />
               <div className="relative text-[8px] uppercase tracking-[0.12em] text-amber-200 flex items-center justify-between" style={{ fontFamily: '"Press Start 2P", monospace' }}>
                 <span>{phaseLabel}</span>
                 <span>{activeCredits} CR</span>
               </div>
-              <div className="relative mt-1 text-[12px] font-ui text-slate-300 flex items-center justify-between">
+              <div className="relative mt-1 text-[12px] font-ui text-amber-50/90 flex items-center justify-between">
                 <span>Unidades listas: {activeUnitsLeft}</span>
                 <span>Centros {controlledCentersP1}-{controlledCentersP2}</span>
               </div>
@@ -840,7 +840,7 @@ export default function Game() {
         {/* Scrollable board area */}
         <div ref={scrollRef} className="absolute inset-0 overflow-auto">
           <div className="min-w-full min-h-full w-max flex items-center justify-center p-2 md:p-4">
-            <div className="relative bg-slate-950/80 border-[3px] border-amber-700 rounded-sm shadow-[0_16px_32px_rgba(0,0,0,0.55)] p-1.5 md:p-2">
+            <div className="relative bg-[#101f22]/84 border-[3px] border-amber-700 rounded-sm shadow-[0_16px_32px_rgba(0,0,0,0.55)] p-1.5 md:p-2">
               <div className="absolute inset-[2px] border border-amber-300/35 rounded-[2px] pointer-events-none" />
               <GameBoard
                 map={map}
@@ -873,10 +873,10 @@ export default function Game() {
               text-[10px] md:text-xs font-bold uppercase tracking-wide
               shadow-[3px_3px_0_0_rgba(0,0,0,0.25)]
               ${gamePhase === 'MOVING'
-                ? 'bg-blue-100 border-blue-400 text-blue-900'
+                ? 'bg-sky-100 border-sky-500 text-sky-900'
                 : gamePhase === 'DEPLOY_SELECT'
-                ? 'bg-amber-100 border-amber-500 text-amber-900'
-                : 'bg-red-100 border-red-400 text-red-900'}
+                ? 'bg-amber-100 border-amber-600 text-amber-900'
+                : 'bg-rose-100 border-rose-500 text-rose-900'}
             `}>
               {gamePhase === 'MOVING'
                 ? 'Elige destino'
@@ -895,7 +895,7 @@ export default function Game() {
             <div className="
               px-3 py-1.5 md:px-4 md:py-2 rounded-sm border-[2px]
               text-[10px] md:text-xs font-bold uppercase tracking-wide
-              bg-amber-100 border-amber-500 text-amber-900
+              bg-amber-100 border-amber-600 text-amber-900
               shadow-[3px_3px_0_0_rgba(0,0,0,0.25)]
             ">
               <span className="animate-pulse">Esperando rival...</span>
@@ -920,24 +920,25 @@ export default function Game() {
         {selectedUnit && !isMobile && (
           <div className="absolute top-3 left-3 z-20 animate-scale-in pointer-events-none">
             <div className={`
-              relative bg-slate-900/95 backdrop-blur-md rounded-xl p-3
-              border shadow-2xl
+              relative bg-[#112126]/95 backdrop-blur-md rounded-sm p-3
+              border-[2px] shadow-2xl
               ${selectedUnit.owner === 'P1'
-                ? 'border-blue-500/50 shadow-blue-500/20'
-                : 'border-red-500/50 shadow-red-500/20'
+                ? 'border-sky-500/55 shadow-sky-500/20'
+                : 'border-rose-500/55 shadow-rose-500/20'
               }
             `}>
+              <div className="absolute inset-[1px] border border-amber-300/25 rounded-[2px]" />
               {/* Glow effect */}
               <div className={`
-                absolute inset-0 rounded-xl blur-xl opacity-30
-                ${selectedUnit.owner === 'P1' ? 'bg-blue-500' : 'bg-red-500'}
+                absolute inset-0 rounded-sm blur-xl opacity-30
+                ${selectedUnit.owner === 'P1' ? 'bg-sky-500' : 'bg-rose-500'}
               `} />
 
               <div className="relative flex items-center gap-3">
                 {/* Pokemon sprite mini */}
                 <div className={`
-                  w-10 h-10 rounded-lg overflow-hidden
-                  ${selectedUnit.owner === 'P1' ? 'bg-blue-950/80' : 'bg-red-950/80'}
+                  w-10 h-10 rounded overflow-hidden border
+                  ${selectedUnit.owner === 'P1' ? 'bg-sky-950/80 border-sky-500/40' : 'bg-rose-950/80 border-rose-500/40'}
                 `}>
                   <img
                     src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/${selectedUnit.template.id}.gif`}
@@ -948,7 +949,7 @@ export default function Game() {
                 </div>
 
                 <div>
-                  <div className="font-bold text-sm tracking-wide">{selectedUnit.template.name}</div>
+                  <div className="font-bold text-sm tracking-wide text-amber-50">{selectedUnit.template.name}</div>
                   <div className="flex gap-2 mt-1">
                     <span className={`
                       px-1.5 py-0.5 rounded text-[10px] font-mono
@@ -961,10 +962,10 @@ export default function Game() {
                     `}>
                       HP {selectedUnit.currentHp}/{selectedUnit.template.hp}
                     </span>
-                    <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-slate-800 text-slate-400">
+                    <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-[#1b2d31] text-amber-100/70 border border-amber-800/30">
                       ATK {selectedUnit.template.atk}
                     </span>
-                    <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-slate-800 text-slate-400">
+                    <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-[#1b2d31] text-amber-100/70 border border-amber-800/30">
                       MOV {selectedUnit.template.mov}
                     </span>
                   </div>
@@ -978,18 +979,19 @@ export default function Game() {
         {showMobileUnitPanel && selectedUnit && (
           <div className="absolute bottom-2 left-2 right-2 animate-slide-up z-30 pointer-events-none">
             <div className={`
-              flex items-center gap-3 px-3 py-2
-              bg-slate-950/95 backdrop-blur-xl rounded-xl
+              relative flex items-center gap-3 px-3 py-2
+              bg-[#112126]/95 backdrop-blur-xl rounded-sm
               border-2 shadow-2xl
               ${selectedUnit.owner === 'P1'
-                ? 'border-blue-500/60 shadow-blue-500/30'
-                : 'border-red-500/60 shadow-red-500/30'
+                ? 'border-sky-500/60 shadow-sky-500/30'
+                : 'border-rose-500/60 shadow-rose-500/30'
               }
             `}>
+              <div className="absolute inset-[1px] border border-amber-300/25 rounded-[2px]" />
               {/* Pokemon sprite */}
               <div className={`
                 relative w-12 h-12 rounded-lg overflow-hidden flex-shrink-0
-                ${selectedUnit.owner === 'P1' ? 'bg-blue-950' : 'bg-red-950'}
+                ${selectedUnit.owner === 'P1' ? 'bg-sky-950' : 'bg-rose-950'}
               `}>
                 <img
                   src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/${selectedUnit.template.id}.gif`}
@@ -1000,13 +1002,13 @@ export default function Game() {
                 {/* Player color indicator */}
                 <div className={`
                   absolute bottom-0 left-0 right-0 h-1
-                  ${selectedUnit.owner === 'P1' ? 'bg-blue-500' : 'bg-red-500'}
+                  ${selectedUnit.owner === 'P1' ? 'bg-sky-500' : 'bg-rose-500'}
                 `} />
               </div>
 
               {/* Name and stats */}
               <div className="flex-1 min-w-0">
-                <div className="font-bold text-sm truncate">{selectedUnit.template.name}</div>
+                <div className="font-bold text-sm truncate text-amber-50">{selectedUnit.template.name}</div>
                 <div className="flex flex-wrap gap-1.5 mt-1">
                   {/* HP */}
                   <div className={`
@@ -1027,12 +1029,12 @@ export default function Game() {
                     <span>{selectedUnit.template.atk}</span>
                   </div>
                   {/* MOV */}
-                  <div className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-sky-900/80 text-sky-400">
+                  <div className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-sky-900/80 text-sky-300">
                     <span className="opacity-60">MOV</span>
                     <span>{selectedUnit.template.mov}</span>
                   </div>
                   {/* DEF */}
-                  <div className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-700/80 text-slate-300">
+                  <div className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-[#1b2d31] text-amber-100/80 border border-amber-800/30">
                     <span className="opacity-60">DEF</span>
                     <span>{selectedUnit.template.def}</span>
                   </div>

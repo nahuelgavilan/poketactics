@@ -75,7 +75,7 @@ export function MapSizeSelector({ onSelect, onBack }: MapSizeSelectorProps) {
         <div className="w-full max-w-4xl flex flex-col gap-3 md:gap-4 animate-start-menu-slide-up">
           <button
             onClick={handleBack}
-            className="self-start inline-flex items-center gap-2 px-3 py-2 rounded-sm border-[2px] border-amber-500/80 bg-slate-900/85 hover:bg-slate-800/95 transition-colors"
+            className="self-start inline-flex items-center gap-2 px-3 py-2 rounded-sm border-[2px] border-amber-500/80 bg-[#16292d]/90 hover:bg-[#1c3338]/95 transition-colors"
           >
             <ArrowLeft className="w-4 h-4 text-slate-100" />
             <span className="text-[9px] uppercase tracking-[0.12em] text-slate-100" style={{ fontFamily: '"Press Start 2P", monospace' }}>
@@ -102,11 +102,11 @@ export function MapSizeSelector({ onSelect, onBack }: MapSizeSelectorProps) {
                       className={`relative p-3 rounded-sm border-[2px] transition-all duration-150 min-h-[124px] ${
                         isSelected
                           ? accent === 'green'
-                            ? 'bg-emerald-900/55 border-emerald-400/80 shadow-[0_0_22px_rgba(16,185,129,0.25)]'
+                            ? 'bg-emerald-900/50 border-emerald-400/80 shadow-[0_0_22px_rgba(16,185,129,0.22)]'
                             : accent === 'violet'
-                            ? 'bg-violet-900/55 border-violet-400/80 shadow-[0_0_22px_rgba(139,92,246,0.25)]'
-                            : 'bg-blue-900/55 border-blue-400/80 shadow-[0_0_22px_rgba(59,130,246,0.25)]'
-                          : 'bg-slate-900/80 border-slate-600 hover:border-slate-400'
+                            ? 'bg-indigo-900/50 border-indigo-400/80 shadow-[0_0_22px_rgba(99,102,241,0.22)]'
+                            : 'bg-sky-900/50 border-sky-400/80 shadow-[0_0_22px_rgba(56,189,248,0.22)]'
+                          : 'bg-[#172b30]/85 border-amber-700/65 hover:border-amber-500/80'
                       }`}
                     >
                       <span className="pointer-events-none absolute inset-[2px] border border-white/10 rounded-[2px]" />
@@ -136,7 +136,7 @@ export function MapSizeSelector({ onSelect, onBack }: MapSizeSelectorProps) {
                 })}
               </div>
 
-              <div className="bg-slate-950/75 border-[2px] border-amber-700/75 rounded-sm p-3 space-y-2">
+              <div className="bg-[#14272b]/88 border-[2px] border-amber-700/75 rounded-sm p-3 space-y-2">
                 <div className="flex items-center gap-2">
                   <Grid2x2 className="w-4 h-4 text-amber-300" />
                   <p className="text-[9px] uppercase tracking-[0.12em] text-amber-200" style={{ fontFamily: '"Press Start 2P", monospace' }}>
@@ -151,7 +151,7 @@ export function MapSizeSelector({ onSelect, onBack }: MapSizeSelectorProps) {
 
                 <div className="pt-2 flex items-center gap-2">
                   <Ruler className="w-4 h-4 text-slate-300" />
-                  <p className="text-[12px] tracking-[0.02em] text-slate-300 font-ui">
+                  <p className="text-[12px] tracking-[0.02em] text-amber-100/85 font-ui">
                     Mas espacio = mas flanqueo y vision.
                   </p>
                 </div>

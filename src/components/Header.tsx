@@ -90,7 +90,7 @@ export function Header({
   };
 
   return (
-    <header className="w-full bg-gradient-to-b from-slate-900 to-slate-950 border-b-2 border-amber-700/80 shadow-lg z-40 safe-area-pt shrink-0">
+    <header className="w-full bg-gradient-to-b from-[#152a2e] to-[#0f1d20] border-b-2 border-amber-700/80 shadow-lg z-40 safe-area-pt shrink-0">
       <div className="max-w-6xl mx-auto px-2 py-1.5 md:px-4 md:py-2 flex justify-between items-center gap-2">
 
         {/* Left: Logo */}
@@ -98,7 +98,7 @@ export function Header({
           <h1 className="text-sm md:text-lg font-black italic tracking-tight flex items-center gap-1.5">
             <Swords className="w-4 h-4 md:w-5 md:h-5 text-amber-500 flex-shrink-0" />
             <span className="hidden sm:inline">
-              <span className="text-white">POKÉ</span>
+              <span className="text-amber-100">POKÉ</span>
               <span className="text-amber-400">TACTICS</span>
             </span>
             <span className="sm:hidden text-amber-400">PT</span>
@@ -114,8 +114,8 @@ export function Header({
                 relative px-3 py-1 md:px-4 md:py-1.5 rounded-full font-bold text-[10px] md:text-xs
                 border-2 transition-all duration-300 uppercase tracking-wide
                 ${isMyTurn
-                  ? 'bg-green-600 border-green-400 text-white shadow-[0_0_12px_rgba(34,197,94,0.4)]'
-                  : 'bg-amber-600/80 border-amber-500 text-white'
+                  ? 'bg-emerald-700 border-emerald-500 text-emerald-50 shadow-[0_0_12px_rgba(16,185,129,0.35)]'
+                  : 'bg-amber-700/85 border-amber-500 text-amber-50'
                 }
               `}
             >
@@ -131,8 +131,8 @@ export function Header({
                   relative px-2 py-1 md:px-3 md:py-1 rounded-full font-bold text-[10px] md:text-xs
                   border-2 transition-all duration-200
                   ${currentPlayer === 'P1'
-                    ? 'bg-blue-600 border-blue-400 text-white shadow-[0_0_10px_rgba(59,130,246,0.4)] scale-105'
-                    : 'bg-slate-800 border-slate-600 text-slate-500 scale-95'
+                    ? 'bg-sky-700 border-sky-500 text-sky-50 shadow-[0_0_10px_rgba(56,189,248,0.35)] scale-105'
+                    : 'bg-[#1a2c30] border-amber-800/60 text-amber-100/45 scale-95'
                   }
                 `}
               >
@@ -140,7 +140,7 @@ export function Header({
                 <span className="relative">P1</span>
               </div>
 
-              <span className="text-slate-600 text-[10px] font-bold">VS</span>
+              <span className="text-amber-100/40 text-[10px] font-bold">VS</span>
 
               {/* P2 */}
               <div
@@ -148,8 +148,8 @@ export function Header({
                   relative px-2 py-1 md:px-3 md:py-1 rounded-full font-bold text-[10px] md:text-xs
                   border-2 transition-all duration-200
                   ${currentPlayer === 'P2'
-                    ? 'bg-red-600 border-red-400 text-white shadow-[0_0_10px_rgba(239,68,68,0.4)] scale-105'
-                    : 'bg-slate-800 border-slate-600 text-slate-500 scale-95'
+                    ? 'bg-rose-700 border-rose-500 text-rose-50 shadow-[0_0_10px_rgba(244,63,94,0.35)] scale-105'
+                    : 'bg-[#1a2c30] border-amber-800/60 text-amber-100/45 scale-95'
                   }
                 `}
               >
@@ -161,21 +161,21 @@ export function Header({
 
           {/* Progress mini-bar (only during SELECT and your turn) */}
           {isMyTurn && gamePhase === 'SELECT' && totalCount > 0 && (
-            <div className="hidden md:flex items-center gap-1.5 px-2 py-1 bg-slate-800 rounded-full border border-slate-700">
-              <Users className="w-3 h-3 text-slate-500" />
-              <div className="w-12 h-1.5 bg-slate-700 rounded-full overflow-hidden">
+            <div className="hidden md:flex items-center gap-1.5 px-2 py-1 bg-[#1a2f33] rounded-full border border-amber-800/50">
+              <Users className="w-3 h-3 text-amber-100/55" />
+              <div className="w-12 h-1.5 bg-[#22363a] rounded-full overflow-hidden">
                 <div
                   className={`h-full transition-all duration-300 ${
-                    allMoved ? 'bg-emerald-500' : isBlue ? 'bg-blue-500' : 'bg-red-500'
+                    allMoved ? 'bg-emerald-500' : isBlue ? 'bg-sky-500' : 'bg-rose-500'
                   }`}
                   style={{ width: `${progress}%` }}
                 />
               </div>
-              <span className="text-[9px] text-slate-400 font-mono">{movedCount}/{totalCount}</span>
+              <span className="text-[9px] text-amber-100/70 font-mono">{movedCount}/{totalCount}</span>
             </div>
           )}
 
-          <div className="hidden sm:flex items-center gap-1.5 px-2 py-1 bg-slate-800 rounded-full border border-slate-700">
+          <div className="hidden sm:flex items-center gap-1.5 px-2 py-1 bg-[#1a2f33] rounded-full border border-amber-800/50">
             <img src={creditIcon} alt="" className="w-3.5 h-3.5 object-contain" />
             <span className="text-[10px] text-amber-300 font-mono">{activeCredits}</span>
           </div>
@@ -189,7 +189,7 @@ export function Header({
               p-2.5 rounded-sm transition-all duration-200 border-[2px]
               ${menuOpen
                 ? 'bg-gradient-to-b from-amber-100 to-amber-200 text-amber-950 border-amber-500'
-                : 'bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border-slate-600'
+                : 'bg-[#1a2f33] hover:bg-[#20393e] text-amber-50 hover:text-amber-100 border-amber-700/60'
               }
             `}
           >
@@ -295,10 +295,10 @@ export function Header({
 
       {/* Progress bar under header (mobile, during your turn) */}
       {isMyTurn && gamePhase === 'SELECT' && totalCount > 0 && (
-        <div className="md:hidden h-1 bg-slate-800">
+        <div className="md:hidden h-1 bg-[#22363a]">
           <div
             className={`h-full transition-all duration-300 ${
-              allMoved ? 'bg-emerald-500' : isBlue ? 'bg-blue-500' : 'bg-red-500'
+              allMoved ? 'bg-emerald-500' : isBlue ? 'bg-sky-500' : 'bg-rose-500'
             }`}
             style={{ width: `${progress}%` }}
           />
@@ -357,9 +357,9 @@ interface MenuItemProps {
 
 function MenuItem({ icon, label, sublabel, onClick, variant, highlight, delay = 0 }: MenuItemProps) {
   const variantStyles = {
-    default: 'bg-gradient-to-r from-slate-100 to-slate-50 text-slate-700 hover:from-slate-200 hover:to-slate-100 border-slate-300',
-    blue: 'bg-gradient-to-r from-blue-100 to-blue-50 text-blue-900 hover:from-blue-200 hover:to-blue-100 border-blue-300',
-    red: 'bg-gradient-to-r from-red-100 to-red-50 text-red-900 hover:from-red-200 hover:to-red-100 border-red-300',
+    default: 'bg-gradient-to-r from-stone-100 to-stone-50 text-stone-800 hover:from-stone-200 hover:to-stone-100 border-stone-300',
+    blue: 'bg-gradient-to-r from-sky-100 to-sky-50 text-sky-900 hover:from-sky-200 hover:to-sky-100 border-sky-300',
+    red: 'bg-gradient-to-r from-rose-100 to-rose-50 text-rose-900 hover:from-rose-200 hover:to-rose-100 border-rose-300',
     success: 'bg-gradient-to-r from-emerald-100 to-emerald-50 text-emerald-900 hover:from-emerald-200 hover:to-emerald-100 border-emerald-300'
   };
 

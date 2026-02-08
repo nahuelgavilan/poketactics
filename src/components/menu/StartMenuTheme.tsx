@@ -11,46 +11,46 @@ const ACCENT_STYLES: Record<MenuAccent, {
   badge: string;
 }> = {
   blue: {
-    title: 'from-blue-700 via-blue-600 to-indigo-700 border-blue-900',
-    border: 'border-blue-700/80',
-    innerBorder: 'border-blue-200/35',
-    glow: 'bg-blue-500/20',
-    badge: 'bg-blue-900/70 border-blue-500/60 text-blue-100',
+    title: 'from-sky-800 via-cyan-700 to-sky-800 border-sky-950',
+    border: 'border-sky-700/80',
+    innerBorder: 'border-sky-200/32',
+    glow: 'bg-cyan-500/18',
+    badge: 'bg-sky-950/75 border-sky-500/55 text-sky-100',
   },
   red: {
-    title: 'from-red-700 via-red-600 to-rose-700 border-red-900',
-    border: 'border-red-700/80',
-    innerBorder: 'border-red-200/35',
-    glow: 'bg-red-500/20',
-    badge: 'bg-red-900/70 border-red-500/60 text-red-100',
+    title: 'from-rose-900 via-rose-800 to-orange-900 border-rose-950',
+    border: 'border-rose-700/80',
+    innerBorder: 'border-rose-200/30',
+    glow: 'bg-rose-500/18',
+    badge: 'bg-rose-950/70 border-rose-500/55 text-rose-100',
   },
   green: {
-    title: 'from-emerald-700 via-emerald-600 to-teal-700 border-emerald-900',
+    title: 'from-emerald-900 via-emerald-800 to-teal-900 border-emerald-950',
     border: 'border-emerald-700/80',
-    innerBorder: 'border-emerald-200/35',
-    glow: 'bg-emerald-500/20',
-    badge: 'bg-emerald-900/70 border-emerald-500/60 text-emerald-100',
+    innerBorder: 'border-emerald-200/30',
+    glow: 'bg-emerald-500/18',
+    badge: 'bg-emerald-950/70 border-emerald-500/55 text-emerald-100',
   },
   amber: {
-    title: 'from-amber-700 via-amber-600 to-orange-700 border-amber-900',
+    title: 'from-amber-800 via-amber-700 to-orange-800 border-amber-950',
     border: 'border-amber-700/80',
-    innerBorder: 'border-amber-300/45',
-    glow: 'bg-amber-500/20',
-    badge: 'bg-amber-900/70 border-amber-500/60 text-amber-100',
+    innerBorder: 'border-amber-300/40',
+    glow: 'bg-amber-500/18',
+    badge: 'bg-amber-950/70 border-amber-500/55 text-amber-100',
   },
   violet: {
-    title: 'from-violet-700 via-violet-600 to-indigo-700 border-violet-900',
-    border: 'border-violet-700/80',
-    innerBorder: 'border-violet-200/35',
-    glow: 'bg-violet-500/20',
-    badge: 'bg-violet-900/70 border-violet-500/60 text-violet-100',
+    title: 'from-indigo-900 via-indigo-800 to-slate-900 border-indigo-950',
+    border: 'border-indigo-700/80',
+    innerBorder: 'border-indigo-200/30',
+    glow: 'bg-indigo-500/18',
+    badge: 'bg-indigo-950/72 border-indigo-500/55 text-indigo-100',
   },
   slate: {
-    title: 'from-slate-700 via-slate-600 to-slate-700 border-slate-900',
-    border: 'border-slate-700/80',
-    innerBorder: 'border-slate-300/30',
-    glow: 'bg-slate-500/20',
-    badge: 'bg-slate-900/70 border-slate-500/60 text-slate-100',
+    title: 'from-stone-700 via-stone-600 to-stone-700 border-stone-900',
+    border: 'border-stone-700/80',
+    innerBorder: 'border-stone-300/28',
+    glow: 'bg-stone-500/16',
+    badge: 'bg-stone-900/70 border-stone-500/55 text-stone-100',
   },
 };
 
@@ -61,7 +61,7 @@ const MENU_PARTICLES = Array.from({ length: 24 }, (_, i) => ({
   size: 1 + Math.random() * 3,
   delay: Math.random() * 3,
   duration: 4 + Math.random() * 4,
-  hue: i % 3 === 0 ? 'rgba(96, 165, 250, 0.8)' : i % 3 === 1 ? 'rgba(248, 113, 113, 0.8)' : 'rgba(251, 191, 36, 0.8)',
+  hue: i % 3 === 0 ? 'rgba(84, 174, 196, 0.76)' : i % 3 === 1 ? 'rgba(191, 111, 83, 0.74)' : 'rgba(241, 186, 95, 0.78)',
 }));
 
 interface StartMenuShellProps {
@@ -72,21 +72,21 @@ interface StartMenuShellProps {
 export function StartMenuShell({ children, className = '' }: StartMenuShellProps) {
   return (
     <div className={`fixed inset-0 z-50 overflow-hidden select-none ${className}`}>
-      <div className="absolute inset-0 bg-[#030305]" />
+      <div className="absolute inset-0 bg-[#0b1416]" />
 
       <div className="absolute inset-0">
         <div
-          className="absolute inset-0 bg-gradient-to-br from-blue-950/70 via-blue-900/20 to-transparent"
+          className="absolute inset-0 bg-gradient-to-br from-cyan-950/70 via-cyan-900/20 to-transparent"
           style={{ clipPath: 'polygon(0 0, 58% 0, 36% 100%, 0 100%)' }}
         />
         <div
-          className="absolute inset-0 bg-gradient-to-tl from-red-950/70 via-red-900/20 to-transparent"
+          className="absolute inset-0 bg-gradient-to-tl from-orange-950/70 via-rose-900/20 to-transparent"
           style={{ clipPath: 'polygon(42% 0, 100% 0, 100% 100%, 64% 100%)' }}
         />
         <div
           className="absolute inset-0 opacity-70"
           style={{
-            background: 'linear-gradient(135deg, transparent 47%, rgba(251,191,36,0.18) 49%, rgba(251,191,36,0.4) 50%, rgba(251,191,36,0.18) 51%, transparent 53%)',
+            background: 'linear-gradient(135deg, transparent 47%, rgba(212,156,78,0.16) 49%, rgba(212,156,78,0.35) 50%, rgba(212,156,78,0.16) 51%, transparent 53%)',
           }}
         />
       </div>
@@ -94,7 +94,7 @@ export function StartMenuShell({ children, className = '' }: StartMenuShellProps
       <div
         className="absolute inset-0 opacity-15"
         style={{
-          backgroundImage: 'linear-gradient(rgba(148,163,184,0.22) 1px, transparent 1px), linear-gradient(90deg, rgba(148,163,184,0.22) 1px, transparent 1px)',
+          backgroundImage: 'linear-gradient(rgba(168,177,176,0.24) 1px, transparent 1px), linear-gradient(90deg, rgba(168,177,176,0.24) 1px, transparent 1px)',
           backgroundSize: '24px 24px',
           maskImage: 'radial-gradient(circle at center, black 35%, transparent 100%)',
           WebkitMaskImage: 'radial-gradient(circle at center, black 35%, transparent 100%)',
@@ -155,7 +155,7 @@ export function MenuPanel({
 
   return (
     <section
-      className={`relative bg-gradient-to-b from-slate-900/95 via-slate-950/94 to-black/95 border-[3px] rounded-sm shadow-[0_14px_36px_rgba(0,0,0,0.62)] ${style.border} ${className}`}
+      className={`relative bg-gradient-to-b from-[#142629]/96 via-[#0f1f21]/95 to-[#0a1416]/96 border-[3px] rounded-sm shadow-[0_14px_36px_rgba(0,0,0,0.62)] ${style.border} ${className}`}
     >
       <div className={`pointer-events-none absolute inset-0 opacity-0 blur-2xl md:opacity-100 ${style.glow}`} />
       <div className={`pointer-events-none absolute inset-[3px] border ${style.innerBorder}`} />
@@ -196,28 +196,28 @@ const BUTTON_STYLES: Record<MenuAccent, {
   shadow: string;
 }> = {
   blue: {
-    edge: 'border-blue-400/75',
-    accent: 'bg-blue-500',
-    iconPlate: 'bg-blue-100 text-blue-800 border-blue-300',
-    text: 'text-blue-950',
-    shadow: 'shadow-[0_0_14px_rgba(59,130,246,0.2)]',
+    edge: 'border-sky-400/75',
+    accent: 'bg-sky-500',
+    iconPlate: 'bg-sky-100 text-sky-900 border-sky-300',
+    text: 'text-sky-950',
+    shadow: 'shadow-[0_0_14px_rgba(56,189,248,0.2)]',
   },
   red: {
-    edge: 'border-red-400/75',
-    accent: 'bg-red-500',
-    iconPlate: 'bg-red-100 text-red-800 border-red-300',
-    text: 'text-red-950',
-    shadow: 'shadow-[0_0_14px_rgba(239,68,68,0.2)]',
+    edge: 'border-rose-400/75',
+    accent: 'bg-rose-500',
+    iconPlate: 'bg-rose-100 text-rose-900 border-rose-300',
+    text: 'text-rose-950',
+    shadow: 'shadow-[0_0_14px_rgba(244,63,94,0.2)]',
   },
   green: {
-    edge: 'border-emerald-400/75',
-    accent: 'bg-emerald-500',
-    iconPlate: 'bg-emerald-100 text-emerald-800 border-emerald-300',
+    edge: 'border-emerald-500/75',
+    accent: 'bg-emerald-600',
+    iconPlate: 'bg-emerald-100 text-emerald-900 border-emerald-300',
     text: 'text-emerald-950',
     shadow: 'shadow-[0_0_14px_rgba(16,185,129,0.2)]',
   },
   amber: {
-    edge: 'border-amber-500/80',
+    edge: 'border-amber-600/80',
     accent: 'bg-amber-500',
     iconPlate: 'bg-amber-100 text-amber-900 border-amber-300',
     text: 'text-amber-950',
@@ -231,11 +231,11 @@ const BUTTON_STYLES: Record<MenuAccent, {
     shadow: 'shadow-[0_0_14px_rgba(139,92,246,0.2)]',
   },
   slate: {
-    edge: 'border-slate-400/75',
-    accent: 'bg-slate-500',
-    iconPlate: 'bg-slate-100 text-slate-700 border-slate-300',
-    text: 'text-slate-800',
-    shadow: 'shadow-[0_0_14px_rgba(148,163,184,0.18)]',
+    edge: 'border-stone-500/75',
+    accent: 'bg-stone-500',
+    iconPlate: 'bg-stone-100 text-stone-800 border-stone-300',
+    text: 'text-stone-800',
+    shadow: 'shadow-[0_0_14px_rgba(168,162,158,0.18)]',
   },
 };
 
@@ -267,9 +267,9 @@ export function MenuActionButton({
       type={type}
       onClick={onClick}
       disabled={disabled}
-      className={`group relative w-full px-3 py-3.5 md:px-4 md:py-3.5 rounded-sm border-[2px] border-b-[4px] bg-gradient-to-b from-amber-50 to-amber-100 ${style.edge} ${style.shadow} transition-all duration-150 active:translate-y-[1px] active:border-b-[3px] disabled:opacity-35 disabled:grayscale disabled:cursor-not-allowed disabled:shadow-none disabled:translate-y-0 ${className}`}
+      className={`group relative w-full px-3 py-3.5 md:px-4 md:py-3.5 rounded-sm border-[2px] border-b-[4px] bg-gradient-to-b from-[#f4e8c8] to-[#e2d2ab] ${style.edge} ${style.shadow} transition-all duration-150 active:translate-y-[1px] active:border-b-[3px] disabled:opacity-35 disabled:grayscale disabled:cursor-not-allowed disabled:shadow-none disabled:translate-y-0 ${className}`}
     >
-      <span className="pointer-events-none absolute inset-[1px] border border-amber-200/80 rounded-[2px]" />
+      <span className="pointer-events-none absolute inset-[1px] border border-amber-300/85 rounded-[2px]" />
       <span className={`pointer-events-none absolute left-1 top-1 bottom-1 w-1 rounded-sm ${style.accent}`} />
       <span className="relative flex items-center justify-center gap-2.5">
         {Icon && (
@@ -331,7 +331,7 @@ export function MenuIconButton({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`inline-flex items-center gap-2 px-3 py-2 rounded-sm border bg-slate-900/90 hover:bg-slate-800/95 transition-colors ${ACCENT_STYLES[color].border} disabled:opacity-45 disabled:cursor-not-allowed ${className}`}
+      className={`inline-flex items-center gap-2 px-3 py-2 rounded-sm border bg-[#142428]/90 hover:bg-[#1a2f33]/95 transition-colors ${ACCENT_STYLES[color].border} disabled:opacity-45 disabled:cursor-not-allowed ${className}`}
     >
       <Icon className="w-4 h-4 text-slate-100" />
       <span className="text-[9px] uppercase tracking-[0.12em] text-slate-100" style={{ fontFamily: '"Press Start 2P", monospace' }}>
@@ -350,7 +350,7 @@ interface MenuStatRowProps {
 export function MenuStatRow({ label, value, className = '' }: MenuStatRowProps) {
   return (
     <div className={`flex items-center justify-between gap-3 ${className}`}>
-      <span className="text-[8px] uppercase tracking-[0.12em] text-slate-400" style={{ fontFamily: '"Press Start 2P", monospace' }}>
+      <span className="text-[8px] uppercase tracking-[0.12em] text-amber-200/80" style={{ fontFamily: '"Press Start 2P", monospace' }}>
         {label}
       </span>
       <span className="text-[12px] tracking-[0.02em] text-slate-100 font-ui">

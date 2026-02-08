@@ -23,24 +23,32 @@ interface ActionButtonProps {
 function ActionButton({ icon: Icon, label, onClick, disabled, color }: ActionButtonProps) {
   const colorStyles = {
     blue: {
-      base: 'from-blue-600 to-blue-700 border-blue-400/50 shadow-blue-500/40',
-      hover: 'hover:from-blue-500 hover:to-blue-600 hover:shadow-blue-500/60',
-      glow: 'bg-blue-500'
+      edge: 'border-sky-400/80',
+      accent: 'bg-sky-500',
+      iconPlate: 'bg-sky-100 border-sky-300 text-sky-900',
+      text: 'text-sky-950',
+      hover: 'hover:from-[#f8efd4] hover:to-[#ecddba]'
     },
     red: {
-      base: 'from-red-600 to-red-700 border-red-400/50 shadow-red-500/40',
-      hover: 'hover:from-red-500 hover:to-red-600 hover:shadow-red-500/60',
-      glow: 'bg-red-500'
+      edge: 'border-rose-400/80',
+      accent: 'bg-rose-500',
+      iconPlate: 'bg-rose-100 border-rose-300 text-rose-900',
+      text: 'text-rose-950',
+      hover: 'hover:from-[#f8efd4] hover:to-[#ecddba]'
     },
     green: {
-      base: 'from-emerald-600 to-emerald-700 border-emerald-400/50 shadow-emerald-500/40',
-      hover: 'hover:from-emerald-500 hover:to-emerald-600 hover:shadow-emerald-500/60',
-      glow: 'bg-emerald-500'
+      edge: 'border-emerald-500/80',
+      accent: 'bg-emerald-600',
+      iconPlate: 'bg-emerald-100 border-emerald-300 text-emerald-900',
+      text: 'text-emerald-950',
+      hover: 'hover:from-[#f8efd4] hover:to-[#ecddba]'
     },
     amber: {
-      base: 'from-amber-600 to-amber-700 border-amber-400/50 shadow-amber-500/40',
-      hover: 'hover:from-amber-500 hover:to-amber-600 hover:shadow-amber-500/60',
-      glow: 'bg-amber-500'
+      edge: 'border-amber-600/80',
+      accent: 'bg-amber-500',
+      iconPlate: 'bg-amber-100 border-amber-300 text-amber-900',
+      text: 'text-amber-950',
+      hover: 'hover:from-[#f8efd4] hover:to-[#ecddba]'
     }
   };
 
@@ -54,23 +62,22 @@ function ActionButton({ icon: Icon, label, onClick, disabled, color }: ActionBut
       }}
       disabled={disabled}
       className={`
-        group relative flex items-center justify-center gap-1.5
-        px-3 py-2.5 min-w-[72px]
-        bg-gradient-to-b ${style.base} ${style.hover}
-        border-b-2 rounded-xl
-        text-white text-xs font-bold uppercase tracking-wide
+        group relative flex items-center justify-center gap-2
+        px-3 py-2.5 min-w-[78px]
+        bg-gradient-to-b from-[#f3e7c6] to-[#e2d2ab] ${style.hover}
+        border-[2px] border-b-[4px] rounded-sm ${style.edge}
+        text-xs font-bold uppercase tracking-wide ${style.text}
         transition-all duration-200
         disabled:opacity-25 disabled:grayscale disabled:cursor-not-allowed disabled:scale-95
-        active:scale-90 active:border-b-0
-        shadow-lg hover:shadow-xl hover:scale-105
+        active:translate-y-[1px] active:border-b-[3px]
+        shadow-[0_4px_0_0_rgba(0,0,0,0.24)] hover:shadow-[0_5px_0_0_rgba(0,0,0,0.24)]
       `}
     >
-      {/* Glow effect on hover */}
-      <div className={`
-        absolute inset-0 rounded-xl ${style.glow} opacity-0 blur-md
-        group-hover:opacity-30 transition-opacity duration-200
-      `} />
-      <Icon className="relative w-4 h-4 group-hover:scale-110 transition-transform" />
+      <span className="pointer-events-none absolute inset-[1px] border border-amber-300/80 rounded-[2px]" />
+      <span className={`pointer-events-none absolute left-1 top-1 bottom-1 w-1 rounded-sm ${style.accent}`} />
+      <span className={`relative w-5 h-5 rounded-sm border flex items-center justify-center ${style.iconPlate}`}>
+        <Icon className="w-3.5 h-3.5" />
+      </span>
       <span className="relative">{label}</span>
     </button>
   );
@@ -110,27 +117,20 @@ export function ActionMenu({
       <div
         className={`
           fixed bottom-4 left-1/2 -translate-x-1/2 z-40
-          flex items-center gap-3
-          bg-slate-950/95 backdrop-blur-xl
-          px-4 py-3 rounded-2xl
-          border border-slate-700/60
-          shadow-2xl shadow-black/60
+          w-[calc(100vw-1rem)] max-w-[680px]
+          flex items-center gap-2 sm:gap-3
+          px-2.5 py-2.5 sm:px-3 sm:py-3 rounded-sm
+          ui-frame-light ui-inner-outline
           transition-all duration-300 ease-out
           ${isVisible ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-8 scale-95'}
         `}
       >
-        {/* Background glow */}
-        <div className={`
-          absolute inset-0 rounded-2xl blur-2xl opacity-20
-          ${selectedUnit.owner === 'P1' ? 'bg-blue-600' : 'bg-red-600'}
-        `} />
-
         {/* Unit name badge with sprite */}
         <div className={`
-          relative flex items-center gap-2 px-2 py-1 rounded-xl text-xs font-bold
+          relative flex items-center gap-2 px-2 py-1 rounded-sm text-xs font-bold
           ${selectedUnit.owner === 'P1'
-            ? 'bg-blue-950/80 text-blue-200 border border-blue-800/50'
-            : 'bg-red-950/80 text-red-200 border border-red-800/50'}
+            ? 'bg-sky-950/90 text-sky-100 border border-sky-500/45'
+            : 'bg-rose-950/90 text-rose-100 border border-rose-500/45'}
         `}>
           <img
             src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${selectedUnit.template.id}.png`}
@@ -142,10 +142,10 @@ export function ActionMenu({
         </div>
 
         {/* Divider */}
-        <div className="w-px h-8 bg-gradient-to-b from-transparent via-slate-600 to-transparent" />
+        <div className="w-px h-8 bg-gradient-to-b from-transparent via-amber-700/70 to-transparent" />
 
         {/* Action buttons */}
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 flex-1 justify-center">
           <ActionButton
             icon={Move}
             label="Mover"
@@ -178,7 +178,7 @@ export function ActionMenu({
         </div>
 
         {/* Divider */}
-        <div className="w-px h-8 bg-gradient-to-b from-transparent via-slate-600 to-transparent" />
+        <div className="w-px h-8 bg-gradient-to-b from-transparent via-amber-700/70 to-transparent" />
 
         {/* Cancel */}
         <button
@@ -187,11 +187,13 @@ export function ActionMenu({
             onCancel();
           }}
           className="
-            relative p-2 rounded-xl
-            bg-slate-800/80 hover:bg-slate-700
-            text-slate-400 hover:text-white
+            relative p-2 rounded-sm
+            ui-plate
+            border-slate-500/70
+            bg-gradient-to-b from-slate-100 to-slate-200 hover:from-slate-50 hover:to-slate-100
+            text-slate-700
             transition-all duration-200
-            hover:scale-110 active:scale-95
+            active:translate-y-[1px] active:border-b-[3px]
           "
         >
           <X className="w-4 h-4" />

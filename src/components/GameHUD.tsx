@@ -38,10 +38,10 @@ function MiniUnitIcon({ unit }: { unit: Unit }) {
         title={`${unit.template.name} - ${unit.currentHp}/${unit.template.hp} HP`}
       />
       {/* Mini HP indicator */}
-      <div className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-6 h-1 bg-black/50 rounded-full overflow-hidden">
+      <div className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-6 h-1 bg-black/45 border border-black/40 rounded-full overflow-hidden">
         <div
           className={`h-full transition-all ${
-            hpPercent > 0.5 ? 'bg-green-500' : hpPercent > 0.25 ? 'bg-yellow-500' : 'bg-red-500'
+            hpPercent > 0.5 ? 'bg-emerald-500' : hpPercent > 0.25 ? 'bg-amber-500' : 'bg-rose-500'
           }`}
           style={{ width: `${hpPercent * 100}%` }}
         />
@@ -62,24 +62,26 @@ function TeamPanel({
   side: 'left' | 'right';
 }) {
   const isP1 = player === 'P1';
-  const color = isP1 ? 'blue' : 'red';
-  const label = isP1 ? 'AZUL' : 'ROJO';
+  const panelStyle = isActive
+    ? isP1
+      ? 'bg-sky-950/55 border-sky-500/55 shadow-[0_0_14px_rgba(56,189,248,0.2)]'
+      : 'bg-rose-950/55 border-rose-500/55 shadow-[0_0_14px_rgba(244,63,94,0.2)]'
+    : 'bg-[#18282b]/78 border-amber-800/45';
+  const dotStyle = isP1 ? 'bg-sky-400' : 'bg-rose-400';
+  const hpStyle = isP1 ? 'bg-sky-500' : 'bg-rose-500';
 
   return (
     <div
       className={`
-        flex items-center gap-2 px-3 py-2 rounded-xl transition-all
-        ${isActive
-          ? `bg-${color}-900/50 border border-${color}-500/50 shadow-lg shadow-${color}-500/20`
-          : 'bg-slate-800/50 border border-slate-700/50'
-        }
+        flex items-center gap-2 px-3 py-2 rounded-md border transition-all
+        ${panelStyle}
         ${side === 'left' ? 'flex-row' : 'flex-row-reverse'}
       `}
     >
       {/* Team indicator */}
       <div className={`flex items-center gap-1 ${side === 'right' ? 'flex-row-reverse' : ''}`}>
-        <div className={`w-3 h-3 rounded-full ${isP1 ? 'bg-blue-500' : 'bg-red-500'} ${isActive ? 'animate-pulse' : ''}`} />
-        <span className={`text-xs font-bold ${isActive ? 'text-white' : 'text-slate-500'}`}>
+        <div className={`w-3 h-3 rounded-full ${dotStyle} ${isActive ? 'animate-pulse' : ''}`} />
+        <span className={`text-xs font-bold ${isActive ? 'text-slate-100' : 'text-amber-100/60'}`}>
           P{isP1 ? '1' : '2'}
         </span>
       </div>
@@ -93,13 +95,13 @@ function TeamPanel({
 
       {/* Team HP */}
       <div className={`${side === 'right' ? 'text-right' : ''}`}>
-        <div className="flex items-center gap-1 text-xs text-slate-400">
+        <div className="flex items-center gap-1 text-xs text-amber-100/65">
           <Users className="w-3 h-3" />
           <span>{summary.alive}</span>
         </div>
-        <div className="w-12 h-1 bg-slate-700 rounded-full overflow-hidden mt-0.5">
+        <div className="w-12 h-1 bg-[#23353a] rounded-full overflow-hidden mt-0.5 border border-black/30">
           <div
-            className={`h-full ${isP1 ? 'bg-blue-500' : 'bg-red-500'}`}
+            className={`h-full ${hpStyle}`}
             style={{ width: `${summary.avgHp}%` }}
           />
         </div>
@@ -113,7 +115,7 @@ export function GameHUD({ units, currentPlayer, turn }: GameHUDProps) {
   const p2Summary = getTeamSummary(units, 'P2');
 
   return (
-    <div className="w-full px-2 md:px-4 py-2 flex items-center justify-between">
+    <div className="w-full px-2 md:px-4 py-2 flex items-center justify-between bg-[#0f1d20]/82 border-b border-amber-800/35">
       {/* P1 Team */}
       <TeamPanel
         player="P1"
@@ -124,8 +126,8 @@ export function GameHUD({ units, currentPlayer, turn }: GameHUDProps) {
 
       {/* Turn counter */}
       <div className="hidden md:flex flex-col items-center">
-        <span className="text-[10px] text-slate-500 uppercase tracking-wider">Turno</span>
-        <span className="text-2xl font-black text-white">{turn}</span>
+        <span className="text-[10px] text-amber-100/70 uppercase tracking-wider">Turno</span>
+        <span className="text-2xl font-black text-amber-100">{turn}</span>
       </div>
 
       {/* P2 Team */}

@@ -93,7 +93,7 @@ export function TerrainInfoPanel({ terrain, centerOwner = null, onClose }: Terra
     >
       <div className={`
         relative overflow-hidden
-        bg-slate-950/95 backdrop-blur-xl rounded-sm
+        bg-[#112126]/95 backdrop-blur-xl rounded-sm
         border-[3px] border-amber-800 shadow-[4px_4px_0_0_rgba(0,0,0,0.35)]
       `}>
         <div className="absolute inset-[2px] border border-amber-300/40 rounded-[2px] pointer-events-none" />
@@ -142,7 +142,7 @@ export function TerrainInfoPanel({ terrain, centerOwner = null, onClose }: Terra
 
                 {/* Special: Vision bonus */}
                 {hasVisionBonus && (
-                  <div className="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold bg-purple-900/80 text-purple-400">
+                  <div className="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold bg-sky-900/80 text-sky-300">
                     <Eye className="w-3 h-3" />
                     <span>+{hasVisionBonus} visión</span>
                   </div>

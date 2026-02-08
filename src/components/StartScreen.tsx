@@ -35,7 +35,7 @@ function generateOrbitParticles(count: number) {
     speed: 2 + Math.random() * 2,
     radius: 8 + Math.random() * 16,
     size: 2 + Math.random() * 3,
-    color: i % 2 === 0 ? '#60A5FA' : '#F87171',
+    color: i % 2 === 0 ? '#4fb6c8' : '#c17259',
   }));
 }
 
@@ -135,7 +135,7 @@ export function StartScreen({ onStartGame, onHowToPlay, onMultiplayer, onDraft, 
                 </p>
               </div>
               <div className="flex items-center gap-2">
-                <MenuBadge label="Mobile Ready" accent="blue" />
+                <MenuBadge label="Mobile Ready" accent="green" />
                 <MenuBadge label="Alpha" accent="slate" />
               </div>
             </div>
@@ -153,7 +153,7 @@ export function StartScreen({ onStartGame, onHowToPlay, onMultiplayer, onDraft, 
                   <div
                     className="absolute inset-0 opacity-25"
                     style={{
-                      background: 'linear-gradient(180deg, rgba(59,130,246,0.22) 0%, rgba(248,113,113,0.18) 100%)',
+                      background: 'linear-gradient(180deg, rgba(45,164,188,0.24) 0%, rgba(191,111,83,0.2) 100%)',
                       maskImage: 'linear-gradient(180deg, transparent 0%, black 45%)',
                       WebkitMaskImage: 'linear-gradient(180deg, transparent 0%, black 45%)',
                     }}
@@ -170,8 +170,8 @@ export function StartScreen({ onStartGame, onHowToPlay, onMultiplayer, onDraft, 
                 </div>
 
                 <div className="absolute left-[18%] right-[18%] top-1/2 h-1 -translate-y-1/2 rounded-full overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-r from-blue-400/70 via-amber-200/70 to-red-400/70 blur-[2px] animate-start-menu-pulse" />
-                  <div className="absolute inset-0 bg-gradient-to-r from-blue-300/30 via-white/35 to-red-300/30 blur-md" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-cyan-400/70 via-amber-200/70 to-rose-400/70 blur-[2px] animate-start-menu-pulse" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-cyan-300/30 via-white/35 to-rose-300/30 blur-md" />
                 </div>
 
                 <div className="absolute top-1/2 left-1/2 w-0 h-0 -translate-x-1/2 -translate-y-1/2">
@@ -204,7 +204,7 @@ export function StartScreen({ onStartGame, onHowToPlay, onMultiplayer, onDraft, 
                         i === activePair ? 'opacity-100 scale-100' : 'opacity-0 scale-75'
                       }`}
                     >
-                      <div className="absolute inset-0 blur-2xl scale-150 bg-blue-500/20 animate-start-menu-pulse" />
+                      <div className="absolute inset-0 blur-2xl scale-150 bg-cyan-500/20 animate-start-menu-pulse" />
                       <img
                         src={SPRITE_URL(pair.left.id)}
                         alt={pair.left.name}
@@ -212,7 +212,7 @@ export function StartScreen({ onStartGame, onHowToPlay, onMultiplayer, onDraft, 
                         style={{ imageRendering: 'pixelated' }}
                       />
                       <p
-                        className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-[8px] text-blue-300 uppercase tracking-[0.1em] whitespace-nowrap"
+                        className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-[8px] text-cyan-300 uppercase tracking-[0.1em] whitespace-nowrap"
                         style={{ fontFamily: '"Press Start 2P", monospace', textShadow: '1px 1px 0 #000' }}
                       >
                         {pair.left.name}
@@ -229,7 +229,7 @@ export function StartScreen({ onStartGame, onHowToPlay, onMultiplayer, onDraft, 
                         i === activePair ? 'opacity-100 scale-100' : 'opacity-0 scale-75'
                       }`}
                     >
-                      <div className="absolute inset-0 blur-2xl scale-150 bg-red-500/20 animate-start-menu-pulse" />
+                      <div className="absolute inset-0 blur-2xl scale-150 bg-rose-500/20 animate-start-menu-pulse" />
                       <img
                         src={SPRITE_URL(pair.right.id)}
                         alt={pair.right.name}
@@ -237,7 +237,7 @@ export function StartScreen({ onStartGame, onHowToPlay, onMultiplayer, onDraft, 
                         style={{ imageRendering: 'pixelated', animationDelay: '0.35s' }}
                       />
                       <p
-                        className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-[8px] text-red-300 uppercase tracking-[0.1em] whitespace-nowrap"
+                        className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-[8px] text-rose-300 uppercase tracking-[0.1em] whitespace-nowrap"
                         style={{ fontFamily: '"Press Start 2P", monospace', textShadow: '1px 1px 0 #000' }}
                       >
                         {pair.right.name}
@@ -272,8 +272,8 @@ export function StartScreen({ onStartGame, onHowToPlay, onMultiplayer, onDraft, 
                           onClick={() => setOnlineModeWithSFX('quick')}
                           className={`px-2 py-2 border-[2px] rounded-sm text-[8px] uppercase tracking-[0.12em] transition-colors ${
                             onlineMode === 'quick'
-                              ? 'bg-emerald-100 border-emerald-400 text-emerald-900'
-                              : 'bg-slate-900/80 border-slate-600 text-slate-300 hover:border-slate-400'
+                              ? 'bg-emerald-100 border-emerald-500 text-emerald-900'
+                              : 'bg-[#182c31]/85 border-amber-700/65 text-amber-100/80 hover:border-amber-500/70'
                           }`}
                           style={{ fontFamily: '"Press Start 2P", monospace' }}
                         >
@@ -284,8 +284,8 @@ export function StartScreen({ onStartGame, onHowToPlay, onMultiplayer, onDraft, 
                           onClick={() => setOnlineModeWithSFX('draft')}
                           className={`px-2 py-2 border-[2px] rounded-sm text-[8px] uppercase tracking-[0.12em] transition-colors ${
                             onlineMode === 'draft'
-                              ? 'bg-violet-100 border-violet-400 text-violet-900'
-                              : 'bg-slate-900/80 border-slate-600 text-slate-300 hover:border-slate-400'
+                              ? 'bg-indigo-100 border-indigo-400 text-indigo-900'
+                              : 'bg-[#182c31]/85 border-amber-700/65 text-amber-100/80 hover:border-amber-500/70'
                           }`}
                           style={{ fontFamily: '"Press Start 2P", monospace' }}
                         >

@@ -102,20 +102,28 @@ function TutorialActionButton({
 }) {
   const colorStyles = {
     blue: {
-      base: 'from-blue-600 to-blue-700 border-blue-400/50 shadow-blue-500/40',
-      glow: 'bg-blue-500'
+      edge: 'border-sky-400/80',
+      accent: 'bg-sky-500',
+      iconPlate: 'bg-sky-100 border-sky-300 text-sky-900',
+      text: 'text-sky-950'
     },
     red: {
-      base: 'from-red-600 to-red-700 border-red-400/50 shadow-red-500/40',
-      glow: 'bg-red-500'
+      edge: 'border-rose-400/80',
+      accent: 'bg-rose-500',
+      iconPlate: 'bg-rose-100 border-rose-300 text-rose-900',
+      text: 'text-rose-950'
     },
     green: {
-      base: 'from-emerald-600 to-emerald-700 border-emerald-400/50 shadow-emerald-500/40',
-      glow: 'bg-emerald-500'
+      edge: 'border-emerald-500/80',
+      accent: 'bg-emerald-600',
+      iconPlate: 'bg-emerald-100 border-emerald-300 text-emerald-900',
+      text: 'text-emerald-950'
     },
     amber: {
-      base: 'from-amber-600 to-amber-700 border-amber-400/50 shadow-amber-500/40',
-      glow: 'bg-amber-500'
+      edge: 'border-amber-600/80',
+      accent: 'bg-amber-500',
+      iconPlate: 'bg-amber-100 border-amber-300 text-amber-900',
+      text: 'text-amber-950'
     }
   };
 
@@ -124,16 +132,20 @@ function TutorialActionButton({
   return (
     <div
       className={`
-        relative flex items-center justify-center gap-1.5
+        relative flex items-center justify-center gap-2
         px-3 py-2.5 min-w-[72px]
-        bg-gradient-to-b ${style.base}
-        border-b-2 rounded-xl
-        text-white text-xs font-bold uppercase tracking-wide
-        shadow-lg
-        ${highlight ? 'ring-2 ring-amber-400 ring-offset-2 ring-offset-slate-950' : ''}
+        bg-gradient-to-b from-[#f3e7c6] to-[#e2d2ab]
+        border-[2px] border-b-[4px] rounded-sm ${style.edge}
+        text-xs font-bold uppercase tracking-wide ${style.text}
+        shadow-[0_4px_0_0_rgba(0,0,0,0.25)]
+        ${highlight ? 'ring-2 ring-amber-400 ring-offset-2 ring-offset-[#111f23]' : ''}
       `}
     >
-      <Icon className="w-4 h-4" />
+      <span className="pointer-events-none absolute inset-[1px] border border-amber-300/80 rounded-[2px]" />
+      <span className={`pointer-events-none absolute left-1 top-1 bottom-1 w-1 rounded-sm ${style.accent}`} />
+      <span className={`w-5 h-5 rounded-sm border flex items-center justify-center ${style.iconPlate}`}>
+        <Icon className="w-3.5 h-3.5" />
+      </span>
       <span>{label}</span>
     </div>
   );
@@ -754,7 +766,7 @@ export function HowToPlay({ onClose }: HowToPlayProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden">
       {/* Background */}
-      <div className="absolute inset-0 bg-black/90 backdrop-blur-md" />
+      <div className="absolute inset-0 bg-black/88 backdrop-blur-md" />
 
       {/* Ambient glow */}
       <div
@@ -788,14 +800,15 @@ export function HowToPlay({ onClose }: HowToPlayProps) {
       <div className="relative w-full max-w-md mx-4">
         {/* GBA-style frame */}
         <div
-          className="relative rounded-2xl overflow-hidden"
+          className="relative rounded-sm overflow-hidden"
           style={{
-            background: 'linear-gradient(180deg, #1E293B 0%, #0F172A 100%)',
+            background: 'linear-gradient(180deg, #142629 0%, #0f1d20 100%)',
             border: '4px solid',
-            borderColor: '#475569 #1E293B #1E293B #475569',
-            boxShadow: `0 0 60px ${slide.color.from}30, inset 0 0 30px rgba(0,0,0,0.5)`,
+            borderColor: '#8b551f #5a3414 #5a3414 #8b551f',
+            boxShadow: `0 0 60px ${slide.color.from}22, inset 0 0 30px rgba(0,0,0,0.5)`,
           }}
         >
+          <div className="absolute inset-[2px] border border-amber-300/30 rounded-[2px] pointer-events-none" />
           {/* Header */}
           <div
             className="relative px-5 py-4 overflow-hidden"
@@ -814,7 +827,7 @@ export function HowToPlay({ onClose }: HowToPlayProps) {
             {/* Close button */}
             <button
               onClick={onClose}
-              className="absolute top-3 right-3 p-2 bg-black/20 hover:bg-black/40 rounded-full transition-colors z-10"
+              className="absolute top-3 right-3 p-2 bg-black/24 hover:bg-black/44 rounded-sm border border-white/20 transition-colors z-10"
             >
               <X className="w-4 h-4 text-white/80" />
             </button>
@@ -873,7 +886,7 @@ export function HowToPlay({ onClose }: HowToPlayProps) {
           </div>
 
           {/* Navigation */}
-          <div className="px-5 py-4 border-t border-slate-800/50">
+          <div className="px-5 py-4 border-t border-amber-700/40">
             <div className="flex items-center justify-between">
               {/* Prev button */}
               <button
@@ -884,8 +897,8 @@ export function HowToPlay({ onClose }: HowToPlayProps) {
                   font-bold text-xs uppercase tracking-wide
                   transition-all duration-200
                   ${currentSlide === 0
-                    ? 'text-slate-700 cursor-not-allowed'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+                    ? 'text-amber-100/35 cursor-not-allowed'
+                    : 'text-amber-100/75 hover:text-white hover:bg-[#1b3338]/70'
                   }
                 `}
               >
@@ -906,7 +919,7 @@ export function HowToPlay({ onClose }: HowToPlayProps) {
                         w-2 h-2 rounded-full transition-all duration-300
                         ${i === currentSlide
                           ? 'w-6 bg-white shadow-lg'
-                          : 'bg-slate-700 group-hover:bg-slate-500'
+                          : 'bg-amber-100/25 group-hover:bg-amber-100/45'
                         }
                       `}
                       style={{
@@ -941,7 +954,7 @@ export function HowToPlay({ onClose }: HowToPlayProps) {
                   className="
                     group flex items-center gap-2 px-4 py-2.5 rounded-xl
                     font-bold text-xs uppercase tracking-wide
-                    bg-slate-800 hover:bg-slate-700
+                    bg-[#1b3338] hover:bg-[#224046]
                     text-white
                     transition-all duration-200
                     hover:scale-105 active:scale-95

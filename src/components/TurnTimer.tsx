@@ -81,19 +81,21 @@ export function TurnTimer({
 
   // Color based on state and player
   const getColor = () => {
-    if (isCritical) return 'rgb(239, 68, 68)'; // red-500
+    if (isCritical) return 'rgb(244, 63, 94)'; // rose-500
     if (isWarning) return 'rgb(245, 158, 11)'; // amber-500
-    return playerColor === 'blue' ? 'rgb(59, 130, 246)' : 'rgb(239, 68, 68)';
+    return playerColor === 'blue' ? 'rgb(56, 189, 248)' : 'rgb(244, 63, 94)';
   };
 
   if (compact) {
     return (
       <div className={`
-        flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-mono font-bold
+        flex items-center gap-1.5 px-2 py-1 rounded text-xs font-mono font-bold border
         transition-all duration-300
-        ${isCritical ? 'bg-red-900/80 text-red-300 animate-pulse' :
-          isWarning ? 'bg-amber-900/80 text-amber-300' :
-          'bg-slate-800/80 text-slate-300'}
+        ${isCritical ? 'bg-rose-900/80 border-rose-500/50 text-rose-200 animate-pulse' :
+          isWarning ? 'bg-amber-900/80 border-amber-500/50 text-amber-200' :
+          playerColor === 'blue'
+            ? 'bg-sky-950/70 border-sky-500/45 text-sky-100'
+            : 'bg-rose-950/70 border-rose-500/45 text-rose-100'}
       `}>
         <Clock className="w-3 h-3" />
         <span>{timeLeft}s</span>
@@ -103,19 +105,21 @@ export function TurnTimer({
 
   return (
     <div className={`
-      relative flex items-center gap-2 px-3 py-2 rounded-lg
-      bg-slate-900/90 border backdrop-blur-sm
+      relative flex items-center gap-2 px-3 py-2 rounded-sm border-[2px]
+      bg-gradient-to-b from-[#f3e7c7] to-[#e4d4ad] backdrop-blur-sm
       transition-all duration-300
-      ${isCritical ? 'border-red-500/70 shadow-lg shadow-red-500/20' :
-        isWarning ? 'border-amber-500/50' :
-        'border-slate-700/50'}
+      ${isCritical ? 'border-rose-500/75 shadow-[3px_3px_0_0_rgba(159,18,57,0.35)]' :
+        isWarning ? 'border-amber-600/75 shadow-[3px_3px_0_0_rgba(146,64,14,0.28)]' :
+        playerColor === 'blue'
+          ? 'border-sky-500/75 shadow-[3px_3px_0_0_rgba(12,74,110,0.28)]'
+          : 'border-rose-500/75 shadow-[3px_3px_0_0_rgba(127,29,29,0.28)]'}
     `}>
       {/* Timer icon */}
       <div className={`relative ${isCritical ? 'animate-bounce' : ''}`}>
         {isCritical ? (
-          <AlertTriangle className="w-5 h-5 text-red-400" />
+          <AlertTriangle className="w-5 h-5 text-rose-500" />
         ) : (
-          <Clock className={`w-5 h-5 ${isWarning ? 'text-amber-400' : 'text-slate-400'}`} />
+          <Clock className={`w-5 h-5 ${isWarning ? 'text-amber-600' : playerColor === 'blue' ? 'text-sky-700' : 'text-rose-700'}`} />
         )}
       </div>
 
@@ -123,17 +127,17 @@ export function TurnTimer({
       <div className="flex flex-col">
         <span className={`
           text-lg font-mono font-bold leading-none
-          ${isCritical ? 'text-red-400' : isWarning ? 'text-amber-400' : 'text-slate-200'}
+          ${isCritical ? 'text-rose-700' : isWarning ? 'text-amber-700' : 'text-slate-800'}
         `}>
           {timeLeft}
         </span>
-        <span className="text-[9px] text-slate-500 uppercase tracking-wider">
+        <span className="text-[9px] text-slate-600 uppercase tracking-wider">
           segundos
         </span>
       </div>
 
       {/* Progress bar */}
-      <div className="absolute bottom-0 left-0 right-0 h-1 bg-slate-800 rounded-b-lg overflow-hidden">
+      <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/20 rounded-b-sm overflow-hidden">
         <div
           className="h-full transition-all duration-1000 ease-linear"
           style={{
@@ -145,7 +149,7 @@ export function TurnTimer({
 
       {/* Critical warning text */}
       {isCritical && (
-        <span className="absolute -top-2 -right-2 px-1.5 py-0.5 bg-red-500 text-white text-[8px] font-bold rounded-full animate-pulse">
+        <span className="absolute -top-2 -right-2 px-1.5 py-0.5 bg-rose-500 text-white text-[8px] font-bold rounded-full animate-pulse">
           !
         </span>
       )}

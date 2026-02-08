@@ -18,21 +18,21 @@ interface UnitInfoProps {
 export function UnitInfo({ unit }: UnitInfoProps) {
   if (!unit) {
     return (
-      <div className="bg-slate-800/50 rounded-xl border border-dashed border-slate-600 p-8 text-center text-slate-500 flex flex-col items-center">
+      <div className="bg-[#132327]/85 rounded-sm border-2 border-dashed border-amber-700/45 p-8 text-center text-amber-100/65 flex flex-col items-center">
         <HandMetal className="mb-2 opacity-50" />
         <p>Selecciona una unidad<br />para ver sus estadísticas</p>
       </div>
     );
   }
 
-  const borderColor = unit.owner === 'P1' ? 'border-blue-500' : 'border-red-500';
+  const borderColor = unit.owner === 'P1' ? 'border-sky-500/60' : 'border-rose-500/60';
 
   return (
-    <div className={`p-5 rounded-xl border-l-4 shadow-xl bg-slate-800 ${borderColor}`}>
+    <div className={`p-5 rounded-sm border-[2px] shadow-xl bg-[#112125]/95 ${borderColor}`}>
       {/* Header */}
       <div className="flex justify-between items-start mb-4">
         <div>
-          <h3 className="text-xl font-bold">{unit.template.name}</h3>
+          <h3 className="text-xl font-bold text-amber-50">{unit.template.name}</h3>
           <div className="flex gap-1 mt-1">
             {unit.template.types.map(type => (
               <span
@@ -45,70 +45,70 @@ export function UnitInfo({ unit }: UnitInfoProps) {
           </div>
         </div>
         <div className="text-right">
-          <span className="text-2xl font-mono font-bold">{unit.currentHp}</span>
-          <span className="text-xs text-slate-400 block">HP</span>
+          <span className="text-2xl font-mono font-bold text-amber-100">{unit.currentHp}</span>
+          <span className="text-xs text-amber-100/65 block">HP</span>
         </div>
       </div>
 
       {/* Ability */}
-      <div className="bg-slate-700/50 rounded-lg px-3 py-2 mb-3">
+      <div className="bg-[#1a2d31]/85 rounded-md px-3 py-2 mb-3 border border-amber-700/35">
         <div className="flex items-center gap-2 text-xs">
-          <Sparkles size={12} className="text-yellow-400" />
-          <span className="text-slate-300 font-bold">{unit.template.ability.name}</span>
-          <span className="text-slate-500 ml-auto truncate">{unit.template.ability.description}</span>
+          <Sparkles size={12} className="text-amber-300" />
+          <span className="text-amber-100 font-bold">{unit.template.ability.name}</span>
+          <span className="text-amber-100/60 ml-auto truncate">{unit.template.ability.description}</span>
         </div>
       </div>
 
       {/* Status effect */}
       {unit.status && (
-        <div className={`bg-slate-700/50 rounded-lg px-3 py-2 mb-3 text-xs font-bold ${STATUS_LABELS[unit.status]?.color ?? 'text-slate-300'}`}>
+        <div className={`bg-[#1a2d31]/85 border border-amber-700/35 rounded-md px-3 py-2 mb-3 text-xs font-bold ${STATUS_LABELS[unit.status]?.color ?? 'text-amber-100'}`}>
           {STATUS_LABELS[unit.status]?.label ?? unit.status} ({unit.statusTurns} turnos)
         </div>
       )}
 
       {/* Moves */}
-      <div className="bg-slate-700/50 rounded-lg p-3 mb-3 space-y-2">
+      <div className="bg-[#1a2d31]/85 rounded-md p-3 mb-3 space-y-2 border border-amber-700/35">
         <div className="flex items-center gap-2 mb-1">
-          <Sword size={14} className="text-orange-400" />
-          <span className="font-bold text-xs text-slate-300">MOVIMIENTOS</span>
+          <Sword size={14} className="text-orange-300" />
+          <span className="font-bold text-xs text-amber-100">MOVIMIENTOS</span>
         </div>
         {unit.template.moves.map((move, i) => (
           <div key={move.id} className="flex items-center gap-2 text-xs">
             <span className={`px-1 py-0.5 rounded text-white font-bold text-[9px] ${TYPE_COLORS[move.type]}`}>
               {move.type.slice(0, 3).toUpperCase()}
             </span>
-            <span className="text-slate-200 flex-1 truncate">{move.name}</span>
-            <span className="text-slate-500">{move.power > 0 ? `P${move.power}` : '—'}</span>
-            <span className="text-slate-400 font-mono">{unit.pp[i] ?? 0}/{move.pp}</span>
+            <span className="text-amber-50 flex-1 truncate">{move.name}</span>
+            <span className="text-amber-100/70">{move.power > 0 ? `P${move.power}` : '—'}</span>
+            <span className="text-amber-100/80 font-mono">{unit.pp[i] ?? 0}/{move.pp}</span>
           </div>
         ))}
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-2 text-xs text-slate-400">
-        <div className="flex justify-between bg-slate-700/30 p-2 rounded">
+      <div className="grid grid-cols-3 gap-2 text-xs text-amber-100/70">
+        <div className="flex justify-between bg-[#1a2d31]/82 p-2 rounded border border-amber-800/30">
           <span>Ataque</span>
-          <span className="text-white font-bold">{unit.template.atk}</span>
+          <span className="text-amber-50 font-bold">{unit.template.atk}</span>
         </div>
-        <div className="flex justify-between bg-slate-700/30 p-2 rounded">
+        <div className="flex justify-between bg-[#1a2d31]/82 p-2 rounded border border-amber-800/30">
           <span>Defensa</span>
-          <span className="text-white font-bold">{unit.template.def}</span>
+          <span className="text-amber-50 font-bold">{unit.template.def}</span>
         </div>
-        <div className="flex justify-between bg-slate-700/30 p-2 rounded">
+        <div className="flex justify-between bg-[#1a2d31]/82 p-2 rounded border border-amber-800/30">
           <span>At.Esp</span>
-          <span className="text-white font-bold">{unit.template.spa}</span>
+          <span className="text-amber-50 font-bold">{unit.template.spa}</span>
         </div>
-        <div className="flex justify-between bg-slate-700/30 p-2 rounded">
+        <div className="flex justify-between bg-[#1a2d31]/82 p-2 rounded border border-amber-800/30">
           <span>Def.Esp</span>
-          <span className="text-white font-bold">{unit.template.spd}</span>
+          <span className="text-amber-50 font-bold">{unit.template.spd}</span>
         </div>
-        <div className="flex justify-between bg-slate-700/30 p-2 rounded">
+        <div className="flex justify-between bg-[#1a2d31]/82 p-2 rounded border border-amber-800/30">
           <span>Velocidad</span>
-          <span className="text-white font-bold">{unit.template.spe}</span>
+          <span className="text-amber-50 font-bold">{unit.template.spe}</span>
         </div>
-        <div className="flex justify-between bg-slate-700/30 p-2 rounded">
+        <div className="flex justify-between bg-[#1a2d31]/82 p-2 rounded border border-amber-800/30">
           <span>MOV</span>
-          <span className="text-white font-bold">{unit.template.mov}</span>
+          <span className="text-amber-50 font-bold">{unit.template.mov}</span>
         </div>
       </div>
     </div>

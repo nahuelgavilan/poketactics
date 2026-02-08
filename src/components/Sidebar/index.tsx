@@ -18,7 +18,7 @@ export function Sidebar({ selectedUnit, logs, onEndTurn }: SidebarProps) {
 
       <button
         onClick={onEndTurn}
-        className="w-full py-3 bg-slate-700 hover:bg-slate-600 text-slate-300 font-bold rounded-xl transition-colors"
+        className="w-full py-3 ui-plate border-amber-700/80 hover:from-[#f8efd4] hover:to-[#ecddba] text-[var(--ui-text-dark)] font-bold rounded-sm transition-colors"
       >
         Pasar Turno
       </button>
