@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { getAnimatedFrontSprite } from '../utils/sprites';
 import { useSFX } from '../hooks/useSFX';
-import { calculateBaseDamage, checkAccuracy, getFullEffectiveness, isStab as checkIsStab, CRIT_CHANCE, CRIT_MULTIPLIER, VARIANCE_MIN, VARIANCE_MAX } from '@poketactics/shared';
+import { calculateBaseDamage, checkAccuracy, CRIT_CHANCE, CRIT_MULTIPLIER, VARIANCE_MIN, VARIANCE_MAX, TERRAIN } from '@poketactics/shared';
 import type { PokemonTemplate, Player, PokemonType, Move } from '../types/game';
 
 interface CaptureMinigameProps {
@@ -115,8 +115,8 @@ function calcMoveDamage(move: Move, attacker: PokemonTemplate, defender: Pokemon
     attackerTypes: attacker.types,
     defenderTemplate: defender,
     defenderTypes: defender.types,
-    attackerTerrain: 1 as any, // grass (capture happens in tall grass)
-    defenderTerrain: 1 as any,
+    attackerTerrain: TERRAIN.TALL_GRASS,
+    defenderTerrain: TERRAIN.TALL_GRASS,
   });
 
   // Crit check
@@ -126,7 +126,7 @@ function calcMoveDamage(move: Move, attacker: PokemonTemplate, defender: Pokemon
   // Variance
   const variance = VARIANCE_MIN + Math.random() * (VARIANCE_MAX - VARIANCE_MIN);
 
-  const finalDamage = Math.max(1, Math.floor(result.base * critMul * variance));
+  const finalDamage = move.category === 'status' ? 0 : Math.max(1, Math.floor(result.base * critMul * variance));
   return { damage: finalDamage, effectiveness: result.effectiveness, stab: result.isStab, missed: false, critical };
 }
 
@@ -985,7 +985,7 @@ export function CaptureMinigame({
                     {activePlayerPokemon.moves.map((move, i) => {
                       const hasPP = localPP[i] > 0;
                       const isStab = activePlayerPokemon.types.includes(move.type);
-                      const isUsable = hasPP && move.category !== 'status';
+                      const isUsable = hasPP;
                       const moveTypeColor = TYPE_COLORS[move.type] || TYPE_COLORS.normal;
 
                       return (

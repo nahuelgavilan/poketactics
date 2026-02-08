@@ -64,10 +64,10 @@ export function MultiplayerLobby({
           <button
             type="button"
             onClick={onBack}
-            className="self-start inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-500/70 bg-slate-900/80 hover:bg-slate-800/95 transition-colors"
+            className="self-start inline-flex items-center gap-2 px-3 py-2 rounded-sm border-[2px] border-amber-500/80 bg-slate-900/85 hover:bg-slate-800/95 transition-colors"
           >
             <ArrowLeft className="w-4 h-4 text-slate-100" />
-            <span className="font-display text-[10px] uppercase tracking-[0.12em] text-slate-100">
+            <span className="text-[9px] uppercase tracking-[0.12em] text-slate-100" style={{ fontFamily: '"Press Start 2P", monospace' }}>
               Volver
             </span>
           </button>
@@ -86,8 +86,11 @@ export function MultiplayerLobby({
             <div className="grid grid-cols-1 lg:grid-cols-[1.3fr_0.7fr] gap-3 md:gap-4">
               <div className="space-y-3">
                 {error && (
-                  <div className="border border-red-400/70 bg-red-950/45 rounded-xl p-3">
-                    <p className="font-display text-[10px] uppercase tracking-[0.1em] text-red-200">
+                  <div className="border-[2px] border-red-400/80 bg-red-950/45 rounded-sm p-3">
+                    <p
+                      className="text-[9px] uppercase tracking-[0.11em] text-red-200"
+                      style={{ fontFamily: '"Press Start 2P", monospace' }}
+                    >
                       {error}
                     </p>
                   </div>
@@ -95,11 +98,11 @@ export function MultiplayerLobby({
 
                 {roomStatus === 'none' && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div className="border border-slate-600/80 bg-slate-950/70 rounded-xl p-3 space-y-3">
-                      <p className="font-display text-[10px] uppercase tracking-[0.12em] text-slate-200">
+                    <div className="border-[2px] border-amber-700/75 bg-slate-950/75 rounded-sm p-3 space-y-3">
+                      <p className="text-[9px] uppercase tracking-[0.12em] text-slate-200" style={{ fontFamily: '"Press Start 2P", monospace' }}>
                         Host lobby
                       </p>
-                      <p className="font-ui text-[12px] tracking-[0.03em] text-slate-400">
+                      <p className="text-[12px] tracking-[0.02em] text-slate-300 font-ui">
                         Create a room and share the code.
                       </p>
                       <MenuActionButton
@@ -112,8 +115,8 @@ export function MultiplayerLobby({
                       />
                     </div>
 
-                    <div className="border border-slate-600/80 bg-slate-950/70 rounded-xl p-3 space-y-3">
-                      <p className="font-display text-[10px] uppercase tracking-[0.12em] text-slate-200">
+                    <div className="border-[2px] border-amber-700/75 bg-slate-950/75 rounded-sm p-3 space-y-3">
+                      <p className="text-[9px] uppercase tracking-[0.12em] text-slate-200" style={{ fontFamily: '"Press Start 2P", monospace' }}>
                         Join lobby
                       </p>
                       <input
@@ -138,8 +141,8 @@ export function MultiplayerLobby({
 
                 {(roomStatus === 'waiting' || roomStatus === 'ready') && roomId && (
                   <div className="space-y-3">
-                    <div className="border border-slate-600/80 bg-slate-950/75 rounded-xl p-3">
-                      <p className="font-display text-[10px] uppercase tracking-[0.12em] text-slate-400 mb-2">
+                    <div className="border-[2px] border-amber-700/75 bg-slate-950/75 rounded-sm p-3">
+                      <p className="text-[8px] uppercase tracking-[0.12em] text-slate-400 mb-2" style={{ fontFamily: '"Press Start 2P", monospace' }}>
                         Codigo de Sala
                       </p>
                       <div className="flex flex-col sm:flex-row sm:items-center gap-2">
@@ -149,22 +152,22 @@ export function MultiplayerLobby({
                         <button
                           type="button"
                           onClick={handleCopyCode}
-                          className="px-3 py-2 border border-slate-600 rounded-lg bg-slate-900 hover:bg-slate-800 transition-colors inline-flex items-center justify-center gap-2"
+                          className="px-3 py-2 border border-slate-600 rounded-sm bg-slate-900 hover:bg-slate-800 transition-colors inline-flex items-center justify-center gap-2"
                         >
                           {copied ? <CheckCircle className="w-4 h-4 text-emerald-300" /> : <Copy className="w-4 h-4 text-slate-200" />}
-                          <span className="font-display text-[10px] uppercase tracking-[0.1em] text-slate-200">
+                          <span className="text-[8px] uppercase tracking-[0.1em] text-slate-200" style={{ fontFamily: '"Press Start 2P", monospace' }}>
                             {copied ? 'Copiado' : 'Copiar'}
                           </span>
                         </button>
                       </div>
                     </div>
 
-                    <div className="border border-slate-600/80 bg-slate-950/75 rounded-xl p-3 space-y-2">
+                    <div className="border-[2px] border-amber-700/75 bg-slate-950/75 rounded-sm p-3 space-y-2">
                       <div className={`flex items-center gap-2 px-2 py-2 rounded-sm border ${
                         isHost ? 'border-blue-400/60 bg-blue-900/35' : 'border-slate-600 bg-slate-900/60'
                       }`}>
                         <div className="w-2.5 h-2.5 rounded-full bg-blue-400" />
-                        <p className="font-display text-[10px] uppercase tracking-[0.1em] text-slate-100">
+                        <p className="text-[8px] uppercase tracking-[0.1em] text-slate-100" style={{ fontFamily: '"Press Start 2P", monospace' }}>
                           Jugador 1 {isHost ? '(tu host)' : ''}
                         </p>
                         <CheckCircle className="w-4 h-4 text-emerald-300 ml-auto" />
@@ -174,7 +177,7 @@ export function MultiplayerLobby({
                         hasOpponent ? 'border-red-400/60 bg-red-900/35' : 'border-slate-600 bg-slate-900/60'
                       }`}>
                         <div className={`w-2.5 h-2.5 rounded-full ${hasOpponent ? 'bg-red-400' : 'bg-slate-500'}`} />
-                        <p className="font-display text-[10px] uppercase tracking-[0.1em] text-slate-100">
+                        <p className="text-[8px] uppercase tracking-[0.1em] text-slate-100" style={{ fontFamily: '"Press Start 2P", monospace' }}>
                           Jugador 2 {!isHost && hasOpponent ? '(tu)' : hasOpponent ? '' : '(esperando)'}
                         </p>
                         {hasOpponent ? (
@@ -195,9 +198,9 @@ export function MultiplayerLobby({
                         subtitle={hasOpponent ? 'Launch battle now' : 'Need second player'}
                       />
                     ) : (
-                      <div className="border border-slate-600/80 bg-slate-950/75 rounded-xl p-3 text-center">
+                      <div className="border-[2px] border-amber-700/75 bg-slate-950/75 rounded-sm p-3 text-center">
                         <Loader2 className="w-5 h-5 text-blue-300 animate-spin mx-auto mb-2" />
-                        <p className="font-display text-[10px] uppercase tracking-[0.1em] text-slate-300">
+                        <p className="text-[8px] uppercase tracking-[0.1em] text-slate-300" style={{ fontFamily: '"Press Start 2P", monospace' }}>
                           Waiting host to start
                         </p>
                       </div>
@@ -206,19 +209,19 @@ export function MultiplayerLobby({
                 )}
 
                 {(roomStatus === 'creating' || roomStatus === 'joining') && (
-                  <div className="border border-slate-600/80 bg-slate-950/75 rounded-xl p-5 text-center">
+                  <div className="border-[2px] border-amber-700/75 bg-slate-950/75 rounded-sm p-5 text-center">
                     <Loader2 className="w-8 h-8 text-blue-300 animate-spin mx-auto mb-3" />
-                    <p className="font-display text-[10px] uppercase tracking-[0.12em] text-slate-200">
+                    <p className="text-[9px] uppercase tracking-[0.12em] text-slate-200" style={{ fontFamily: '"Press Start 2P", monospace' }}>
                       {roomStatus === 'creating' ? 'Creando sala' : 'Uniendo jugador'}
                     </p>
                   </div>
                 )}
               </div>
 
-              <div className="border border-slate-600/80 bg-slate-950/70 rounded-xl p-3 space-y-3">
+              <div className="border-[2px] border-amber-700/75 bg-slate-950/75 rounded-sm p-3 space-y-3">
                 <div className="flex items-center gap-2">
                   <Radio className="w-4 h-4 text-amber-300" />
-                  <p className="font-display text-[10px] uppercase tracking-[0.12em] text-amber-200">
+                  <p className="text-[9px] uppercase tracking-[0.12em] text-amber-200" style={{ fontFamily: '"Press Start 2P", monospace' }}>
                     Network State
                   </p>
                 </div>
@@ -227,7 +230,7 @@ export function MultiplayerLobby({
                   {connectionStatus === 'connecting' && <Loader2 className="w-4 h-4 text-amber-300 animate-spin" />}
                   {connectionStatus === 'connected' && <Wifi className="w-4 h-4 text-emerald-300" />}
                   {connectionStatus === 'disconnected' && <WifiOff className="w-4 h-4 text-red-300" />}
-                  <p className="font-display text-[10px] uppercase tracking-[0.1em] text-slate-100">
+                  <p className="text-[8px] uppercase tracking-[0.1em] text-slate-100" style={{ fontFamily: '"Press Start 2P", monospace' }}>
                     {connectionStatus}
                   </p>
                 </div>

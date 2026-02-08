@@ -76,7 +76,7 @@ export function MoveSelector({ attacker, target, onSelectMove, onCancel }: MoveS
             {attacker.template.moves.map((move, i) => {
               const hasPP = attacker.pp[i] > 0;
               const inRange = move.range >= distance;
-              const isUsable = hasPP && inRange && move.category !== 'status';
+              const isUsable = hasPP && inRange;
               const isStab = attacker.template.types.includes(move.type);
 
               return (

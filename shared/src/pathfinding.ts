@@ -1,5 +1,6 @@
 import { TERRAIN_GAME_PROPS } from './terrain';
-import type { PokemonType, Position, GameMap } from './types';
+import { getMovReduction } from './status';
+import type { PokemonType, Position, GameMap, StatusEffect } from './types';
 
 export interface PathfindingUnit {
   x: number;
@@ -7,6 +8,7 @@ export interface PathfindingUnit {
   owner: string;
   uid: string;
   hasMoved: boolean;
+  status?: StatusEffect | null;
   template: {
     types: PokemonType[];
     mov: number;
@@ -27,6 +29,7 @@ export function calculateMoveRange(
   units: PathfindingUnit[]
 ): Position[] {
   if (unit.hasMoved) return [];
+  const effectiveMov = getMovReduction(unit.status ?? null, unit.template.mov);
 
   const costs: Record<string, number> = {};
   const queue: QueueNode[] = [{ x: unit.x, y: unit.y, cost: 0 }];
@@ -39,7 +42,7 @@ export function calculateMoveRange(
     queue.sort((a, b) => a.cost - b.cost);
     const curr = queue.shift()!;
 
-    if (curr.cost < unit.template.mov) {
+    if (curr.cost < effectiveMov) {
       for (const [dx, dy] of DIRECTIONS) {
         const nx = curr.x + dx;
         const ny = curr.y + dy;
@@ -57,7 +60,7 @@ export function calculateMoveRange(
 
         const newCost = curr.cost + cost;
 
-        if (newCost <= unit.template.mov) {
+        if (newCost <= effectiveMov) {
           const key = `${nx},${ny}`;
 
           if (costs[key] === undefined || newCost < costs[key]) {

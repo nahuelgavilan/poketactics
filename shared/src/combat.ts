@@ -1,6 +1,7 @@
 import { TYPE_CHART } from './typeChart';
 import { TERRAIN_GAME_PROPS, TERRAIN_TYPE_BONUS, hasTerrainTypeBonus } from './terrain';
-import type { PokemonType, PokemonTemplate, TerrainType, Move, StatusEffect } from './types';
+import { getAbilityAttackModifier, getAbilityDefenseModifier, applySturdy } from './abilities';
+import type { PokemonType, PokemonTemplate, TerrainType, Move, StatusEffect, Ability } from './types';
 
 // ── Constants ─────────────────────────────────────────────────────────
 
@@ -56,6 +57,29 @@ export interface DamageCalcResult {
   terrainBonus: number;
 }
 
+export interface DamageRollInput extends DamageCalcInput {
+  attackerAbility: Ability;
+  defenderAbility: Ability;
+  attackerCurrentHp: number;
+  attackerMaxHp: number;
+  defenderCurrentHp: number;
+  defenderMaxHp: number;
+  defenderStatus?: StatusEffect | null;
+  forceCrit?: boolean;
+  forceMiss?: boolean;
+}
+
+export interface DamageRollResult {
+  damage: number;
+  effectiveness: number;
+  isCritical: boolean;
+  isStab: boolean;
+  missed: boolean;
+  terrainBonus: number;
+  typeTerrainBonus: boolean;
+  statusApplied?: StatusEffect;
+}
+
 export function calculateBaseDamage(input: DamageCalcInput): DamageCalcResult {
   const { move, attackerTemplate, attackerTypes, defenderTemplate, defenderTypes,
     attackerTerrain, defenderTerrain, isCounter = false, attackerStatus } = input;
@@ -109,6 +133,127 @@ export function calculateBaseDamage(input: DamageCalcInput): DamageCalcResult {
 export function checkAccuracy(move: Move): boolean {
   if (move.accuracy >= 100) return true;
   return Math.random() * 100 < move.accuracy;
+}
+
+// ── Full damage roll with abilities, crit, variance and status ───────
+
+export function rollDamage(input: DamageRollInput): DamageRollResult {
+  const {
+    move,
+    attackerTemplate,
+    attackerTypes,
+    defenderTemplate,
+    defenderTypes,
+    attackerTerrain,
+    defenderTerrain,
+    attackerAbility,
+    defenderAbility,
+    attackerCurrentHp,
+    attackerMaxHp,
+    defenderCurrentHp,
+    defenderMaxHp,
+    attackerStatus,
+    defenderStatus,
+    isCounter = false,
+    forceCrit,
+    forceMiss,
+  } = input;
+
+  const missed = forceMiss !== undefined ? forceMiss : !checkAccuracy(move);
+  if (missed) {
+    return {
+      damage: 0,
+      effectiveness: getFullEffectiveness(move.type, defenderTypes),
+      isCritical: false,
+      isStab: isStab(move.type, attackerTypes),
+      missed: true,
+      terrainBonus: 0,
+      typeTerrainBonus: false,
+    };
+  }
+
+  const { base, effectiveness, isStab: stab, typeTerrainBonus, terrainBonus } = calculateBaseDamage({
+    move,
+    attackerTemplate,
+    attackerTypes,
+    defenderTemplate,
+    defenderTypes,
+    attackerTerrain,
+    defenderTerrain,
+    isCounter,
+    attackerStatus,
+  });
+
+  const abilityAtk = getAbilityAttackModifier(
+    attackerAbility,
+    move,
+    attackerTypes,
+    attackerCurrentHp,
+    attackerMaxHp,
+    attackerStatus ?? null
+  );
+  const abilityDef = getAbilityDefenseModifier(
+    defenderAbility,
+    move,
+    defenderStatus ?? null,
+    defenderCurrentHp,
+    defenderMaxHp
+  );
+
+  if (abilityDef.multiplier === 0) {
+    return {
+      damage: 0,
+      effectiveness: 0,
+      isCritical: false,
+      isStab: stab,
+      missed: false,
+      terrainBonus,
+      typeTerrainBonus,
+    };
+  }
+
+  let statusApplied: StatusEffect | undefined;
+  const statusChance = move.effect ? (move.effectChance ?? 100) : 0;
+  if (move.effect && statusChance > 0 && !defenderStatus) {
+    if (Math.random() * 100 < statusChance) {
+      statusApplied = move.effect;
+    }
+  }
+
+  // Status moves can apply effects but should never deal damage.
+  if (move.category === 'status') {
+    return {
+      damage: 0,
+      effectiveness,
+      isCritical: false,
+      isStab: stab,
+      missed: false,
+      terrainBonus,
+      typeTerrainBonus,
+      statusApplied,
+    };
+  }
+
+  const isCritical = forceCrit !== undefined ? forceCrit : Math.random() < CRIT_CHANCE;
+  const critMultiplier = isCritical ? CRIT_MULTIPLIER : 1;
+  const variance = VARIANCE_MIN + Math.random() * (VARIANCE_MAX - VARIANCE_MIN);
+
+  let damage = Math.max(
+    1,
+    Math.floor(base * critMultiplier * variance * abilityAtk.multiplier * abilityDef.multiplier)
+  );
+  damage = applySturdy(defenderAbility, defenderCurrentHp, defenderMaxHp, damage);
+
+  return {
+    damage,
+    effectiveness,
+    isCritical,
+    isStab: stab,
+    missed: false,
+    terrainBonus,
+    typeTerrainBonus,
+    statusApplied,
+  };
 }
 
 // ── Max attack range across all moves ─────────────────────────────────

@@ -5,76 +5,63 @@ type MenuAccent = 'blue' | 'red' | 'green' | 'amber' | 'violet' | 'slate';
 
 const ACCENT_STYLES: Record<MenuAccent, {
   title: string;
-  titleGlow: string;
   border: string;
   innerBorder: string;
-  softGlow: string;
+  glow: string;
   badge: string;
 }> = {
   blue: {
-    title: 'from-blue-700 via-blue-600 to-indigo-600',
-    titleGlow: 'shadow-[0_0_24px_rgba(59,130,246,0.45)]',
-    border: 'border-blue-400/40',
-    innerBorder: 'border-blue-200/22',
-    softGlow: 'bg-blue-500/12',
-    badge: 'bg-blue-900/70 border-blue-300/50 text-blue-100',
+    title: 'from-blue-700 via-blue-600 to-indigo-700 border-blue-900',
+    border: 'border-blue-700/80',
+    innerBorder: 'border-blue-200/35',
+    glow: 'bg-blue-500/20',
+    badge: 'bg-blue-900/70 border-blue-500/60 text-blue-100',
   },
   red: {
-    title: 'from-red-700 via-red-600 to-rose-600',
-    titleGlow: 'shadow-[0_0_24px_rgba(239,68,68,0.45)]',
-    border: 'border-red-400/40',
-    innerBorder: 'border-red-200/22',
-    softGlow: 'bg-red-500/12',
-    badge: 'bg-red-900/70 border-red-300/50 text-red-100',
+    title: 'from-red-700 via-red-600 to-rose-700 border-red-900',
+    border: 'border-red-700/80',
+    innerBorder: 'border-red-200/35',
+    glow: 'bg-red-500/20',
+    badge: 'bg-red-900/70 border-red-500/60 text-red-100',
   },
   green: {
-    title: 'from-emerald-700 via-emerald-600 to-teal-600',
-    titleGlow: 'shadow-[0_0_24px_rgba(16,185,129,0.45)]',
-    border: 'border-emerald-400/40',
-    innerBorder: 'border-emerald-200/22',
-    softGlow: 'bg-emerald-500/12',
-    badge: 'bg-emerald-900/70 border-emerald-300/50 text-emerald-100',
+    title: 'from-emerald-700 via-emerald-600 to-teal-700 border-emerald-900',
+    border: 'border-emerald-700/80',
+    innerBorder: 'border-emerald-200/35',
+    glow: 'bg-emerald-500/20',
+    badge: 'bg-emerald-900/70 border-emerald-500/60 text-emerald-100',
   },
   amber: {
-    title: 'from-amber-600 via-amber-500 to-orange-500',
-    titleGlow: 'shadow-[0_0_24px_rgba(251,191,36,0.45)]',
-    border: 'border-amber-300/45',
-    innerBorder: 'border-amber-200/24',
-    softGlow: 'bg-amber-500/12',
-    badge: 'bg-amber-900/70 border-amber-300/50 text-amber-100',
+    title: 'from-amber-700 via-amber-600 to-orange-700 border-amber-900',
+    border: 'border-amber-700/80',
+    innerBorder: 'border-amber-300/45',
+    glow: 'bg-amber-500/20',
+    badge: 'bg-amber-900/70 border-amber-500/60 text-amber-100',
   },
   violet: {
-    title: 'from-violet-700 via-violet-600 to-indigo-600',
-    titleGlow: 'shadow-[0_0_24px_rgba(139,92,246,0.45)]',
-    border: 'border-violet-400/40',
-    innerBorder: 'border-violet-200/22',
-    softGlow: 'bg-violet-500/12',
-    badge: 'bg-violet-900/70 border-violet-300/50 text-violet-100',
+    title: 'from-violet-700 via-violet-600 to-indigo-700 border-violet-900',
+    border: 'border-violet-700/80',
+    innerBorder: 'border-violet-200/35',
+    glow: 'bg-violet-500/20',
+    badge: 'bg-violet-900/70 border-violet-500/60 text-violet-100',
   },
   slate: {
-    title: 'from-slate-700 via-slate-600 to-slate-500',
-    titleGlow: 'shadow-[0_0_24px_rgba(148,163,184,0.35)]',
-    border: 'border-slate-300/30',
-    innerBorder: 'border-slate-100/14',
-    softGlow: 'bg-slate-400/8',
-    badge: 'bg-slate-900/70 border-slate-300/45 text-slate-100',
+    title: 'from-slate-700 via-slate-600 to-slate-700 border-slate-900',
+    border: 'border-slate-700/80',
+    innerBorder: 'border-slate-300/30',
+    glow: 'bg-slate-500/20',
+    badge: 'bg-slate-900/70 border-slate-500/60 text-slate-100',
   },
 };
 
-const MENU_PARTICLES = Array.from({ length: 20 }, (_, i) => ({
+const MENU_PARTICLES = Array.from({ length: 24 }, (_, i) => ({
   id: i,
   x: Math.random() * 100,
   y: Math.random() * 100,
-  size: 1.5 + Math.random() * 2.8,
+  size: 1 + Math.random() * 3,
   delay: Math.random() * 3,
-  duration: 4 + Math.random() * 5,
-  hue: i % 4 === 0
-    ? 'rgba(96, 165, 250, 0.78)'
-    : i % 4 === 1
-      ? 'rgba(248, 113, 113, 0.72)'
-      : i % 4 === 2
-        ? 'rgba(251, 191, 36, 0.8)'
-        : 'rgba(45, 212, 191, 0.72)',
+  duration: 4 + Math.random() * 4,
+  hue: i % 3 === 0 ? 'rgba(96, 165, 250, 0.8)' : i % 3 === 1 ? 'rgba(248, 113, 113, 0.8)' : 'rgba(251, 191, 36, 0.8)',
 }));
 
 interface StartMenuShellProps {
@@ -85,36 +72,32 @@ interface StartMenuShellProps {
 export function StartMenuShell({ children, className = '' }: StartMenuShellProps) {
   return (
     <div className={`fixed inset-0 z-50 overflow-hidden select-none ${className}`}>
-      <div className="absolute inset-0 bg-[#05070d]" />
+      <div className="absolute inset-0 bg-[#030305]" />
 
       <div className="absolute inset-0">
         <div
-          className="absolute -top-[26%] left-[9%] h-[56%] w-[44%] rounded-full blur-3xl"
-          style={{ background: 'radial-gradient(circle, rgba(59,130,246,0.35), transparent 72%)' }}
+          className="absolute inset-0 bg-gradient-to-br from-blue-950/70 via-blue-900/20 to-transparent"
+          style={{ clipPath: 'polygon(0 0, 58% 0, 36% 100%, 0 100%)' }}
         />
         <div
-          className="absolute top-[4%] right-[5%] h-[46%] w-[35%] rounded-full blur-3xl"
-          style={{ background: 'radial-gradient(circle, rgba(244,114,182,0.2), transparent 70%)' }}
+          className="absolute inset-0 bg-gradient-to-tl from-red-950/70 via-red-900/20 to-transparent"
+          style={{ clipPath: 'polygon(42% 0, 100% 0, 100% 100%, 64% 100%)' }}
         />
         <div
-          className="absolute -bottom-[22%] right-[13%] h-[48%] w-[38%] rounded-full blur-3xl"
-          style={{ background: 'radial-gradient(circle, rgba(251,191,36,0.24), transparent 72%)' }}
+          className="absolute inset-0 opacity-70"
+          style={{
+            background: 'linear-gradient(135deg, transparent 47%, rgba(251,191,36,0.18) 49%, rgba(251,191,36,0.4) 50%, rgba(251,191,36,0.18) 51%, transparent 53%)',
+          }}
         />
       </div>
 
       <div
-        className="absolute inset-0 opacity-[0.16]"
+        className="absolute inset-0 opacity-15"
         style={{
-          backgroundImage:
-            'linear-gradient(rgba(148,163,184,0.24) 1px, transparent 1px), linear-gradient(90deg, rgba(148,163,184,0.24) 1px, transparent 1px)',
-          backgroundSize: '34px 34px',
-        }}
-      />
-
-      <div
-        className="absolute inset-0 opacity-[0.1]"
-        style={{
-          background: 'linear-gradient(120deg, transparent 44%, rgba(250,204,21,0.38) 50%, transparent 56%)',
+          backgroundImage: 'linear-gradient(rgba(148,163,184,0.22) 1px, transparent 1px), linear-gradient(90deg, rgba(148,163,184,0.22) 1px, transparent 1px)',
+          backgroundSize: '24px 24px',
+          maskImage: 'radial-gradient(circle at center, black 35%, transparent 100%)',
+          WebkitMaskImage: 'radial-gradient(circle at center, black 35%, transparent 100%)',
         }}
       />
 
@@ -129,7 +112,7 @@ export function StartMenuShell({ children, className = '' }: StartMenuShellProps
               width: particle.size,
               height: particle.size,
               background: particle.hue,
-              boxShadow: `0 0 ${particle.size * 2.4}px ${particle.hue}`,
+              boxShadow: `0 0 ${particle.size * 3}px ${particle.hue}`,
               animationDelay: `${particle.delay}s`,
               animationDuration: `${particle.duration}s`,
             }}
@@ -137,8 +120,14 @@ export function StartMenuShell({ children, className = '' }: StartMenuShellProps
         ))}
       </div>
 
-      <div className="absolute inset-0 border-y border-slate-300/15 pointer-events-none" />
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_32%,rgba(0,0,0,0.84)_100%)]" />
+      <div
+        className="absolute inset-0 pointer-events-none opacity-[0.05]"
+        style={{
+          background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.6) 2px, rgba(0,0,0,0.6) 4px)',
+        }}
+      />
+
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_28%,rgba(0,0,0,0.9)_100%)]" />
 
       <div className="relative z-10 min-h-full safe-area-inset">{children}</div>
     </div>
@@ -166,20 +155,25 @@ export function MenuPanel({
 
   return (
     <section
-      className={`relative overflow-hidden rounded-2xl border bg-gradient-to-b from-slate-900/94 via-slate-950/94 to-black/88 shadow-[0_18px_50px_rgba(0,0,0,0.62)] ${style.border} ${className}`}
+      className={`relative bg-gradient-to-b from-slate-900/95 via-slate-950/94 to-black/95 border-[3px] rounded-sm shadow-[0_14px_36px_rgba(0,0,0,0.62)] ${style.border} ${className}`}
     >
-      <div className={`pointer-events-none absolute -inset-14 blur-3xl ${style.softGlow}`} />
-      <div className={`pointer-events-none absolute inset-[5px] rounded-xl border ${style.innerBorder}`} />
+      <div className={`pointer-events-none absolute inset-0 opacity-0 blur-2xl md:opacity-100 ${style.glow}`} />
+      <div className={`pointer-events-none absolute inset-[3px] border ${style.innerBorder}`} />
 
-      <header className={`relative flex items-center justify-between gap-3 border-b border-white/10 px-4 py-3 md:px-5 md:py-3.5 bg-gradient-to-r ${style.title} ${style.titleGlow}`}>
-        <div className="flex min-w-0 items-center gap-2">
-          <Sparkles className="h-4 w-4 text-white/90" />
+      <header className={`relative px-3 py-2 border-b-2 bg-gradient-to-r ${style.title} flex items-center justify-between gap-2`}>
+        <div className="flex items-center gap-1.5 min-w-0">
+          <Sparkles className="w-3.5 h-3.5 text-amber-100/95 flex-shrink-0" />
           <div className="min-w-0">
-            <p className="font-display truncate text-[11px] uppercase tracking-[0.18em] text-white/95">
+            <p
+              className="text-[10px] md:text-[11px] uppercase tracking-[0.13em] text-amber-100 drop-shadow-[1px_1px_0_rgba(0,0,0,0.45)] truncate"
+              style={{ fontFamily: '"Press Start 2P", monospace' }}
+            >
               {title}
             </p>
             {subtitle && (
-              <p className="font-ui mt-0.5 truncate text-[11px] tracking-[0.04em] text-white/70">
+              <p
+                className="text-[12px] tracking-[0.02em] text-amber-100/75 mt-0.5 truncate font-ui"
+              >
                 {subtitle}
               </p>
             )}
@@ -189,52 +183,59 @@ export function MenuPanel({
         {rightSlot}
       </header>
 
-      <div className="relative p-4 md:p-5">{children}</div>
+      <div className="relative p-3 md:p-4">{children}</div>
     </section>
   );
 }
 
 const BUTTON_STYLES: Record<MenuAccent, {
-  base: string;
-  ring: string;
-  shadow: string;
+  edge: string;
+  accent: string;
+  iconPlate: string;
   text: string;
+  shadow: string;
 }> = {
   blue: {
-    base: 'from-blue-600 via-blue-500 to-indigo-500',
-    ring: 'group-hover:ring-blue-300/70',
-    shadow: 'shadow-[0_9px_20px_rgba(59,130,246,0.35)]',
-    text: 'text-blue-50',
+    edge: 'border-blue-400/75',
+    accent: 'bg-blue-500',
+    iconPlate: 'bg-blue-100 text-blue-800 border-blue-300',
+    text: 'text-blue-950',
+    shadow: 'shadow-[0_0_14px_rgba(59,130,246,0.2)]',
   },
   red: {
-    base: 'from-red-600 via-red-500 to-rose-500',
-    ring: 'group-hover:ring-red-300/70',
-    shadow: 'shadow-[0_9px_20px_rgba(239,68,68,0.35)]',
-    text: 'text-red-50',
+    edge: 'border-red-400/75',
+    accent: 'bg-red-500',
+    iconPlate: 'bg-red-100 text-red-800 border-red-300',
+    text: 'text-red-950',
+    shadow: 'shadow-[0_0_14px_rgba(239,68,68,0.2)]',
   },
   green: {
-    base: 'from-emerald-600 via-emerald-500 to-teal-500',
-    ring: 'group-hover:ring-emerald-300/70',
-    shadow: 'shadow-[0_9px_20px_rgba(16,185,129,0.35)]',
-    text: 'text-emerald-50',
+    edge: 'border-emerald-400/75',
+    accent: 'bg-emerald-500',
+    iconPlate: 'bg-emerald-100 text-emerald-800 border-emerald-300',
+    text: 'text-emerald-950',
+    shadow: 'shadow-[0_0_14px_rgba(16,185,129,0.2)]',
   },
   amber: {
-    base: 'from-amber-500 via-orange-400 to-amber-500',
-    ring: 'group-hover:ring-amber-200/75',
-    shadow: 'shadow-[0_9px_20px_rgba(251,191,36,0.32)]',
-    text: 'text-slate-900',
+    edge: 'border-amber-500/80',
+    accent: 'bg-amber-500',
+    iconPlate: 'bg-amber-100 text-amber-900 border-amber-300',
+    text: 'text-amber-950',
+    shadow: 'shadow-[0_0_14px_rgba(251,191,36,0.22)]',
   },
   violet: {
-    base: 'from-violet-600 via-fuchsia-500 to-indigo-500',
-    ring: 'group-hover:ring-violet-300/70',
-    shadow: 'shadow-[0_9px_20px_rgba(139,92,246,0.35)]',
-    text: 'text-violet-50',
+    edge: 'border-violet-400/75',
+    accent: 'bg-violet-500',
+    iconPlate: 'bg-violet-100 text-violet-800 border-violet-300',
+    text: 'text-violet-950',
+    shadow: 'shadow-[0_0_14px_rgba(139,92,246,0.2)]',
   },
   slate: {
-    base: 'from-slate-600 via-slate-500 to-slate-600',
-    ring: 'group-hover:ring-slate-200/55',
-    shadow: 'shadow-[0_9px_20px_rgba(15,23,42,0.38)]',
-    text: 'text-slate-50',
+    edge: 'border-slate-400/75',
+    accent: 'bg-slate-500',
+    iconPlate: 'bg-slate-100 text-slate-700 border-slate-300',
+    text: 'text-slate-800',
+    shadow: 'shadow-[0_0_14px_rgba(148,163,184,0.18)]',
   },
 };
 
@@ -266,21 +267,22 @@ export function MenuActionButton({
       type={type}
       onClick={onClick}
       disabled={disabled}
-      className={`group relative w-full overflow-hidden rounded-xl border border-white/20 bg-gradient-to-br ${style.base} px-4 py-3 text-left transition-all duration-150 active:translate-y-[1px] disabled:cursor-not-allowed disabled:grayscale disabled:opacity-45 ${style.shadow} ${className}`}
+      className={`group relative w-full px-3 py-3.5 md:px-4 md:py-3.5 rounded-sm border-[2px] border-b-[4px] bg-gradient-to-b from-amber-50 to-amber-100 ${style.edge} ${style.shadow} transition-all duration-150 active:translate-y-[1px] active:border-b-[3px] disabled:opacity-35 disabled:grayscale disabled:cursor-not-allowed disabled:shadow-none disabled:translate-y-0 ${className}`}
     >
-      <span className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.26),transparent_38%)]" />
-      <span className={`pointer-events-none absolute inset-0 rounded-xl ring-2 ring-transparent transition ${style.ring}`} />
-      <span className="pointer-events-none absolute inset-[1px] rounded-[10px] border border-black/20" />
-
+      <span className="pointer-events-none absolute inset-[1px] border border-amber-200/80 rounded-[2px]" />
+      <span className={`pointer-events-none absolute left-1 top-1 bottom-1 w-1 rounded-sm ${style.accent}`} />
       <span className="relative flex items-center justify-center gap-2.5">
-        {Icon && <Icon className={`h-4 w-4 ${style.text}`} />}
-        <span className={`font-display text-[11px] uppercase tracking-[0.14em] ${style.text}`}>
+        {Icon && (
+          <span className={`w-6 h-6 rounded-sm border flex items-center justify-center ${style.iconPlate}`}>
+            <Icon className="w-3.5 h-3.5" />
+          </span>
+        )}
+        <span className={`text-[10px] md:text-[11px] uppercase tracking-[0.12em] font-bold ${style.text}`} style={{ fontFamily: '"Press Start 2P", monospace' }}>
           {label}
         </span>
       </span>
-
       {subtitle && (
-        <span className={`relative mt-1 block text-center font-ui text-[11px] tracking-[0.03em] ${style.text === 'text-slate-900' ? 'text-slate-900/80' : 'text-white/85'}`}>
+        <span className="relative block mt-1 text-[12px] tracking-[0.02em] text-slate-700 font-ui text-center">
           {subtitle}
         </span>
       )}
@@ -299,7 +301,8 @@ export function MenuBadge({ label, accent = 'amber', className = '' }: MenuBadge
 
   return (
     <span
-      className={`font-display inline-flex items-center justify-center rounded-lg border px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] ${style.badge} ${className}`}
+      className={`inline-flex items-center justify-center px-2 py-1 border rounded-sm text-[8px] md:text-[9px] uppercase tracking-[0.11em] ${style.badge} ${className}`}
+      style={{ fontFamily: '"Press Start 2P", monospace' }}
     >
       {label}
     </span>
@@ -328,10 +331,10 @@ export function MenuIconButton({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`inline-flex items-center gap-2 rounded-lg border bg-slate-900/88 px-3 py-2 transition-colors hover:bg-slate-800/95 ${ACCENT_STYLES[color].border} disabled:cursor-not-allowed disabled:opacity-45 ${className}`}
+      className={`inline-flex items-center gap-2 px-3 py-2 rounded-sm border bg-slate-900/90 hover:bg-slate-800/95 transition-colors ${ACCENT_STYLES[color].border} disabled:opacity-45 disabled:cursor-not-allowed ${className}`}
     >
-      <Icon className="h-4 w-4 text-slate-100" />
-      <span className="font-display text-[10px] uppercase tracking-[0.12em] text-slate-100">
+      <Icon className="w-4 h-4 text-slate-100" />
+      <span className="text-[9px] uppercase tracking-[0.12em] text-slate-100" style={{ fontFamily: '"Press Start 2P", monospace' }}>
         {label}
       </span>
     </button>
@@ -347,10 +350,10 @@ interface MenuStatRowProps {
 export function MenuStatRow({ label, value, className = '' }: MenuStatRowProps) {
   return (
     <div className={`flex items-center justify-between gap-3 ${className}`}>
-      <span className="font-display text-[10px] uppercase tracking-[0.12em] text-slate-400">
+      <span className="text-[8px] uppercase tracking-[0.12em] text-slate-400" style={{ fontFamily: '"Press Start 2P", monospace' }}>
         {label}
       </span>
-      <span className="font-ui text-[12px] font-semibold tracking-[0.03em] text-slate-100">
+      <span className="text-[12px] tracking-[0.02em] text-slate-100 font-ui">
         {value}
       </span>
     </div>

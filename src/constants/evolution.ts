@@ -5,6 +5,7 @@ export {
   getBaseFormPokemon,
   getRandomBasePokemon,
   getNextEvolution,
-  canEvolve
+  canEvolve,
+  getBalancedRandomBaseTeams
 } from '@poketactics/shared';
 export type { EvolutionChain } from '@poketactics/shared';

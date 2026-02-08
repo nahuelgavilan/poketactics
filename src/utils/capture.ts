@@ -11,7 +11,7 @@ const CAPTURE_DIRECTIONS: [number, number][] = [
  * Check if a tile is passable for spawning
  */
 function isPassableTerrain(terrain: number): boolean {
-  return terrain !== TERRAIN.WATER;
+  return terrain !== TERRAIN.WATER && terrain !== TERRAIN.MOUNTAIN && terrain !== TERRAIN.LAVA;
 }
 
 /**

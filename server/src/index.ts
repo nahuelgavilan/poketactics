@@ -8,6 +8,7 @@ import {
   getClientState,
   executeMove,
   executeAttack,
+  executeDeploy,
   executeWait,
   executeCapture,
   checkTurnEnd,
@@ -338,6 +339,8 @@ io.on('connection', (socket) => {
       type: 'attack',
       attackerId,
       defenderId,
+      moveId: result.moveId!,
+      counterMoveId: result.counterMoveId,
       damage: result.damage,
       counterDamage: result.counterDamage,
       attackerDied: result.attackerDied,
@@ -359,6 +362,49 @@ io.on('connection', (socket) => {
     broadcastStateUpdate(room.id);
 
     console.log(`Attack: ${attackerId} -> ${defenderId}, damage: ${result.damage}, counter: ${result.counterDamage}`);
+  });
+
+  // Handle deploy action
+  socket.on('action-deploy', ({ templateId }) => {
+    const room = roomManager.getPlayerRoom(socket.id);
+    if (!room?.game) {
+      socket.emit('error', 'No hay juego activo');
+      return;
+    }
+
+    const player = roomManager.getPlayerRole(socket.id);
+    if (!player) {
+      socket.emit('error', 'No eres un jugador válido');
+      return;
+    }
+
+    const result = executeDeploy(room.game, player, templateId);
+    if (!result.success || !result.newUnit) {
+      socket.emit('error', result.error || 'No se pudo desplegar');
+      return;
+    }
+
+    io.to(room.id).emit('action-result', {
+      type: 'deploy',
+      player,
+      templateId,
+      unitId: result.newUnit.uid,
+      x: result.newUnit.x,
+      y: result.newUnit.y
+    });
+
+    // Check turn end (deploy consumes action for the deployed unit)
+    const turnResult = checkTurnEnd(room.game);
+    if (turnResult.turnEnded) {
+      io.to(room.id).emit('action-result', {
+        type: 'turn-end',
+        nextPlayer: turnResult.nextPlayer,
+        turn: turnResult.turn
+      });
+    }
+
+    broadcastStateUpdate(room.id);
+    console.log(`Deploy: ${player} -> ${templateId} in room ${room.id}`);
   });
 
   // Handle wait action
@@ -431,20 +477,6 @@ io.on('connection', (socket) => {
       type: 'capture',
       unitId,
       success: result.captured,
-      newUnit: result.newUnit ? {
-        uid: result.newUnit.uid,
-        owner: result.newUnit.owner,
-        templateId: result.newUnit.templateId,
-        template: result.newUnit.template,
-        x: result.newUnit.x,
-        y: result.newUnit.y,
-        currentHp: result.newUnit.currentHp,
-        hasMoved: result.newUnit.hasMoved,
-        kills: result.newUnit.kills,
-        pp: [...result.newUnit.pp],
-        status: result.newUnit.status,
-        statusTurns: result.newUnit.statusTurns
-      } : undefined,
       pokemon: result.pokemon
     });
 

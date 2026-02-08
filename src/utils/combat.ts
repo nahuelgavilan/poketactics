@@ -1,10 +1,9 @@
 import {
   calculateBaseDamage as sharedCalculateBaseDamage,
-  checkAccuracy,
+  rollDamage,
   getCounterMove,
   getFullEffectiveness as sharedGetFullEffectiveness,
   getEffectiveness as sharedGetEffectiveness,
-  isStab as sharedIsStab,
   CRIT_CHANCE as SHARED_CRIT_CHANCE,
   CRIT_MULTIPLIER as SHARED_CRIT_MULTIPLIER,
   VARIANCE_MIN as SHARED_VARIANCE_MIN,
@@ -12,8 +11,6 @@ import {
   COUNTER_DAMAGE_PENALTY as SHARED_COUNTER_DAMAGE_PENALTY,
   getAbilityAttackModifier,
   getAbilityDefenseModifier,
-  getAbilityOnContactHit,
-  applySturdy,
 } from '@poketactics/shared';
 import { hasTerrainTypeBonus } from '../constants/terrain';
 import type {
@@ -25,7 +22,6 @@ import type {
   AttackPreview,
   TerrainType,
   Move,
-  StatusEffect,
 } from '../types/game';
 
 // Re-export constants
@@ -56,24 +52,10 @@ export function calculateDamage(
   forceCrit?: boolean,
   forceMiss?: boolean
 ): CombatResult {
-  // Accuracy check
-  const missed = forceMiss !== undefined ? forceMiss : !checkAccuracy(move);
-  if (missed) {
-    return {
-      damage: 0,
-      effectiveness: getFullEffectiveness(move.type, defender.template.types),
-      isCritical: false,
-      isStab: sharedIsStab(move.type, attacker.template.types),
-      missed: true,
-      terrainBonus: 0,
-      typeTerrainBonus: false,
-    };
-  }
-
   const attackerTerrain = map[attacker.y][attacker.x];
   const defenderTerrain = map[defender.y][defender.x];
 
-  const { base, effectiveness, isStab: stab, typeTerrainBonus, terrainBonus } = sharedCalculateBaseDamage({
+  return rollDamage({
     move,
     attackerTemplate: attacker.template,
     attackerTypes: attacker.template.types,
@@ -83,70 +65,16 @@ export function calculateDamage(
     defenderTerrain,
     isCounter,
     attackerStatus: attacker.status,
+    defenderStatus: defender.status,
+    attackerAbility: attacker.template.ability,
+    defenderAbility: defender.template.ability,
+    attackerCurrentHp: attacker.currentHp,
+    attackerMaxHp: attacker.template.hp,
+    defenderCurrentHp: defender.currentHp,
+    defenderMaxHp: defender.template.hp,
+    forceCrit,
+    forceMiss,
   });
-
-  // Ability modifiers
-  const abilityAtk = getAbilityAttackModifier(
-    attacker.template.ability, move, attacker.template.types,
-    attacker.currentHp, attacker.template.hp, attacker.status
-  );
-  const abilityDef = getAbilityDefenseModifier(
-    defender.template.ability, move, defender.status,
-    defender.currentHp, defender.template.hp
-  );
-
-  // Immunity from ability
-  if (abilityDef.multiplier === 0) {
-    return {
-      damage: 0,
-      effectiveness: 0,
-      isCritical: false,
-      isStab: stab,
-      missed: false,
-      terrainBonus,
-      typeTerrainBonus,
-    };
-  }
-
-  // Critical hit check
-  const isCritical = forceCrit !== undefined ? forceCrit : Math.random() < CRIT_CHANCE;
-  const critMultiplier = isCritical ? CRIT_MULTIPLIER : 1;
-
-  // Damage variance (0.85 to 1.00)
-  const variance = VARIANCE_MIN + Math.random() * (VARIANCE_MAX - VARIANCE_MIN);
-
-  let damage = Math.max(1, Math.floor(base * critMultiplier * variance * abilityAtk.multiplier * abilityDef.multiplier));
-
-  // Sturdy check
-  damage = applySturdy(defender.template.ability, defender.currentHp, defender.template.hp, damage);
-
-  // Check for status effect from move
-  let statusApplied: StatusEffect | undefined;
-  if (move.effect && move.effectChance) {
-    if (Math.random() * 100 < move.effectChance && !defender.status) {
-      statusApplied = move.effect;
-    }
-  }
-
-  // Check for contact ability trigger
-  if (move.category === 'physical' && move.range <= 1 && !statusApplied) {
-    const contactResult = getAbilityOnContactHit(defender.template.ability, move);
-    if (contactResult.statusApplied && !attacker.status) {
-      // Contact abilities apply to the ATTACKER, not defender
-      // We'll track this separately; for now include it in the result
-    }
-  }
-
-  return {
-    damage,
-    effectiveness,
-    isCritical,
-    isStab: stab,
-    missed: false,
-    terrainBonus,
-    typeTerrainBonus,
-    statusApplied,
-  };
 }
 
 /**
@@ -173,6 +101,10 @@ export function calculateDamageRange(
     isCounter,
     attackerStatus: attacker.status,
   });
+
+  if (move.category === 'status') {
+    return { min: 0, max: 0, effectiveness, isStab: stab, typeTerrainBonus };
+  }
 
   // Ability modifiers for preview
   const abilityAtk = getAbilityAttackModifier(

@@ -23,3 +23,4 @@ export { DraftScreen } from './DraftScreen';
 export { TurnTimer, TURN_TIMER_DURATION } from './TurnTimer';
 export { MapSizeSelector } from './MapSizeSelector';
 export { MapEditor } from './MapEditor';
+export { BaseDeploySelector } from './BaseDeploySelector';

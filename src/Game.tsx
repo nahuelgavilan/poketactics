@@ -761,16 +761,17 @@ export default function Game() {
   const activeCredits = activePlayer === 'P1' ? creditsP1 : creditsP2;
   const controlledCentersP1 = Object.values(centerOwners).filter(owner => owner === 'P1').length;
   const controlledCentersP2 = Object.values(centerOwners).filter(owner => owner === 'P2').length;
-  const phaseLabelMap: Record<string, string> = {
+  const activeUnitsLeft = playerUnits.filter(u => !u.hasMoved).length;
+  const phaseLabelByState: Record<string, string> = {
     SELECT: 'Seleccion',
     MOVING: 'Movimiento',
     ACTION_MENU: 'Accion',
     ATTACKING: 'Objetivo',
-    MOVE_SELECT: 'Movimiento de ataque',
+    MOVE_SELECT: 'Movimiento',
     DEPLOY_SELECT: 'Despliegue',
-    WAITING: 'Espera',
+    WAITING: 'Espera'
   };
-  const phaseLabel = phaseLabelMap[gamePhase] ?? gamePhase;
+  const phaseLabel = phaseLabelByState[gamePhase] ?? gamePhase;
   const showMobileUnitPanel = !!selectedUnit
     && isMobile
     && gameState === 'playing'
@@ -779,7 +780,7 @@ export default function Game() {
     && gamePhase !== 'DEPLOY_SELECT';
 
   return (
-    <div className="fixed inset-0 bg-[radial-gradient(circle_at_10%_12%,rgba(37,99,235,0.2),transparent_40%),radial-gradient(circle_at_92%_8%,rgba(251,191,36,0.16),transparent_33%),radial-gradient(circle_at_85%_90%,rgba(239,68,68,0.16),transparent_40%),linear-gradient(155deg,#04070d_0%,#0a1220_48%,#101a2a_100%)] text-slate-100 flex flex-col select-none overflow-hidden">
+    <div className="fixed inset-0 bg-[radial-gradient(circle_at_15%_8%,rgba(37,99,235,0.22),transparent_34%),radial-gradient(circle_at_86%_90%,rgba(239,68,68,0.18),transparent_30%),#0f172a] text-slate-100 flex flex-col select-none overflow-hidden">
       {/* Header - compact with dropdown menu */}
       <Header
         currentPlayer={currentPlayer}
@@ -800,42 +801,47 @@ export default function Game() {
       {/* Hidden during transition to prevent flash (LOCAL GAME ONLY - multiplayer doesn't use transition screen) */}
       <main className={`flex-1 min-h-0 relative ${gameState === 'transition' && !isInMultiplayerGame.current ? 'invisible' : ''}`}>
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute inset-0 opacity-[0.14] bg-[linear-gradient(rgba(148,163,184,0.22)_1px,transparent_1px),linear-gradient(90deg,rgba(148,163,184,0.22)_1px,transparent_1px)] bg-[size:30px_30px]" />
-          <div className="absolute -top-24 left-[10%] w-[38%] h-[42%] rounded-full blur-3xl bg-blue-500/18" />
-          <div className="absolute -bottom-24 right-[12%] w-[34%] h-[40%] rounded-full blur-3xl bg-red-500/16" />
-          <div className="absolute inset-x-0 top-0 h-10 bg-gradient-to-b from-black/35 to-transparent" />
-          <div className="absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-black/45 to-transparent" />
+          <div className="absolute inset-0 opacity-[0.08] bg-[linear-gradient(rgba(148,163,184,0.22)_1px,transparent_1px),linear-gradient(90deg,rgba(148,163,184,0.22)_1px,transparent_1px)] bg-[size:28px_28px]" />
         </div>
 
-        <div className="pointer-events-none absolute left-3 top-3 hidden xl:flex flex-col gap-2 z-20">
-          <div className="rounded-xl border border-slate-500/35 bg-slate-950/78 backdrop-blur-xl px-3 py-2 shadow-[0_12px_30px_rgba(0,0,0,0.45)]">
-            <p className="font-display text-[10px] uppercase tracking-[0.13em] text-amber-200/90">Estado</p>
-            <p className="font-ui text-[13px] text-slate-100 mt-1">{phaseLabel}</p>
+        {/* Mobile tactical strip */}
+        {gameState === 'playing' && (
+          <div className="md:hidden absolute top-1 left-1 right-1 z-20 pointer-events-none">
+            <div className="bg-slate-950/92 border-2 border-amber-700 rounded-sm shadow-lg px-2 py-1">
+              <div className="text-[8px] uppercase tracking-[0.1em] text-amber-200 flex items-center justify-between" style={{ fontFamily: '"Press Start 2P", monospace' }}>
+                <span>{phaseLabel}</span>
+                <span>{activeCredits} CR</span>
+              </div>
+              <div className="mt-1 text-[10px] text-slate-300 font-ui flex items-center justify-between">
+                <span>Unidades: {activeUnitsLeft}</span>
+                <span>Centros {controlledCentersP1}-{controlledCentersP2}</span>
+              </div>
+            </div>
           </div>
-          <div className="rounded-xl border border-slate-500/35 bg-slate-950/78 backdrop-blur-xl px-3 py-2 shadow-[0_12px_30px_rgba(0,0,0,0.45)]">
-            <p className="font-display text-[10px] uppercase tracking-[0.13em] text-cyan-200/90">Centros</p>
-            <p className="font-data text-[12px] text-blue-300 mt-1">P1 {controlledCentersP1}</p>
-            <p className="font-data text-[12px] text-red-300">P2 {controlledCentersP2}</p>
-          </div>
-        </div>
+        )}
 
-        <div className="pointer-events-none absolute right-3 top-3 hidden xl:flex flex-col gap-2 z-20">
-          <div className="rounded-xl border border-slate-500/35 bg-slate-950/78 backdrop-blur-xl px-3 py-2 shadow-[0_12px_30px_rgba(0,0,0,0.45)]">
-            <p className="font-display text-[10px] uppercase tracking-[0.13em] text-emerald-200/90">Reserva</p>
-            <p className="font-data text-[12px] text-slate-100 mt-1">{activeReserve.length} disponibles</p>
+        {/* Desktop tactical strip */}
+        {gameState === 'playing' && (
+          <div className="hidden md:block absolute top-3 left-3 z-20 pointer-events-none">
+            <div className="bg-slate-950/90 border-[3px] border-amber-700 rounded-sm shadow-[4px_4px_0_0_rgba(0,0,0,0.35)] px-3 py-2 min-w-[230px]">
+              <div className="absolute inset-[2px] border border-amber-300/30 rounded-[2px] pointer-events-none" />
+              <div className="relative text-[8px] uppercase tracking-[0.12em] text-amber-200 flex items-center justify-between" style={{ fontFamily: '"Press Start 2P", monospace' }}>
+                <span>{phaseLabel}</span>
+                <span>{activeCredits} CR</span>
+              </div>
+              <div className="relative mt-1 text-[12px] font-ui text-slate-300 flex items-center justify-between">
+                <span>Unidades listas: {activeUnitsLeft}</span>
+                <span>Centros {controlledCentersP1}-{controlledCentersP2}</span>
+              </div>
+            </div>
           </div>
-          <div className="rounded-xl border border-slate-500/35 bg-slate-950/78 backdrop-blur-xl px-3 py-2 shadow-[0_12px_30px_rgba(0,0,0,0.45)]">
-            <p className="font-display text-[10px] uppercase tracking-[0.13em] text-amber-200/90">Economia activa</p>
-            <p className="font-data text-[12px] text-amber-300 mt-1">{activeCredits} cr</p>
-          </div>
-        </div>
+        )}
 
         {/* Scrollable board area */}
         <div ref={scrollRef} className="absolute inset-0 overflow-auto">
-          <div className="min-w-full min-h-full w-max flex items-center justify-center p-2 md:p-5">
-            <div className="relative rounded-[26px] border border-slate-400/35 bg-slate-950/55 backdrop-blur-md p-2 md:p-4 shadow-[0_18px_44px_rgba(0,0,0,0.52)]">
-              <div className="pointer-events-none absolute inset-[6px] rounded-[20px] border border-slate-200/12" />
-              <div className="pointer-events-none absolute inset-x-5 top-0 h-[1px] bg-gradient-to-r from-transparent via-amber-200/70 to-transparent" />
+          <div className="min-w-full min-h-full w-max flex items-center justify-center p-2 md:p-4">
+            <div className="relative bg-slate-950/80 border-[3px] border-amber-700 rounded-sm shadow-[0_16px_32px_rgba(0,0,0,0.55)] p-1.5 md:p-2">
+              <div className="absolute inset-[2px] border border-amber-300/35 rounded-[2px] pointer-events-none" />
               <GameBoard
                 map={map}
                 units={units}
@@ -863,14 +869,14 @@ export default function Game() {
         {gameState === 'playing' && (gamePhase === 'MOVING' || gamePhase === 'ATTACKING' || gamePhase === 'MOVE_SELECT' || gamePhase === 'DEPLOY_SELECT') && (
           <div className="absolute top-1 right-1 md:top-3 md:right-3 z-20 animate-in pointer-events-none">
             <div className={`
-              px-3 py-1.5 md:px-4 md:py-2 rounded-lg
+              px-3 py-1.5 md:px-4 md:py-2 rounded-sm border-[2px]
               text-[10px] md:text-xs font-bold uppercase tracking-wide
-              backdrop-blur-sm shadow-lg
+              shadow-[3px_3px_0_0_rgba(0,0,0,0.25)]
               ${gamePhase === 'MOVING'
-                ? 'bg-blue-900/90 border border-blue-500/50 text-blue-300 shadow-blue-500/20'
+                ? 'bg-blue-100 border-blue-400 text-blue-900'
                 : gamePhase === 'DEPLOY_SELECT'
-                ? 'bg-amber-900/90 border border-amber-500/50 text-amber-300 shadow-amber-500/20'
-                : 'bg-red-900/90 border border-red-500/50 text-red-300 shadow-red-500/30'}
+                ? 'bg-amber-100 border-amber-500 text-amber-900'
+                : 'bg-red-100 border-red-400 text-red-900'}
             `}>
               {gamePhase === 'MOVING'
                 ? 'Elige destino'
@@ -887,10 +893,10 @@ export default function Game() {
         {gameState === 'playing' && isMultiplayer && !isMyTurn && gamePhase === 'SELECT' && (
           <div className="absolute top-1 right-1 md:top-3 md:right-3 z-20 pointer-events-none">
             <div className="
-              px-3 py-1.5 md:px-4 md:py-2 rounded-lg
+              px-3 py-1.5 md:px-4 md:py-2 rounded-sm border-[2px]
               text-[10px] md:text-xs font-bold uppercase tracking-wide
-              bg-amber-900/90 border border-amber-500/50 text-amber-300
-              backdrop-blur-sm shadow-lg
+              bg-amber-100 border-amber-500 text-amber-900
+              shadow-[3px_3px_0_0_rgba(0,0,0,0.25)]
             ">
               <span className="animate-pulse">Esperando rival...</span>
             </div>

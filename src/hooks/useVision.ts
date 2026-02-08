@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { BOARD_WIDTH, BOARD_HEIGHT } from '../constants/board';
 import { VISION_RANGE } from '../constants/vision';
-import { TERRAIN_PROPS } from '../constants/terrain';
+import { TERRAIN, TERRAIN_PROPS } from '../constants/terrain';
 import type { Unit, Player, VisibilityMap, GameMap } from '../types/game';
 
 
@@ -30,6 +30,34 @@ export function useVision(
 
     // Get current player's units
     const playerUnits = units.filter(u => u.owner === currentPlayer);
+
+    // Always reveal own base area so players can deploy even with no units on field.
+    if (map) {
+      const bases: { x: number; y: number }[] = [];
+      for (let y = 0; y < rows; y++) {
+        for (let x = 0; x < cols; x++) {
+          if (map[y]?.[x] === TERRAIN.BASE) {
+            bases.push({ x, y });
+          }
+        }
+      }
+
+      if (bases.length > 0) {
+        const ownBase = currentPlayer === 'P1'
+          ? bases.reduce((best, tile) => (tile.x + tile.y > best.x + best.y ? tile : best), bases[0])
+          : bases.reduce((best, tile) => (tile.x + tile.y < best.x + best.y ? tile : best), bases[0]);
+        const baseVisionRange = 2;
+        for (let y = 0; y < rows; y++) {
+          for (let x = 0; x < cols; x++) {
+            const distance = Math.abs(x - ownBase.x) + Math.abs(y - ownBase.y);
+            if (distance <= baseVisionRange) {
+              visible[y][x] = true;
+              explored[y][x] = true;
+            }
+          }
+        }
+      }
+    }
 
     // Calculate visible tiles based on unit positions
     for (const unit of playerUnits) {

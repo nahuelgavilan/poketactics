@@ -20,7 +20,7 @@ export function hasMovesInRange(template: PokemonTemplate, pp: number[], distanc
 
 export function getMaxAttackRange(template: PokemonTemplate, pp?: number[]): number {
   const attackMoves = template.moves.filter((m, i) => {
-    if (m.category === 'status') return false;
+    if (m.range <= 0) return false;
     if (pp && pp[i] <= 0) return false;
     return true;
   });

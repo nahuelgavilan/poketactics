@@ -98,7 +98,10 @@ export function StartScreen({ onStartGame, onHowToPlay, onMultiplayer, onDraft, 
       >
         <div className="text-center animate-pulse">
           <Swords className="w-12 h-12 text-amber-500 mx-auto mb-3" strokeWidth={1.5} />
-          <p className="font-display text-[11px] tracking-[0.2em] text-amber-500/90 uppercase">
+          <p
+            className="text-[9px] tracking-[0.22em] text-amber-500/85 uppercase"
+            style={{ fontFamily: '"Press Start 2P", monospace' }}
+          >
             Booting Command Deck
           </p>
         </div>
@@ -119,10 +122,15 @@ export function StartScreen({ onStartGame, onHowToPlay, onMultiplayer, onDraft, 
           >
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div>
-                <h1 className="font-display text-lg md:text-2xl text-amber-100 uppercase tracking-[0.14em] drop-shadow-[0_3px_10px_rgba(251,191,36,0.35)]">
+                <h1
+                  className="text-base md:text-lg text-amber-100 uppercase tracking-[0.14em]"
+                  style={{ fontFamily: '"Press Start 2P", monospace', textShadow: '2px 2px 0 rgba(0,0,0,0.6)' }}
+                >
                   Tactical Pokemon Battles
                 </h1>
-                <p className="font-ui text-[12px] md:text-[13px] text-slate-300 tracking-[0.04em] mt-1">
+                <p
+                  className="text-[12px] md:text-[13px] text-slate-300 mt-1 font-ui"
+                >
                   Local, online and draft combat with shared battle rules.
                 </p>
               </div>
@@ -180,7 +188,10 @@ export function StartScreen({ onStartGame, onHowToPlay, onMultiplayer, onDraft, 
                 </div>
 
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[58%] z-10">
-                  <span className="font-display text-2xl sm:text-4xl text-amber-300 animate-start-menu-pulse drop-shadow-[0_0_16px_rgba(251,191,36,0.55)]">
+                  <span
+                    className="text-xl sm:text-3xl text-amber-300 animate-start-menu-pulse"
+                    style={{ fontFamily: '"Press Start 2P", monospace', textShadow: '2px 2px 0 #000, 0 0 16px rgba(251,191,36,0.55)' }}
+                  >
                     VS
                   </span>
                 </div>
@@ -200,7 +211,10 @@ export function StartScreen({ onStartGame, onHowToPlay, onMultiplayer, onDraft, 
                         className="relative w-24 h-24 sm:w-32 sm:h-32 lg:w-40 lg:h-40 object-contain scale-x-[-1] animate-start-menu-idle"
                         style={{ imageRendering: 'pixelated' }}
                       />
-                      <p className="font-display absolute -bottom-5 left-1/2 -translate-x-1/2 text-[10px] text-blue-300 uppercase tracking-[0.1em] whitespace-nowrap drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+                      <p
+                        className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-[8px] text-blue-300 uppercase tracking-[0.1em] whitespace-nowrap"
+                        style={{ fontFamily: '"Press Start 2P", monospace', textShadow: '1px 1px 0 #000' }}
+                      >
                         {pair.left.name}
                       </p>
                     </div>
@@ -222,7 +236,10 @@ export function StartScreen({ onStartGame, onHowToPlay, onMultiplayer, onDraft, 
                         className="relative w-24 h-24 sm:w-32 sm:h-32 lg:w-40 lg:h-40 object-contain animate-start-menu-idle"
                         style={{ imageRendering: 'pixelated', animationDelay: '0.35s' }}
                       />
-                      <p className="font-display absolute -bottom-5 left-1/2 -translate-x-1/2 text-[10px] text-red-300 uppercase tracking-[0.1em] whitespace-nowrap drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+                      <p
+                        className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-[8px] text-red-300 uppercase tracking-[0.1em] whitespace-nowrap"
+                        style={{ fontFamily: '"Press Start 2P", monospace', textShadow: '1px 1px 0 #000' }}
+                      >
                         {pair.right.name}
                       </p>
                     </div>
@@ -253,22 +270,24 @@ export function StartScreen({ onStartGame, onHowToPlay, onMultiplayer, onDraft, 
                         <button
                           type="button"
                           onClick={() => setOnlineModeWithSFX('quick')}
-                          className={`font-display px-2 py-2 border rounded-lg text-[10px] uppercase tracking-[0.1em] transition-colors ${
+                          className={`px-2 py-2 border-[2px] rounded-sm text-[8px] uppercase tracking-[0.12em] transition-colors ${
                             onlineMode === 'quick'
-                              ? 'bg-emerald-600/75 border-emerald-300/80 text-emerald-50 shadow-[0_0_16px_rgba(16,185,129,0.28)]'
+                              ? 'bg-emerald-100 border-emerald-400 text-emerald-900'
                               : 'bg-slate-900/80 border-slate-600 text-slate-300 hover:border-slate-400'
                           }`}
+                          style={{ fontFamily: '"Press Start 2P", monospace' }}
                         >
                           Online Quick
                         </button>
                         <button
                           type="button"
                           onClick={() => setOnlineModeWithSFX('draft')}
-                          className={`font-display px-2 py-2 border rounded-lg text-[10px] uppercase tracking-[0.1em] transition-colors ${
+                          className={`px-2 py-2 border-[2px] rounded-sm text-[8px] uppercase tracking-[0.12em] transition-colors ${
                             onlineMode === 'draft'
-                              ? 'bg-violet-600/75 border-violet-300/80 text-violet-50 shadow-[0_0_16px_rgba(139,92,246,0.28)]'
+                              ? 'bg-violet-100 border-violet-400 text-violet-900'
                               : 'bg-slate-900/80 border-slate-600 text-slate-300 hover:border-slate-400'
                           }`}
+                          style={{ fontFamily: '"Press Start 2P", monospace' }}
                         >
                           Online Draft
                         </button>
@@ -305,11 +324,14 @@ export function StartScreen({ onStartGame, onHowToPlay, onMultiplayer, onDraft, 
                   <button
                     type="button"
                     onClick={handleHowToPlayWithSFX}
-                    className="w-full px-3 py-2.5 border rounded-xl border-slate-500/70 bg-slate-900/75 hover:bg-slate-800/90 text-slate-200 transition-colors"
+                    className="w-full px-3 py-3 border-[2px] border-amber-400 rounded-sm bg-gradient-to-b from-amber-100 to-amber-200 hover:from-amber-50 hover:to-amber-100 text-amber-950 transition-colors shadow-[0_0_14px_rgba(251,191,36,0.18)]"
                   >
                     <span className="flex items-center justify-center gap-2">
-                      <BookOpen className="w-4 h-4" />
-                      <span className="font-display text-[11px] uppercase tracking-[0.12em]">
+                      <BookOpen className="w-4 h-4 text-amber-900" />
+                      <span
+                        className="text-[9px] uppercase tracking-[0.14em] text-amber-950"
+                        style={{ fontFamily: '"Press Start 2P", monospace' }}
+                      >
                         Como Jugar
                       </span>
                     </span>
@@ -334,7 +356,7 @@ export function StartScreen({ onStartGame, onHowToPlay, onMultiplayer, onDraft, 
                   </div>
                   <div className="pt-1 flex items-center gap-2">
                     <Users className="w-4 h-4 text-slate-300" />
-                    <p className="font-ui text-[12px] tracking-[0.03em] text-slate-300">
+                    <p className="text-[12px] tracking-[0.02em] text-slate-300 font-ui">
                       Online rooms with host and guest sync.
                     </p>
                   </div>

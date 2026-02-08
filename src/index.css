@@ -1,5 +1,5 @@
-/* Premium typography */
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Manrope:wght@400;600;700;800&family=Orbitron:wght@500;700;900&display=swap');
+/* Retro + readable UI stack */
+@import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Press+Start+2P&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -7,12 +7,14 @@
 
 /* Root variables */
 :root {
-  --font-display: "Orbitron", sans-serif;
-  --font-ui: "Manrope", sans-serif;
-  --font-data: "JetBrains Mono", monospace;
+  --font-ui: 'Chakra Petch', system-ui, sans-serif;
   --color-p1: #3b82f6;
   --color-p2: #ef4444;
   --color-accent: #facc15;
+  --ui-panel-bg: rgba(15, 23, 42, 0.94);
+  --ui-amber-dark: #78350f;
+  --ui-amber-mid: #b45309;
+  --ui-amber-light: #fcd34d;
 }
 
 /* Base styles */
@@ -27,10 +29,9 @@ html {
 
 body {
   background:
-    radial-gradient(circle at 18% 16%, rgba(37, 99, 235, 0.22), transparent 40%),
-    radial-gradient(circle at 84% 10%, rgba(251, 191, 36, 0.18), transparent 34%),
-    radial-gradient(circle at 76% 84%, rgba(239, 68, 68, 0.18), transparent 40%),
-    linear-gradient(160deg, #060a12 0%, #0a1220 45%, #0d1626 100%);
+    radial-gradient(circle at 16% 12%, rgba(30, 64, 175, 0.25), transparent 34%),
+    radial-gradient(circle at 86% 88%, rgba(239, 68, 68, 0.2), transparent 30%),
+    #0f172a;
   color: #f1f5f9;
   font-family: var(--font-ui);
   overscroll-behavior: none;
@@ -38,16 +39,8 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-.font-display {
-  font-family: var(--font-display);
-}
-
 .font-ui {
   font-family: var(--font-ui);
-}
-
-.font-data {
-  font-family: var(--font-data);
 }
 
 /* Prevent pull-to-refresh on mobile */
@@ -412,9 +405,9 @@ button:focus-visible,
   background-clip: text;
 }
 
-/* Display font utility */
+/* Press Start 2P font utility */
 .font-pixel {
-  font-family: var(--font-display);
+  font-family: 'Press Start 2P', system-ui, sans-serif;
 }
 
 /* Scanline effect */

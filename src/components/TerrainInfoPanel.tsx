@@ -93,11 +93,12 @@ export function TerrainInfoPanel({ terrain, centerOwner = null, onClose }: Terra
     >
       <div className={`
         relative overflow-hidden
-        bg-slate-950/92 backdrop-blur-xl rounded-2xl
-        border ${style.border} shadow-[0_14px_34px_rgba(0,0,0,0.55)]
+        bg-slate-950/95 backdrop-blur-xl rounded-sm
+        border-[3px] border-amber-800 shadow-[4px_4px_0_0_rgba(0,0,0,0.35)]
       `}>
+        <div className="absolute inset-[2px] border border-amber-300/40 rounded-[2px] pointer-events-none" />
         {/* Colored header bar */}
-        <div className={`h-1 bg-gradient-to-r ${style.gradient}`} />
+        <div className={`h-1.5 bg-gradient-to-r ${style.gradient}`} />
 
         <div className="p-3">
           <div className="flex items-start gap-3">
@@ -115,8 +116,8 @@ export function TerrainInfoPanel({ terrain, centerOwner = null, onClose }: Terra
             {/* Info */}
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between">
-                <h3 className="font-display text-white text-sm uppercase tracking-[0.1em]">{props.name}</h3>
-                <span className="font-ui text-slate-500 text-[11px]">Toca para cerrar</span>
+                <h3 className="text-[10px] uppercase tracking-[0.12em] text-amber-100" style={{ fontFamily: '"Press Start 2P", monospace' }}>{props.name}</h3>
+                <span className="text-slate-400 text-[11px] font-ui">Toca para cerrar</span>
               </div>
 
               {/* Stats row */}

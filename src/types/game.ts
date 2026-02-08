@@ -24,6 +24,7 @@ export type GameState =
  */
 export type GamePhase =
   | 'SELECT'       // Player selecting a unit
+  | 'DEPLOY_SELECT' // Player selecting reserve Pokemon to deploy from base
   | 'ACTION_MENU'  // Unit selected, showing action menu
   | 'MOVING'       // Player selecting move destination
   | 'ATTACKING'    // Player selecting attack target
