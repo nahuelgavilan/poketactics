@@ -56,9 +56,9 @@ interface UseGameStateReturn {
   handleTileClick: (x: number, y: number) => void;
   endBattle: () => void;
   confirmBattleZoom: () => void;
-  onCaptureMinigameSuccess: (damageTaken: number) => void;
-  onCaptureMinigameFail: (damageTaken: number) => void;
-  onCaptureMinigameFlee: (damageTaken: number) => void;
+  onCaptureMinigameSuccess: (damageTaken: number, ppUsed: number[]) => void;
+  onCaptureMinigameFail: (damageTaken: number, ppUsed: number[]) => void;
+  onCaptureMinigameFlee: (damageTaken: number, ppUsed: number[]) => void;
   confirmCapture: () => void;
   confirmEvolution: () => void;
   confirmTurnChange: () => void;
@@ -679,33 +679,33 @@ export function useGameState(): UseGameStateReturn {
   }, [battleData, units, waitUnit, addLog, resetSelection, currentPlayer]);
 
   // Called when minigame succeeds - show capture celebration
-  // Apply damage taken from wild Pokemon counter-attack
-  const onCaptureMinigameSuccess = useCallback((damageTaken: number) => {
-    if (selectedUnit && damageTaken > 0) {
-      setUnits(prev => prev.map(u =>
-        u.uid === selectedUnit.uid
-          ? { ...u, currentHp: Math.max(1, u.currentHp - damageTaken) }
-          : u
-      ));
-      addLog(`${selectedUnit.template.name} recibió ${damageTaken} de daño`);
+  // Apply damage taken from wild Pokemon counter-attack and PP usage
+  const onCaptureMinigameSuccess = useCallback((damageTaken: number, ppUsed: number[]) => {
+    if (selectedUnit) {
+      setUnits(prev => prev.map(u => {
+        if (u.uid !== selectedUnit.uid) return u;
+        const newHp = damageTaken > 0 ? Math.max(1, u.currentHp - damageTaken) : u.currentHp;
+        const newPP = ppUsed.length > 0 ? u.pp.map((p, i) => Math.max(0, p - (ppUsed[i] || 0))) : u.pp;
+        return { ...u, currentHp: newHp, pp: newPP };
+      }));
+      if (damageTaken > 0) addLog(`${selectedUnit.template.name} recibió ${damageTaken} de daño`);
     }
     setGameState('capture');
   }, [selectedUnit, addLog]);
 
   // Called when minigame fails - Pokemon escapes
-  // Apply damage taken from wild Pokemon counter-attack
-  const onCaptureMinigameFail = useCallback((damageTaken: number) => {
+  // Apply damage taken from wild Pokemon counter-attack and PP usage
+  const onCaptureMinigameFail = useCallback((damageTaken: number, ppUsed: number[]) => {
     if (!captureData || !selectedUnit) return;
 
-    // Apply damage to player's Pokemon
-    if (damageTaken > 0) {
-      setUnits(prev => prev.map(u =>
-        u.uid === selectedUnit.uid
-          ? { ...u, currentHp: Math.max(1, u.currentHp - damageTaken) }
-          : u
-      ));
-      addLog(`${selectedUnit.template.name} recibió ${damageTaken} de daño`);
-    }
+    // Apply damage and PP to player's Pokemon
+    setUnits(prev => prev.map(u => {
+      if (u.uid !== selectedUnit.uid) return u;
+      const newHp = damageTaken > 0 ? Math.max(1, u.currentHp - damageTaken) : u.currentHp;
+      const newPP = ppUsed.length > 0 ? u.pp.map((p, i) => Math.max(0, p - (ppUsed[i] || 0))) : u.pp;
+      return { ...u, currentHp: newHp, pp: newPP };
+    }));
+    if (damageTaken > 0) addLog(`${selectedUnit.template.name} recibió ${damageTaken} de daño`);
 
     addLog(`¡${captureData.pokemon.name} salvaje escapó!`);
     setCaptureData(null);
@@ -717,17 +717,18 @@ export function useGameState(): UseGameStateReturn {
 
   // Called when player flees from capture minigame - unit's turn ends
   // Fleeing doesn't cause counter-attack damage, but signature is consistent
-  const onCaptureMinigameFlee = useCallback((damageTaken: number) => {
+  const onCaptureMinigameFlee = useCallback((damageTaken: number, ppUsed: number[]) => {
     if (!captureData || !selectedUnit) return;
 
-    // Apply damage if any (shouldn't happen when fleeing, but just in case)
+    // Apply damage and PP if any
     let nextUnits = units;
-    if (damageTaken > 0) {
-      nextUnits = units.map(u =>
-        u.uid === selectedUnit.uid
-          ? { ...u, currentHp: Math.max(1, u.currentHp - damageTaken) }
-          : u
-      );
+    if (damageTaken > 0 || ppUsed.length > 0) {
+      nextUnits = units.map(u => {
+        if (u.uid !== selectedUnit.uid) return u;
+        const newHp = damageTaken > 0 ? Math.max(1, u.currentHp - damageTaken) : u.currentHp;
+        const newPP = ppUsed.length > 0 ? u.pp.map((p, i) => Math.max(0, p - (ppUsed[i] || 0))) : u.pp;
+        return { ...u, currentHp: newHp, pp: newPP };
+      });
       setUnits(nextUnits);
     }
 

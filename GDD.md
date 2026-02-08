@@ -427,20 +427,35 @@ Player sees the wild Pokémon with:
 - **Name and type badges**
 - **HP bar** (GBA-style with gradient colors)
 - **Current capture chance** percentage
+- **Info overlay** toggle — shows wild Pokémon's 6 stats, ability, and 4 moves
 
 **Action Buttons** (premium GBA-style with 3D depth):
-- **ATACAR** (red) - Attack once to weaken (only usable once)
+- **ATACAR** (red) - Opens move selection (only usable once)
 - **CAPTURAR** (amber) - Start ring timing minigame
 - **HUIR** (gray) - Flee from encounter
+- **VER INFO** (text link) - Toggle info overlay
+
+#### Phase 2b: Move Selection (new)
+When player chooses ATACAR, a 2×2 move grid appears:
+- Each move button shows: **category icon** (⚔️/✨/🛡️), **move name**, **STAB badge** if applicable, **type badge**, **power**, **PP remaining**
+- Grayed out if PP = 0 or status move
+- Cancel returns to battle menu
+- PP is tracked locally and passed back to game state after encounter
 
 #### Phase 3: Attack Cinematic (if chosen)
-When player chooses to attack:
+When player selects a move:
 1. **Intro** - Player's Pokémon slides in from left
-2. **Execute** - Attack hits, damage number flies up, wild Pokémon flashes
-3. **Counter** - Wild Pokémon counter-attacks, player's Pokémon takes damage
+2. **Execute** - Uses **shared `calculateBaseDamage()`** with Physical/Special split, STAB, accuracy check, crit chance, variance. Shows effectiveness text (¡Súper Eficaz!, No muy eficaz..., ¡Falló!, ¡Golpe Crítico!)
+3. **Counter** - Wild Pokémon counter-attacks using its first attack move with the same formula
 4. **Outro** - Player's Pokémon slides out, returns to battle menu
 
 **Note**: Only the wild Pokémon is visible normally. The player's Pokémon only appears during the attack cinematic.
+
+**Damage Formula** (same as main combat):
+```
+Physical: floor(22 × power × ATK / DEF / 50 + 2) × STAB × effectiveness × variance
+Special:  floor(22 × power × SPA / SPD / 50 + 2) × STAB × effectiveness × variance
+```
 
 #### Phase 4: Ring Timing Minigame
 Three consecutive ring challenges, each faster than the last:
@@ -517,12 +532,12 @@ Capture Chance = Base Rate + HP Bonus + Ring Bonus
 #### Base Rate (based on Pokémon stats)
 
 ```typescript
-statTotal = hp + atk + def
+statTotal = hp + atk + def + spa + spd + spe
 
-if (statTotal < 100) baseRate = 45%
-if (statTotal < 150) baseRate = 35%
-if (statTotal < 200) baseRate = 25%
-else baseRate = 15%
+if (statTotal < 250) baseRate = 55%
+if (statTotal < 350) baseRate = 45%
+if (statTotal < 450) baseRate = 35%
+else baseRate = 25%
 ```
 
 #### HP Bonus (from weakening)
@@ -772,8 +787,8 @@ Celebration screen with GBA-style effects:
 | `Header` | Turn/player info, dropdown menu with actions |
 | `UnitActionMenu` | Fire Emblem style contextual menu (appears next to tile) |
 | `BattleCinematic` | GBA-style combat animation with VS intro, segmented HP bars |
-| `CaptureMinigame` | Probability-based capture with ring timing, attack option |
-| `CaptureModal` | Capture result with stat bars and type badges |
+| `CaptureMinigame` | Probability-based capture with ring timing, 4-move selection (shared damage formula), info overlay, PP tracking |
+| `CaptureModal` | Capture result with 6-stat bars, 4 moves, ability display |
 | `EvolutionCinematic` | Evolution animation with stat comparison |
 | `TurnTransition` | Fire Emblem style turn change: diagonal slash, shield emblem |
 | `VictoryScreen` | Confetti celebration with crown/trophy animation |
@@ -1251,6 +1266,7 @@ Currently in alpha - major version stays at 0 until core features complete.
 
 | Version | Changes |
 |---------|---------|
+| **0.44.0** | **Fix Server Deployment + Capture UI Overhaul**: Fixed Render deployment — `render.yaml` now builds from workspace root (`npm install && shared build && server build`) so `@poketactics/shared` is available at runtime. **CaptureMinigame overhaul**: New `move_select` phase with 2×2 move grid (type-colored backgrounds, category icons, STAB badges, PP tracking). Replaced old `atk*0.7-def*0.25` damage formula with shared `calculateBaseDamage()` — Physical/Special split, STAB (1.5×), accuracy checks, crit chance (10%), damage variance (0.85-1.0). Effectiveness text displayed during combat (¡Súper Eficaz!, No muy eficaz, ¡Falló!, ¡Golpe Crítico!). Wild Pokémon counter-attacks with its first attack move using the same formula. **Info overlay** — toggle panel showing wild Pokémon's 6 stats, ability with description, and 4 moves with type/power/category. PP usage tracked during encounter and persisted back to unit state via `ppUsed` array. **CaptureModal overhaul**: 6-stat display in 2 columns (HP/ATK/DEF/SPA/SPD/SPE, max 200), ability section with description, 4 moves in 2×2 grid (type-colored left border, category icon, power/effect, range). Base capture rate now uses full 6-stat total (thresholds: <250=55%, <350=45%, <450=35%, else 25%). |
 | **0.43.0** | **Complete Combat Overhaul — Real Pokémon Data from Showdown**: Replaced shallow 1-move combat with full Pokémon mechanics using `@pkmn/dex` as build-time data source. **4 moves per Pokémon** (hand-curated per species) with Physical/Special/Status categories. **Division-based damage formula** (`floor(22 × power × A/D / 50 + 2) × modifiers`) replacing old subtraction formula. **Physical/Special split** — physical uses ATK/DEF, special uses SPA/SPD. **STAB** (1.5× Same Type Attack Bonus). **Accuracy checks** (70-100%). **6 real base stats** (HP/ATK/DEF/SPA/SPD/SPE) from Showdown replacing custom stats. **PP system** (2-5 per move, Struggle fallback). **Move ranges** (1=melee, 2=ranged, 3=long-range). **Priority moves** prevent counter-attacks. **Counter uses first in-range move** (auto-selected). **5 status effects** — Burn (-50% phys ATK, 6% chip), Paralysis (-50% MOV, 25% skip), Poison (12% chip), Sleep (1-3 turns), Freeze (20% thaw/turn). **15+ abilities** (Blaze/Torrent/Overgrow, Intimidate, Levitate, Sturdy, Guts, Thick Fat, Static, Poison Point, Flash Fire, Marvel Scale). **MOVE_SELECT game phase** with 4-button move picker overlay (type colors, PP, power, accuracy, STAB badge, range/PP warnings). **Build-time code generation** — `scripts/generate-pokemon-data.ts` queries `@pkmn/dex` for 21 chains / 58 Pokémon / ~250 curated moves → outputs `shared/src/generatedPokemon.ts`. **Server updated** with PP tracking, status ticks on turn change, move-based combat with moveId validation, Pokémon Center cures status. Battle cinematic shows move name + STAB + miss animation + status applied. Attack preview shows per-move stats. Sidebar shows 6 stats + moves + ability + status. |
 | **0.42.0** | **Shared Package (`@poketactics/shared`)**: Eliminated ~600+ lines of duplicated game data between client and server. Created npm workspace package as single source of truth for: TYPE_CHART (18x18), TERRAIN definitions (16 types with game props), EVOLUTION_CHAINS (21 chains, 55 Pokémon), combat formulas (`calculateBaseDamage`, `getEffectiveness`, `getFullEffectiveness`), Dijkstra pathfinding (`calculateMoveRange`), core types (`PokemonType`, `PokemonTemplate`, `Position`, `TerrainType`, `GameMap`), and constants (`BOARD_WIDTH`, `BOARD_HEIGHT`, `VISION_RANGE`). Architecture: npm workspaces with Vite alias (client resolves raw `.ts`) and tsconfig paths (server resolves built `.d.ts` declarations). Client barrel files re-export from shared + add client-only fields (`name`, `bg` for terrain, `TYPE_COLORS`). Shared `calculateBaseDamage` is framework-agnostic (raw stats, not Unit objects). `PathfindingUnit` structural interface allows both client `Unit` and server `ServerUnit`. Zero desync risk — adding types, Pokémon, or terrain only requires updating one location. |
 | **0.41.0** | **Audio & Multiplayer Parity Fixes**: Generated 7 missing audio files (attack_hit, critical_hit, super_effective, not_effective, unit_faint SFX + victory/defeat music jingles). Fixed browser autoplay policy — audio now unlocks on first user interaction (click/touch/keydown) with queued playback for pre-interaction sounds. **Server-client sync**: All 16 terrain types synced (was only 7: added Sand, Bridge, Berry Bush, Ice, Lava, Swamp, Road, Ruins, Cave with proper properties). All 21 evolution chains synced (was 12: added Scyther, Munchlax, Beldum, Trapinch, Chimchar, Sneasel, Swinub, Ralts, Cleffa chains). Full 18-type chart with Dark type on server (was missing). Board size matched to 10x12 (was 6x8). Server now uses Dijkstra pathfinding (was Manhattan distance only). Fixed Tyranitar server type to Rock/Dark (was Rock/Dragon). Berry bush consumable healing implemented on server (10% HP + converts to grass). Cave concealment implemented on server (hidesUnit check, Manhattan ≤1 reveal). Terrain type ATK bonus (+25%) now applied in server damage calculation. Fixed wait action not sent after move in multiplayer (units stayed unmoved). Expanded server wild Pokemon pool (10 species including Dark/Fairy types). |

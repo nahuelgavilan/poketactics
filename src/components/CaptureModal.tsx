@@ -360,47 +360,92 @@ export function CaptureModal({ pokemon, player, onComplete }: CaptureModalProps)
           </div>
 
           {/* Stats panel */}
-          <div className={`px-6 pb-6 transition-all duration-500 ${
+          <div className={`px-6 pb-4 transition-all duration-500 ${
             phase === 'stats' || phase === 'ready' ? 'opacity-100' : 'opacity-0'
           }`}>
             <div
               className="bg-slate-900/80 rounded-lg p-4 border-2 border-slate-700"
               style={{ boxShadow: 'inset 0 2px 10px rgba(0,0,0,0.5)' }}
             >
-              <div className="space-y-3">
-                <StatBar label="HP" value={pokemon.hp} maxValue={150} color="#22C55E" />
-                <StatBar label="ATK" value={pokemon.atk} maxValue={50} color="#EF4444" />
-                <StatBar label="DEF" value={pokemon.def} maxValue={50} color="#3B82F6" />
-                <StatBar label="MOV" value={pokemon.mov} maxValue={6} color="#F59E0B" />
+              {/* 6 Stats in 2 columns */}
+              <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                <StatBar label="HP" value={pokemon.hp} maxValue={200} color="#22C55E" />
+                <StatBar label="SPA" value={pokemon.spa} maxValue={200} color="#A855F7" />
+                <StatBar label="ATK" value={pokemon.atk} maxValue={200} color="#EF4444" />
+                <StatBar label="SPD" value={pokemon.spd} maxValue={200} color="#14B8A6" />
+                <StatBar label="DEF" value={pokemon.def} maxValue={200} color="#3B82F6" />
+                <StatBar label="SPE" value={pokemon.spe} maxValue={200} color="#F59E0B" />
               </div>
 
-              {/* Move info */}
-              <div className="mt-4 pt-3 border-t border-slate-700">
-                <div className="flex items-center justify-between">
+              {/* Ability */}
+              <div className="mt-3 pt-3 border-t border-slate-700">
+                <div className="flex items-center gap-2">
                   <span
-                    className="text-[10px] text-slate-400"
+                    className="text-[8px] text-slate-500 uppercase"
                     style={{ fontFamily: "'Press Start 2P', monospace" }}
                   >
-                    MOVIMIENTO:
+                    Habilidad:
                   </span>
-                  <div className="flex items-center gap-2">
-                    <span
-                      className="text-[10px] font-bold text-white"
-                      style={{ fontFamily: "'Press Start 2P', monospace" }}
-                    >
-                      {pokemon.moves[0]?.name ?? '—'}
-                    </span>
-                    <span
-                      className="px-2 py-0.5 text-[8px] rounded"
-                      style={{
-                        background: TYPE_COLORS[pokemon.moves[0]?.type]?.primary || '#888',
-                        color: '#fff',
-                        fontFamily: "'Press Start 2P', monospace",
-                      }}
-                    >
-                      {(pokemon.moves[0]?.type ?? 'normal').toUpperCase()}
-                    </span>
-                  </div>
+                  <span
+                    className="text-[9px] font-bold text-white"
+                    style={{ fontFamily: "'Press Start 2P', monospace" }}
+                  >
+                    {pokemon.ability?.name ?? '—'}
+                  </span>
+                </div>
+                {pokemon.ability?.description && (
+                  <p className="text-[8px] text-slate-400 mt-1">{pokemon.ability.description}</p>
+                )}
+              </div>
+
+              {/* 4 Moves in 2x2 grid */}
+              <div className="mt-3 pt-3 border-t border-slate-700">
+                <span
+                  className="text-[8px] text-slate-500 uppercase block mb-2"
+                  style={{ fontFamily: "'Press Start 2P', monospace" }}
+                >
+                  Movimientos
+                </span>
+                <div className="grid grid-cols-2 gap-1.5">
+                  {pokemon.moves.map(move => {
+                    const moveColor = TYPE_COLORS[move.type] || TYPE_COLORS.normal;
+                    return (
+                      <div
+                        key={move.id}
+                        className="rounded px-2 py-1.5 border-l-2"
+                        style={{
+                          borderColor: moveColor.primary,
+                          background: 'rgba(15,23,42,0.6)',
+                        }}
+                      >
+                        <div className="flex items-center gap-1 mb-0.5">
+                          <span className="text-[9px]">
+                            {move.category === 'physical' ? '⚔️' : move.category === 'special' ? '✨' : '🛡️'}
+                          </span>
+                          <span
+                            className="text-[8px] font-bold text-white truncate"
+                            style={{ fontFamily: "'Press Start 2P', monospace" }}
+                          >
+                            {move.name}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <span
+                            className="text-[7px] px-1 py-0.5 rounded text-white font-bold"
+                            style={{ background: moveColor.primary }}
+                          >
+                            {move.type.toUpperCase()}
+                          </span>
+                          {move.power > 0 ? (
+                            <span className="text-[8px] text-slate-400 font-mono">{move.power}pw</span>
+                          ) : move.effect ? (
+                            <span className="text-[8px] text-slate-400 font-mono capitalize">{move.effect}</span>
+                          ) : null}
+                          <span className="text-[8px] text-slate-500 font-mono ml-auto">Rng {move.range}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </div>

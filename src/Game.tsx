@@ -271,17 +271,17 @@ export default function Game() {
 
   // Multiplayer-aware capture handlers
   // These now accept damageTaken to apply wild Pokemon counter-attack damage
-  const handleCaptureSuccess = useCallback((damageTaken: number) => {
+  const handleCaptureSuccess = useCallback((damageTaken: number, ppUsed: number[]) => {
     if (isInMultiplayerGame.current && selectedUnit) {
       // Store unit ID for when capture modal completes
       pendingCaptureUnitRef.current = selectedUnit.uid;
     }
     // Show the capture modal (works for both local and multiplayer)
     // Pass damageTaken to apply to player's Pokemon
-    onCaptureMinigameSuccess(damageTaken);
+    onCaptureMinigameSuccess(damageTaken, ppUsed);
   }, [selectedUnit, onCaptureMinigameSuccess]);
 
-  const handleCaptureFail = useCallback((damageTaken: number) => {
+  const handleCaptureFail = useCallback((damageTaken: number, ppUsed: number[]) => {
     if (isInMultiplayerGame.current && selectedUnit) {
       // Tell server capture failed - just marks unit as moved
       console.log('[Multiplayer] Capture failed, sending to server');
@@ -289,17 +289,17 @@ export default function Game() {
     }
     // Run local handler (shows message, marks unit as moved locally)
     // Pass damageTaken to apply to player's Pokemon
-    onCaptureMinigameFail(damageTaken);
+    onCaptureMinigameFail(damageTaken, ppUsed);
   }, [selectedUnit, sendCapture, onCaptureMinigameFail]);
 
-  const handleCaptureFlee = useCallback((damageTaken: number) => {
+  const handleCaptureFlee = useCallback((damageTaken: number, ppUsed: number[]) => {
     if (isInMultiplayerGame.current && selectedUnit) {
       // Player fled - send wait to server (unit used their turn)
       console.log('[Multiplayer] Player fled encounter, sending wait');
       sendWait(selectedUnit.uid);
     }
     // Run local handler (damageTaken is usually 0 when fleeing)
-    onCaptureMinigameFlee(damageTaken);
+    onCaptureMinigameFlee(damageTaken, ppUsed);
   }, [selectedUnit, sendWait, onCaptureMinigameFlee]);
 
   const handleConfirmCapture = useCallback(() => {
@@ -963,6 +963,7 @@ export default function Game() {
           pokemon={captureData.pokemon}
           player={captureData.player}
           playerPokemon={selectedUnit?.template}
+          playerPP={selectedUnit?.pp}
           onSuccess={handleCaptureSuccess}
           onFail={handleCaptureFail}
           onFlee={handleCaptureFlee}

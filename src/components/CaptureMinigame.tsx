@@ -1,15 +1,17 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { getAnimatedFrontSprite } from '../utils/sprites';
 import { useSFX } from '../hooks/useSFX';
-import type { PokemonTemplate, Player, PokemonType } from '../types/game';
+import { calculateBaseDamage, checkAccuracy, getFullEffectiveness, isStab as checkIsStab, CRIT_CHANCE, CRIT_MULTIPLIER, VARIANCE_MIN, VARIANCE_MAX } from '@poketactics/shared';
+import type { PokemonTemplate, Player, PokemonType, Move } from '../types/game';
 
 interface CaptureMinigameProps {
   pokemon: PokemonTemplate;
   player: Player;
   playerPokemon?: PokemonTemplate;
-  onSuccess: (damageTaken: number) => void;
-  onFail: (damageTaken: number) => void;
-  onFlee: (damageTaken: number) => void;
+  playerPP?: number[];
+  onSuccess: (damageTaken: number, ppUsed: number[]) => void;
+  onFail: (damageTaken: number, ppUsed: number[]) => void;
+  onFlee: (damageTaken: number, ppUsed: number[]) => void;
 }
 
 type Phase =
@@ -18,6 +20,7 @@ type Phase =
   | 'silhouette'
   | 'reveal'
   | 'battle'
+  | 'move_select'       // Player choosing which move to use
   | 'attack_intro'      // Player Pokemon slides in
   | 'attack_execute'    // Attack happens
   | 'attack_counter'    // Wild counters
@@ -69,10 +72,10 @@ const RING_ZONES = [
 const RING_SHAKE_BONUS = { perfect: 20, great: 12, good: 5, miss: -5 };
 
 function getBaseRate(pokemon: PokemonTemplate): number {
-  const statTotal = pokemon.hp + pokemon.atk + pokemon.def;
-  if (statTotal < 100) return 55;  // Weak pokemon: easier to catch
-  if (statTotal < 150) return 45;
-  if (statTotal < 200) return 35;
+  const statTotal = pokemon.hp + pokemon.atk + pokemon.def + pokemon.spa + pokemon.spd + pokemon.spe;
+  if (statTotal < 250) return 55;  // Weak pokemon: easier to catch
+  if (statTotal < 350) return 45;
+  if (statTotal < 450) return 35;
   return 25;  // Strong pokemon: harder base rate
 }
 
@@ -97,16 +100,41 @@ function getShakeCheckProbability(basePerShake: number, ringResult: RingResult):
   return Math.min(95, Math.max(15, basePerShake + bonus));
 }
 
-function calculateDamage(attacker: PokemonTemplate, defender: PokemonTemplate): number {
-  const baseDamage = Math.floor(attacker.atk * 0.7);
-  const defense = Math.floor(defender.def * 0.25);
-  return Math.max(8, baseDamage - defense + Math.floor(Math.random() * 8));
+// Calculate damage using the shared formula with move, Physical/Special split, STAB, accuracy
+function calcMoveDamage(move: Move, attacker: PokemonTemplate, defender: PokemonTemplate): {
+  damage: number; effectiveness: number; stab: boolean; missed: boolean; critical: boolean;
+} {
+  // Accuracy check
+  if (!checkAccuracy(move)) {
+    return { damage: 0, effectiveness: 1, stab: false, missed: true, critical: false };
+  }
+
+  const result = calculateBaseDamage({
+    move,
+    attackerTemplate: attacker,
+    attackerTypes: attacker.types,
+    defenderTemplate: defender,
+    defenderTypes: defender.types,
+    attackerTerrain: 1 as any, // grass (capture happens in tall grass)
+    defenderTerrain: 1 as any,
+  });
+
+  // Crit check
+  const critical = Math.random() < CRIT_CHANCE;
+  const critMul = critical ? CRIT_MULTIPLIER : 1;
+
+  // Variance
+  const variance = VARIANCE_MIN + Math.random() * (VARIANCE_MAX - VARIANCE_MIN);
+
+  const finalDamage = Math.max(1, Math.floor(result.base * critMul * variance));
+  return { damage: finalDamage, effectiveness: result.effectiveness, stab: result.isStab, missed: false, critical };
 }
 
 export function CaptureMinigame({
   pokemon,
   player,
   playerPokemon,
+  playerPP,
   onSuccess,
   onFail,
   onFlee
@@ -117,6 +145,16 @@ export function CaptureMinigame({
   const [hasAttacked, setHasAttacked] = useState(false);
   const [damageDealt, setDamageDealt] = useState(0);
   const [damageTaken, setDamageTaken] = useState(0);
+  const [selectedMove, setSelectedMove] = useState<Move | null>(null);
+  const [effectivenessText, setEffectivenessText] = useState<string | null>(null);
+  const [showInfoOverlay, setShowInfoOverlay] = useState(false);
+
+  // PP tracking: count how many times each move was used during encounter
+  const [ppUsed, setPpUsed] = useState<number[]>(() => new Array(playerPokemon?.moves.length || 4).fill(0));
+  // Local PP state for the encounter (decremented from initial)
+  const [localPP, setLocalPP] = useState<number[]>(() =>
+    playerPP || playerPokemon?.moves.map(m => m.pp) || []
+  );
 
   // Ring states
   const [ringResults, setRingResults] = useState<[RingResult, RingResult, RingResult]>([null, null, null]);
@@ -190,23 +228,61 @@ export function CaptureMinigame({
     return () => timers.forEach(t => clearTimeout(t));
   }, [playSFX]);
 
-  // Attack sequence
+  // Open move selection
   const handleAttack = useCallback(() => {
     if (phase !== 'battle' || hasAttacked) return;
+    setPhase('move_select');
+  }, [phase, hasAttacked]);
+
+  // Handle move selection and start attack sequence
+  const handleMoveSelect = useCallback((move: Move, moveIndex: number) => {
+    setSelectedMove(move);
     setHasAttacked(true);
+
+    // Deduct PP
+    setPpUsed(prev => {
+      const next = [...prev];
+      next[moveIndex] = (next[moveIndex] || 0) + 1;
+      return next;
+    });
+    setLocalPP(prev => {
+      const next = [...prev];
+      next[moveIndex] = Math.max(0, (next[moveIndex] || 0) - 1);
+      return next;
+    });
+
     setPhase('attack_intro');
 
     // Intro -> Execute
     setTimeout(() => {
-      const damage = calculateDamage(activePlayerPokemon, pokemon);
-      setDamageDealt(damage);
-      setWildHp(hp => Math.max(1, hp - damage));
+      const result = calcMoveDamage(move, activePlayerPokemon, pokemon);
+
+      if (result.missed) {
+        setDamageDealt(0);
+        setEffectivenessText('¡Falló!');
+      } else {
+        setDamageDealt(result.damage);
+        setWildHp(hp => Math.max(1, hp - result.damage));
+
+        // Set effectiveness text
+        if (result.effectiveness >= 2) setEffectivenessText('¡Súper Eficaz!');
+        else if (result.effectiveness > 0 && result.effectiveness < 1) setEffectivenessText('No muy eficaz...');
+        else if (result.effectiveness === 0) setEffectivenessText('No afecta...');
+        else if (result.critical) setEffectivenessText('¡Golpe Crítico!');
+        else setEffectivenessText(null);
+      }
       setPhase('attack_execute');
 
-      // Execute -> Counter
+      // Execute -> Counter (wild Pokemon uses its first attack move)
       setTimeout(() => {
-        const counter = calculateDamage(pokemon, activePlayerPokemon);
-        setDamageTaken(counter);
+        const wildAttackMoves = pokemon.moves.filter(m => m.category !== 'status' && m.power > 0);
+        const counterMove = wildAttackMoves[0] || pokemon.moves[0];
+        if (counterMove && counterMove.category !== 'status') {
+          const counterResult = calcMoveDamage(counterMove, pokemon, activePlayerPokemon);
+          setDamageTaken(counterResult.missed ? 0 : counterResult.damage);
+        } else {
+          setDamageTaken(0);
+        }
         setPhase('attack_counter');
 
         // Counter -> Outro
@@ -217,12 +293,18 @@ export function CaptureMinigame({
           setTimeout(() => {
             setDamageDealt(0);
             setDamageTaken(0);
+            setEffectivenessText(null);
             setPhase('battle');
           }, 600);
         }, 800);
       }, 800);
     }, 800);
-  }, [phase, hasAttacked, activePlayerPokemon, pokemon]);
+  }, [activePlayerPokemon, pokemon]);
+
+  // Cancel move selection -> return to battle
+  const handleCancelMoveSelect = useCallback(() => {
+    setPhase('battle');
+  }, []);
 
   // Ring system
   const handleCapture = useCallback(() => {
@@ -387,11 +469,11 @@ export function CaptureMinigame({
     }
 
     const timer = setTimeout(() => {
-      if (captureSuccess) onSuccess(damageTaken);
-      else onFail(damageTaken);
+      if (captureSuccess) onSuccess(damageTaken, ppUsed);
+      else onFail(damageTaken, ppUsed);
     }, 2500);
     return () => clearTimeout(timer);
-  }, [phase, captureSuccess, damageTaken, onSuccess, onFail, playSFX]);
+  }, [phase, captureSuccess, damageTaken, ppUsed, onSuccess, onFail, playSFX]);
 
   // Cleanup
   useEffect(() => {
@@ -403,12 +485,13 @@ export function CaptureMinigame({
   const handleFlee = useCallback(() => {
     if (phase !== 'battle') return;
     playSFX('flee_success', 0.6);
-    onFlee(damageTaken);
-  }, [phase, damageTaken, onFlee, playSFX]);
+    onFlee(damageTaken, ppUsed);
+  }, [phase, damageTaken, ppUsed, onFlee, playSFX]);
 
   const hpPercentage = (wildHp / pokemon.hp) * 100;
   const isRingPhase = phase === 'ring1' || phase === 'ring2' || phase === 'ring3';
   const isAttackPhase = phase === 'attack_intro' || phase === 'attack_execute' || phase === 'attack_counter' || phase === 'attack_outro';
+  const isMoveSelect = phase === 'move_select';
   const showWildPokemon = phase !== 'flash' && phase !== 'alert' && phase !== 'silhouette' && phase !== 'reveal';
 
   return (
@@ -678,21 +761,39 @@ export function CaptureMinigame({
               />
 
               {/* Damage Number with impact flash */}
-              {phase === 'attack_execute' && damageDealt > 0 && (
+              {phase === 'attack_execute' && (damageDealt > 0 || effectivenessText) && (
                 <div className="absolute top-0 left-1/2 -translate-x-1/2">
-                  {/* Impact flash circle */}
-                  <div
-                    className="absolute top-4 left-1/2 -translate-x-1/2 w-16 h-16 rounded-full animate-[impact-circle_0.4s_ease-out_forwards]"
-                    style={{ background: 'radial-gradient(circle, rgba(255,255,255,0.8) 0%, transparent 70%)' }}
-                  />
-                  <div className="animate-[damage-fly_0.8s_ease-out_forwards]">
-                    <span
-                      className="text-4xl font-black text-red-400"
-                      style={{ fontFamily: '"Press Start 2P", monospace', textShadow: '3px 3px 0 #000, 0 0 20px rgba(239,68,68,0.8)' }}
-                    >
-                      -{damageDealt}
-                    </span>
-                  </div>
+                  {damageDealt > 0 && (
+                    <>
+                      <div
+                        className="absolute top-4 left-1/2 -translate-x-1/2 w-16 h-16 rounded-full animate-[impact-circle_0.4s_ease-out_forwards]"
+                        style={{ background: 'radial-gradient(circle, rgba(255,255,255,0.8) 0%, transparent 70%)' }}
+                      />
+                      <div className="animate-[damage-fly_0.8s_ease-out_forwards]">
+                        <span
+                          className="text-4xl font-black text-red-400"
+                          style={{ fontFamily: '"Press Start 2P", monospace', textShadow: '3px 3px 0 #000, 0 0 20px rgba(239,68,68,0.8)' }}
+                        >
+                          -{damageDealt}
+                        </span>
+                      </div>
+                    </>
+                  )}
+                  {effectivenessText && (
+                    <div className="absolute top-14 left-1/2 -translate-x-1/2 whitespace-nowrap animate-[fade-in_0.3s_ease-out_forwards]">
+                      <span
+                        className={`text-sm font-bold ${
+                          effectivenessText.includes('Súper') ? 'text-emerald-400' :
+                          effectivenessText.includes('No muy') || effectivenessText.includes('No afecta') ? 'text-slate-400' :
+                          effectivenessText.includes('Falló') ? 'text-amber-400' :
+                          effectivenessText.includes('Crítico') ? 'text-yellow-400' : 'text-white'
+                        }`}
+                        style={{ fontFamily: '"Press Start 2P", monospace', textShadow: '2px 2px 0 #000' }}
+                      >
+                        {effectivenessText}
+                      </span>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -761,7 +862,7 @@ export function CaptureMinigame({
                 </div>
               </div>
 
-              {/* Premium Action Buttons */}
+              {/* Action Buttons Panel */}
               <div
                 className="rounded-2xl p-4 backdrop-blur-md"
                 style={{
@@ -770,48 +871,31 @@ export function CaptureMinigame({
                   boxShadow: `0 -10px 40px ${typeColor.glow}, inset 0 1px 0 rgba(255,255,255,0.1)`,
                 }}
               >
+                {/* Main row: Attack + Capture + Flee + Info */}
                 <div className="grid grid-cols-3 gap-3">
-                  {/* ATTACK Button */}
+                  {/* ATTACK Button - opens move selection */}
                   <button
                     onClick={handleAttack}
                     disabled={hasAttacked}
                     onMouseEnter={() => setHoveredButton('attack')}
                     onMouseLeave={() => setHoveredButton(null)}
-                    className={`relative group rounded-xl overflow-hidden transition-all duration-200 ${hasAttacked ? 'opacity-40 cursor-not-allowed' : 'hover:scale-105 active:scale-95'
-                      }`}
+                    className={`relative group rounded-xl overflow-hidden transition-all duration-200 ${hasAttacked ? 'opacity-40 cursor-not-allowed' : 'hover:scale-105 active:scale-95'}`}
                     style={{
                       background: hasAttacked ? '#1a1a2e' : 'linear-gradient(180deg, #dc2626 0%, #991b1b 50%, #7f1d1d 100%)',
-                      boxShadow: hasAttacked ? 'none' : hoveredButton === 'attack'
-                        ? '0 0 30px rgba(220,38,38,0.6), 0 8px 0 #450a0a, inset 0 1px 0 rgba(255,255,255,0.3)'
-                        : '0 6px 0 #450a0a, inset 0 1px 0 rgba(255,255,255,0.2)',
-                      transform: hoveredButton === 'attack' && !hasAttacked ? 'translateY(-2px)' : 'translateY(0)',
+                      boxShadow: hasAttacked ? 'none' : '0 6px 0 #450a0a, inset 0 1px 0 rgba(255,255,255,0.2)',
                     }}
                   >
                     <div className="px-4 py-4 flex flex-col items-center gap-2">
-                      {/* Sword Icon */}
-                      <div className="relative">
-                        <svg className={`w-8 h-8 ${hasAttacked ? 'text-slate-600' : 'text-white'}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                          <path d="M14.5 17.5L3 6V3h3l11.5 11.5" />
-                          <path d="M13 19l6-6" />
-                          <path d="M16 16l4 4" />
-                          <path d="M19 21l2-2" />
-                        </svg>
-                        {!hasAttacked && (
-                          <div className="absolute inset-0 animate-pulse">
-                            <svg className="w-8 h-8 text-red-300 blur-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                              <path d="M14.5 17.5L3 6V3h3l11.5 11.5" />
-                            </svg>
-                          </div>
-                        )}
-                      </div>
-                      <span
-                        className={`text-[10px] font-bold uppercase tracking-wide ${hasAttacked ? 'text-slate-600' : 'text-white'}`}
-                        style={{ fontFamily: '"Press Start 2P", monospace' }}
-                      >
+                      <svg className={`w-8 h-8 ${hasAttacked ? 'text-slate-600' : 'text-white'}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                        <path d="M14.5 17.5L3 6V3h3l11.5 11.5" />
+                        <path d="M13 19l6-6" />
+                        <path d="M16 16l4 4" />
+                        <path d="M19 21l2-2" />
+                      </svg>
+                      <span className={`text-[10px] font-bold uppercase tracking-wide ${hasAttacked ? 'text-slate-600' : 'text-white'}`} style={{ fontFamily: '"Press Start 2P", monospace' }}>
                         {hasAttacked ? 'Usado' : 'Atacar'}
                       </span>
                     </div>
-                    {!hasAttacked && <div className="absolute inset-0 bg-gradient-to-t from-transparent via-transparent to-white/10" />}
                   </button>
 
                   {/* CAPTURE Button */}
@@ -822,14 +906,10 @@ export function CaptureMinigame({
                     className="relative group rounded-xl overflow-hidden transition-all duration-200 hover:scale-105 active:scale-95"
                     style={{
                       background: 'linear-gradient(180deg, #f59e0b 0%, #d97706 50%, #b45309 100%)',
-                      boxShadow: hoveredButton === 'capture'
-                        ? '0 0 30px rgba(245,158,11,0.6), 0 8px 0 #78350f, inset 0 1px 0 rgba(255,255,255,0.3)'
-                        : '0 6px 0 #78350f, inset 0 1px 0 rgba(255,255,255,0.2)',
-                      transform: hoveredButton === 'capture' ? 'translateY(-2px)' : 'translateY(0)',
+                      boxShadow: '0 6px 0 #78350f, inset 0 1px 0 rgba(255,255,255,0.2)',
                     }}
                   >
                     <div className="px-4 py-4 flex flex-col items-center gap-2">
-                      {/* Pokeball Icon */}
                       <div className="relative w-8 h-8">
                         <div className="absolute inset-0 rounded-full bg-gradient-to-b from-red-500 to-red-600 border-2 border-slate-900 overflow-hidden">
                           <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-1.5 bg-slate-900" />
@@ -838,14 +918,10 @@ export function CaptureMinigame({
                         </div>
                         <div className="absolute inset-0 rounded-full animate-ping bg-amber-400/30" style={{ animationDuration: '2s' }} />
                       </div>
-                      <span
-                        className="text-[10px] font-bold text-white uppercase tracking-wide"
-                        style={{ fontFamily: '"Press Start 2P", monospace' }}
-                      >
+                      <span className="text-[10px] font-bold text-white uppercase tracking-wide" style={{ fontFamily: '"Press Start 2P", monospace' }}>
                         Capturar
                       </span>
                     </div>
-                    <div className="absolute inset-0 bg-gradient-to-t from-transparent via-transparent to-white/10" />
                   </button>
 
                   {/* FLEE Button */}
@@ -856,14 +932,10 @@ export function CaptureMinigame({
                     className="relative group rounded-xl overflow-hidden transition-all duration-200 hover:scale-105 active:scale-95"
                     style={{
                       background: 'linear-gradient(180deg, #475569 0%, #334155 50%, #1e293b 100%)',
-                      boxShadow: hoveredButton === 'flee'
-                        ? '0 0 20px rgba(71,85,105,0.5), 0 8px 0 #0f172a, inset 0 1px 0 rgba(255,255,255,0.2)'
-                        : '0 6px 0 #0f172a, inset 0 1px 0 rgba(255,255,255,0.1)',
-                      transform: hoveredButton === 'flee' ? 'translateY(-2px)' : 'translateY(0)',
+                      boxShadow: '0 6px 0 #0f172a, inset 0 1px 0 rgba(255,255,255,0.1)',
                     }}
                   >
                     <div className="px-4 py-4 flex flex-col items-center gap-2">
-                      {/* Run Icon */}
                       <svg className="w-8 h-8 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <path d="M13 4v4l4-2" />
                         <path d="M5 12h14" />
@@ -871,14 +943,202 @@ export function CaptureMinigame({
                         <path d="M19 12l-6-6" />
                         <path d="M19 12l-6 6" />
                       </svg>
-                      <span
-                        className="text-[10px] font-bold text-white uppercase tracking-wide"
-                        style={{ fontFamily: '"Press Start 2P", monospace' }}
-                      >
+                      <span className="text-[10px] font-bold text-white uppercase tracking-wide" style={{ fontFamily: '"Press Start 2P", monospace' }}>
                         Huir
                       </span>
                     </div>
-                    <div className="absolute inset-0 bg-gradient-to-t from-transparent via-transparent to-white/5" />
+                  </button>
+                </div>
+
+                {/* Info toggle button */}
+                <button
+                  onClick={() => setShowInfoOverlay(v => !v)}
+                  className="mt-3 w-full py-2 rounded-lg text-[9px] font-bold uppercase tracking-wider text-slate-400 hover:text-white bg-slate-800/50 hover:bg-slate-700/50 border border-slate-700 transition-all"
+                  style={{ fontFamily: '"Press Start 2P", monospace' }}
+                >
+                  {showInfoOverlay ? 'Ocultar Info' : 'Ver Info Pokémon'}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* === MOVE SELECT OVERLAY === */}
+          {isMoveSelect && (
+            <div className="absolute inset-0 z-40 flex items-end justify-center bg-black/50 backdrop-blur-sm animate-[fade-in_0.2s_ease-out]">
+              <div className="w-full max-w-md p-4 pb-6 animate-[slide-up_0.3s_ease-out]">
+                <div
+                  className="rounded-2xl p-4 backdrop-blur-md"
+                  style={{
+                    background: 'linear-gradient(180deg, rgba(20,20,40,0.98) 0%, rgba(10,10,25,0.99) 100%)',
+                    border: `3px solid ${typeColor.primary}60`,
+                    boxShadow: `0 -10px 40px ${typeColor.glow}, inset 0 1px 0 rgba(255,255,255,0.1)`,
+                  }}
+                >
+                  <div className="text-center mb-3">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider" style={{ fontFamily: '"Press Start 2P", monospace' }}>
+                      Elegir Movimiento
+                    </span>
+                  </div>
+
+                  {/* 2x2 Move Grid */}
+                  <div className="grid grid-cols-2 gap-2">
+                    {activePlayerPokemon.moves.map((move, i) => {
+                      const hasPP = localPP[i] > 0;
+                      const isStab = activePlayerPokemon.types.includes(move.type);
+                      const isUsable = hasPP && move.category !== 'status';
+                      const moveTypeColor = TYPE_COLORS[move.type] || TYPE_COLORS.normal;
+
+                      return (
+                        <button
+                          key={move.id}
+                          onClick={() => isUsable && handleMoveSelect(move, i)}
+                          disabled={!isUsable}
+                          className={`relative rounded-lg overflow-hidden text-left transition-all duration-100 ${
+                            isUsable ? 'hover:scale-[1.03] active:scale-[0.97] cursor-pointer' : 'opacity-40 cursor-not-allowed'
+                          }`}
+                          style={{
+                            background: isUsable
+                              ? `linear-gradient(135deg, ${moveTypeColor.dark}cc 0%, #0a0a15ee 100%)`
+                              : '#1a1a2e',
+                            border: `2px solid ${isUsable ? moveTypeColor.primary + '80' : '#333'}`,
+                          }}
+                        >
+                          {/* Type color bar */}
+                          <div className="absolute left-0 top-0 bottom-0 w-1" style={{ background: moveTypeColor.primary }} />
+
+                          <div className="pl-3 pr-2 py-2.5">
+                            <div className="flex items-center gap-1.5 mb-1">
+                              {/* Category icon */}
+                              <span className="text-[10px]">
+                                {move.category === 'physical' ? '⚔️' : move.category === 'special' ? '✨' : '🛡️'}
+                              </span>
+                              <span className="text-[10px] font-bold text-white truncate" style={{ fontFamily: '"Press Start 2P", monospace' }}>
+                                {move.name}
+                              </span>
+                              {isStab && hasPP && (
+                                <span className="text-[7px] px-1 py-0.5 rounded bg-amber-500/30 text-amber-300 font-bold">STAB</span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span
+                                className="text-[7px] px-1.5 py-0.5 rounded text-white font-bold"
+                                style={{ background: moveTypeColor.primary }}
+                              >
+                                {move.type.toUpperCase()}
+                              </span>
+                              {move.power > 0 && (
+                                <span className="text-[9px] text-slate-400 font-mono">Pow {move.power}</span>
+                              )}
+                              <span className={`text-[9px] font-mono font-bold ${
+                                !hasPP ? 'text-red-400' : localPP[i] <= 1 ? 'text-amber-400' : 'text-slate-300'
+                              }`}>
+                                {localPP[i]}/{move.pp}
+                              </span>
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Cancel */}
+                  <button
+                    onClick={handleCancelMoveSelect}
+                    className="mt-3 w-full py-2 rounded-lg text-[9px] font-bold uppercase tracking-wider text-slate-400 hover:text-white bg-slate-800/50 hover:bg-slate-700/50 border border-slate-700 transition-all"
+                    style={{ fontFamily: '"Press Start 2P", monospace' }}
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* === INFO OVERLAY — Wild Pokemon stats/moves/ability === */}
+          {showInfoOverlay && phase === 'battle' && (
+            <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/70 backdrop-blur-sm animate-[fade-in_0.2s_ease-out]" onClick={() => setShowInfoOverlay(false)}>
+              <div className="w-full max-w-sm mx-4 animate-[result-pop_0.3s_ease-out]" onClick={e => e.stopPropagation()}>
+                <div
+                  className="rounded-xl p-4 overflow-hidden"
+                  style={{
+                    background: `linear-gradient(180deg, ${typeColor.dark}ee 0%, #0a0a15f0 100%)`,
+                    border: `3px solid ${typeColor.primary}`,
+                    boxShadow: `0 0 30px ${typeColor.glow}`,
+                  }}
+                >
+                  {/* Header */}
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-sm font-bold text-white uppercase" style={{ fontFamily: '"Press Start 2P", monospace' }}>
+                      {pokemon.name}
+                    </span>
+                    <div className="flex gap-1">
+                      {pokemon.types.map(type => (
+                        <span key={type} className="px-2 py-0.5 text-[7px] font-bold uppercase rounded text-white"
+                          style={{ background: (TYPE_COLORS[type] || TYPE_COLORS.normal).primary }}>
+                          {type}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Ability */}
+                  <div className="mb-3 px-2 py-1.5 rounded bg-slate-800/60 border border-slate-700">
+                    <span className="text-[8px] text-slate-500 block">HABILIDAD</span>
+                    <span className="text-[10px] font-bold text-white" style={{ fontFamily: '"Press Start 2P", monospace' }}>
+                      {pokemon.ability.name}
+                    </span>
+                    <span className="text-[8px] text-slate-400 block mt-0.5">{pokemon.ability.description}</span>
+                  </div>
+
+                  {/* 6-Stat Grid */}
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 mb-3">
+                    {[
+                      { label: 'HP', value: pokemon.hp, color: '#22C55E' },
+                      { label: 'SPA', value: pokemon.spa, color: '#A855F7' },
+                      { label: 'ATK', value: pokemon.atk, color: '#EF4444' },
+                      { label: 'SPD', value: pokemon.spd, color: '#14B8A6' },
+                      { label: 'DEF', value: pokemon.def, color: '#3B82F6' },
+                      { label: 'SPE', value: pokemon.spe, color: '#F59E0B' },
+                    ].map(stat => (
+                      <div key={stat.label} className="flex items-center gap-1.5">
+                        <span className="w-8 text-[8px] font-bold text-slate-400" style={{ fontFamily: '"Press Start 2P", monospace' }}>
+                          {stat.label}
+                        </span>
+                        <div className="flex-1 h-2 bg-slate-800 rounded-sm overflow-hidden">
+                          <div className="h-full rounded-sm" style={{ width: `${Math.min(100, (stat.value / 200) * 100)}%`, background: stat.color }} />
+                        </div>
+                        <span className="w-6 text-[8px] font-bold text-white text-right" style={{ fontFamily: '"Press Start 2P", monospace' }}>
+                          {stat.value}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Moves */}
+                  <div className="space-y-1">
+                    <span className="text-[8px] text-slate-500 font-bold">MOVIMIENTOS</span>
+                    {pokemon.moves.map(move => {
+                      const mColor = TYPE_COLORS[move.type] || TYPE_COLORS.normal;
+                      return (
+                        <div key={move.id} className="flex items-center gap-2 px-2 py-1 rounded bg-slate-800/40 border-l-2" style={{ borderColor: mColor.primary }}>
+                          <span className="text-[10px]">{move.category === 'physical' ? '⚔️' : move.category === 'special' ? '✨' : '🛡️'}</span>
+                          <span className="text-[9px] font-bold text-white flex-1 truncate">{move.name}</span>
+                          <span className="text-[7px] px-1 py-0.5 rounded text-white font-bold" style={{ background: mColor.primary }}>
+                            {move.type.toUpperCase()}
+                          </span>
+                          {move.power > 0 && <span className="text-[8px] text-slate-400 font-mono">{move.power}</span>}
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Close */}
+                  <button
+                    onClick={() => setShowInfoOverlay(false)}
+                    className="mt-3 w-full py-2 rounded-lg text-[9px] font-bold uppercase text-slate-400 hover:text-white bg-slate-800/50 border border-slate-700 transition-all"
+                    style={{ fontFamily: '"Press Start 2P", monospace' }}
+                  >
+                    Cerrar
                   </button>
                 </div>
               </div>
