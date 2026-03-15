@@ -1,11 +1,11 @@
 /**
  * Audio Preloader & Pool Manager
  *
- * Solves production performance issues by:
- * 1. Preloading all audio files on game start (no network delays during gameplay)
- * 2. Pooling Audio instances (reuse instead of creating new ones)
- * 3. Providing loading state tracking
- * 4. Handling network failures gracefully
+ * Goals:
+ * 1. Preload all audio files early so gameplay never waits on the network
+ * 2. Keep a small reusable pool for SFX overlap
+ * 3. Expose loading + unlock state so music can recover after autoplay blocks
+ * 4. Stay resilient on mobile browsers where `canplaythrough` is unreliable
  */
 
 export type AudioCategory = 'music' | 'sfx';
@@ -13,7 +13,7 @@ export type AudioCategory = 'music' | 'sfx';
 export interface AudioConfig {
   path: string;
   category: AudioCategory;
-  poolSize?: number; // For SFX, how many instances to create
+  poolSize?: number;
 }
 
 export interface AudioLoadingState {
@@ -22,6 +22,9 @@ export interface AudioLoadingState {
   failed: string[];
   isComplete: boolean;
 }
+
+const AUDIO_READY_TIMEOUT_MS = 12_000;
+const UNLOCK_EVENTS = ['click', 'touchstart', 'keydown', 'pointerdown'] as const;
 
 class AudioPreloader {
   private musicCache: Map<string, HTMLAudioElement> = new Map();
@@ -32,81 +35,153 @@ class AudioPreloader {
     failed: [],
     isComplete: false,
   };
-  private listeners: Set<(state: AudioLoadingState) => void> = new Set();
+  private loadingListeners: Set<(state: AudioLoadingState) => void> = new Set();
+  private unlockListeners: Set<(unlocked: boolean) => void> = new Set();
   private audioUnlocked = false;
   private pendingPlaybacks: Array<() => void> = [];
+  private preloadPromise: Promise<void> | null = null;
+  private unlockHandler = () => {
+    void this.unlockAudio();
+  };
 
   constructor() {
     this.setupAutoUnlock();
   }
 
   /**
-   * Listen for first user interaction to unlock audio playback.
-   * Browsers block audio until a user gesture (click/touch/keydown).
+   * Listen for the first user interaction so later playback requests are allowed.
    */
   private setupAutoUnlock(): void {
-    const unlock = () => {
-      if (this.audioUnlocked) return;
-      this.audioUnlocked = true;
+    if (typeof document === 'undefined') return;
 
-      // Touch all cached audio elements to unlock them
-      this.musicCache.forEach((audio) => {
-        audio.play().then(() => {
-          audio.pause();
-          audio.currentTime = 0;
-        }).catch(() => { /* ignore */ });
+    UNLOCK_EVENTS.forEach((eventName) => {
+      document.addEventListener(eventName, this.unlockHandler, {
+        capture: true,
+        passive: true,
       });
-      this.sfxPools.forEach((pool) => {
-        pool.forEach((audio) => {
-          audio.play().then(() => {
-            audio.pause();
-            audio.currentTime = 0;
-          }).catch(() => { /* ignore */ });
-        });
-      });
+    });
+  }
 
-      // Execute any pending playbacks that were blocked
-      const pending = [...this.pendingPlaybacks];
-      this.pendingPlaybacks = [];
-      // Small delay to let unlock propagate
-      setTimeout(() => {
-        pending.forEach((fn) => fn());
-      }, 50);
+  private removeAutoUnlockListeners(): void {
+    if (typeof document === 'undefined') return;
 
-      // Remove listeners
-      ['click', 'touchstart', 'keydown', 'pointerdown'].forEach((evt) => {
-        document.removeEventListener(evt, unlock, true);
-      });
-    };
+    UNLOCK_EVENTS.forEach((eventName) => {
+      document.removeEventListener(eventName, this.unlockHandler, true);
+    });
+  }
 
-    ['click', 'touchstart', 'keydown', 'pointerdown'].forEach((evt) => {
-      document.addEventListener(evt, unlock, { capture: true, once: false, passive: true });
+  private createAudioElement(path: string): HTMLAudioElement {
+    const audio = new Audio(path);
+    audio.preload = 'auto';
+    audio.setAttribute('playsinline', 'true');
+    audio.setAttribute('webkit-playsinline', 'true');
+    return audio;
+  }
+
+  private waitForAudioReady(audio: HTMLAudioElement, path: string): Promise<HTMLAudioElement> {
+    return new Promise((resolve, reject) => {
+      let settled = false;
+      let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+      const cleanup = () => {
+        audio.removeEventListener('loadeddata', onReady);
+        audio.removeEventListener('canplay', onReady);
+        audio.removeEventListener('canplaythrough', onReady);
+        audio.removeEventListener('error', onError);
+        if (timeoutId) {
+          clearTimeout(timeoutId);
+          timeoutId = null;
+        }
+      };
+
+      const settle = (handler: () => void) => {
+        if (settled) return;
+        settled = true;
+        cleanup();
+        handler();
+      };
+
+      const onReady = () => {
+        settle(() => resolve(audio));
+      };
+
+      const onError = () => {
+        settle(() => reject(new Error(`Failed to load ${path}`)));
+      };
+
+      if (audio.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
+        resolve(audio);
+        return;
+      }
+
+      audio.addEventListener('loadeddata', onReady, { once: true });
+      audio.addEventListener('canplay', onReady, { once: true });
+      audio.addEventListener('canplaythrough', onReady, { once: true });
+      audio.addEventListener('error', onError, { once: true });
+
+      timeoutId = setTimeout(() => {
+        if (audio.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
+          onReady();
+          return;
+        }
+        onError();
+      }, AUDIO_READY_TIMEOUT_MS);
+
+      audio.load();
     });
   }
 
   /**
-   * Preload all audio files
+   * Explicitly unlock audio after a user gesture.
+   * This is also called by the passive global listeners above.
    */
-  async preloadAll(configs: Record<string, AudioConfig>): Promise<void> {
-    const entries = Object.entries(configs);
-    this.loadingState.total = entries.length;
-    this.loadingState.loaded = 0;
-    this.loadingState.failed = [];
-    this.loadingState.isComplete = false;
-    this.notifyListeners();
+  async unlockAudio(): Promise<void> {
+    if (this.audioUnlocked) return;
 
-    const promises = entries.map(([key, config]) =>
-      this.preloadAudio(key, config)
-    );
+    this.audioUnlocked = true;
+    this.notifyUnlockListeners();
+    this.removeAutoUnlockListeners();
 
-    await Promise.allSettled(promises);
-    this.loadingState.isComplete = true;
-    this.notifyListeners();
+    const pending = [...this.pendingPlaybacks];
+    this.pendingPlaybacks = [];
+    pending.forEach((playback) => playback());
   }
 
   /**
-   * Preload a single audio file
+   * Preload all audio files once and reuse the same promise for subsequent calls.
    */
+  async preloadAll(configs: Record<string, AudioConfig>): Promise<void> {
+    if (this.loadingState.isComplete) {
+      return;
+    }
+
+    if (this.preloadPromise) {
+      return this.preloadPromise;
+    }
+
+    const entries = Object.entries(configs);
+    this.loadingState = {
+      total: entries.length,
+      loaded: 0,
+      failed: [],
+      isComplete: false,
+    };
+    this.notifyLoadingListeners();
+
+    this.preloadPromise = (async () => {
+      const promises = entries.map(([key, config]) => this.preloadAudio(key, config));
+      await Promise.allSettled(promises);
+      this.loadingState.isComplete = true;
+      this.notifyLoadingListeners();
+    })();
+
+    try {
+      await this.preloadPromise;
+    } finally {
+      this.preloadPromise = this.loadingState.isComplete ? this.preloadPromise : null;
+    }
+  }
+
   private async preloadAudio(key: string, config: AudioConfig): Promise<void> {
     try {
       if (config.category === 'music') {
@@ -114,90 +189,41 @@ class AudioPreloader {
       } else {
         await this.preloadSFX(key, config.path, config.poolSize || 2);
       }
-      this.loadingState.loaded++;
-      this.notifyListeners();
     } catch (err) {
       console.error(`Failed to preload ${key}:`, err);
       this.loadingState.failed.push(key);
+    } finally {
       this.loadingState.loaded++;
-      this.notifyListeners();
+      this.notifyLoadingListeners();
     }
   }
 
-  /**
-   * Preload a music track (single instance)
-   */
   private async preloadMusic(key: string, path: string): Promise<void> {
-    return new Promise((resolve, reject) => {
-      const audio = new Audio();
-      audio.preload = 'auto';
-
-      const onCanPlay = () => {
-        audio.removeEventListener('canplaythrough', onCanPlay);
-        audio.removeEventListener('error', onError);
-        this.musicCache.set(key, audio);
-        resolve();
-      };
-
-      const onError = (e: ErrorEvent | Event) => {
-        audio.removeEventListener('canplaythrough', onCanPlay);
-        audio.removeEventListener('error', onError);
-        reject(new Error(`Failed to load ${path}: ${e}`));
-      };
-
-      audio.addEventListener('canplaythrough', onCanPlay, { once: true });
-      audio.addEventListener('error', onError, { once: true });
-      audio.src = path;
-      audio.load();
-    });
+    const audio = this.createAudioElement(path);
+    await this.waitForAudioReady(audio, path);
+    this.musicCache.set(key, audio);
   }
 
-  /**
-   * Preload SFX with pooling (multiple instances for overlapping sounds)
-   */
   private async preloadSFX(key: string, path: string, poolSize: number): Promise<void> {
-    const pool: HTMLAudioElement[] = [];
+    const baseAudio = this.createAudioElement(path);
+    await this.waitForAudioReady(baseAudio, path);
 
-    const loadPromises = Array.from({ length: poolSize }, () => {
-      return new Promise<HTMLAudioElement>((resolve, reject) => {
-        const audio = new Audio();
-        audio.preload = 'auto';
+    const pool: HTMLAudioElement[] = [baseAudio];
+    for (let i = 1; i < poolSize; i++) {
+      const clone = baseAudio.cloneNode(true) as HTMLAudioElement;
+      clone.preload = 'auto';
+      clone.setAttribute('playsinline', 'true');
+      clone.setAttribute('webkit-playsinline', 'true');
+      pool.push(clone);
+    }
 
-        const onCanPlay = () => {
-          audio.removeEventListener('canplaythrough', onCanPlay);
-          audio.removeEventListener('error', onError);
-          resolve(audio);
-        };
-
-        const onError = (e: ErrorEvent | Event) => {
-          audio.removeEventListener('canplaythrough', onCanPlay);
-          audio.removeEventListener('error', onError);
-          reject(new Error(`Failed to load ${path}: ${e}`));
-        };
-
-        audio.addEventListener('canplaythrough', onCanPlay, { once: true });
-        audio.addEventListener('error', onError, { once: true });
-        audio.src = path;
-        audio.load();
-      });
-    });
-
-    const results = await Promise.all(loadPromises);
-    pool.push(...results);
     this.sfxPools.set(key, pool);
   }
 
-  /**
-   * Get music audio element (for playback control)
-   */
   getMusic(key: string): HTMLAudioElement | null {
     return this.musicCache.get(key) || null;
   }
 
-  /**
-   * Play SFX from pool (automatically finds available instance)
-   * Optimized for instant playback with no delay
-   */
   playSFX(key: string, volume: number = 0.5): void {
     const pool = this.sfxPools.get(key);
     if (!pool || pool.length === 0) {
@@ -205,117 +231,101 @@ class AudioPreloader {
       return;
     }
 
-    // If audio isn't unlocked yet, queue this playback
     if (!this.audioUnlocked) {
       this.pendingPlaybacks.push(() => this.playSFX(key, volume));
       return;
     }
 
-    // Find first available (paused or ended) audio instance
-    let audio = pool.find(a => a.paused || a.ended);
-
-    // If all instances are playing, use the first one (interrupt it)
+    let audio = pool.find((candidate) => candidate.paused || candidate.ended);
     if (!audio) {
       audio = pool[0];
     }
 
-    // Reset to start and set volume
+    audio.pause();
     audio.currentTime = 0;
     audio.volume = volume;
 
-    // Play immediately - preloaded audio should have no delay
-    // Use a trick: pause first to ensure clean state, then play
-    audio.pause();
-    audio.currentTime = 0;
-
     const playPromise = audio.play();
     if (playPromise !== undefined) {
-      playPromise.catch(err => {
-        // Only warn if it's not an AbortError (which happens when interrupting)
-        if (err.name !== 'AbortError') {
+      playPromise.catch((err) => {
+        if (err.name !== 'AbortError' && err.name !== 'NotAllowedError') {
           console.warn(`SFX playback failed for "${key}":`, err);
         }
       });
     }
   }
 
-  /**
-   * Subscribe to loading state changes
-   */
   onLoadingStateChange(callback: (state: AudioLoadingState) => void): () => void {
-    this.listeners.add(callback);
-    // Immediately call with current state
+    this.loadingListeners.add(callback);
     callback({ ...this.loadingState });
 
-    // Return unsubscribe function
     return () => {
-      this.listeners.delete(callback);
+      this.loadingListeners.delete(callback);
     };
   }
 
-  /**
-   * Get current loading state (snapshot)
-   */
+  onUnlockStateChange(callback: (unlocked: boolean) => void): () => void {
+    this.unlockListeners.add(callback);
+    callback(this.audioUnlocked);
+
+    return () => {
+      this.unlockListeners.delete(callback);
+    };
+  }
+
   getLoadingState(): AudioLoadingState {
     return { ...this.loadingState };
   }
 
-  /**
-   * Check if audio has been unlocked by user interaction
-   */
   get isUnlocked(): boolean {
     return this.audioUnlocked;
   }
 
-  /**
-   * Notify all listeners of state change
-   */
-  private notifyListeners(): void {
+  private notifyLoadingListeners(): void {
     const state = { ...this.loadingState };
-    this.listeners.forEach(listener => listener(state));
+    this.loadingListeners.forEach((listener) => listener(state));
   }
 
-  /**
-   * Clear all cached audio (for cleanup)
-   */
+  private notifyUnlockListeners(): void {
+    this.unlockListeners.forEach((listener) => listener(this.audioUnlocked));
+  }
+
   clear(): void {
-    this.musicCache.forEach(audio => {
+    this.musicCache.forEach((audio) => {
       audio.pause();
       audio.src = '';
     });
     this.musicCache.clear();
 
-    this.sfxPools.forEach(pool => {
-      pool.forEach(audio => {
+    this.sfxPools.forEach((pool) => {
+      pool.forEach((audio) => {
         audio.pause();
         audio.src = '';
       });
     });
     this.sfxPools.clear();
 
+    this.pendingPlaybacks = [];
+    this.preloadPromise = null;
     this.loadingState = {
       total: 0,
       loaded: 0,
       failed: [],
       isComplete: false,
     };
-    this.notifyListeners();
+    this.notifyLoadingListeners();
   }
 }
 
-// Singleton instance
 export const audioPreloader = new AudioPreloader();
 
-// Audio configuration
 export const AUDIO_CONFIGS: Record<string, AudioConfig> = {
-  // Music (single instance each)
   menu_theme: { path: '/audio/music/menu_theme.mp3', category: 'music' },
   board_theme: { path: '/audio/music/board_theme.mp3', category: 'music' },
   battle_theme: { path: '/audio/music/battle_theme.mp3', category: 'music' },
   victory: { path: '/audio/music/victory.mp3', category: 'music' },
   defeat: { path: '/audio/music/defeat.mp3', category: 'music' },
 
-  // UI SFX (2 instances each - rarely overlap)
   menu_open: { path: '/audio/sfx/menu_open.mp3', category: 'sfx', poolSize: 2 },
   menu_close: { path: '/audio/sfx/menu_close.mp3', category: 'sfx', poolSize: 2 },
   button_click: { path: '/audio/sfx/button_click.mp3', category: 'sfx', poolSize: 2 },
@@ -323,14 +333,12 @@ export const AUDIO_CONFIGS: Record<string, AudioConfig> = {
   unit_deselect: { path: '/audio/sfx/unit_deselect.mp3', category: 'sfx', poolSize: 2 },
   unit_move: { path: '/audio/sfx/unit_move.mp3', category: 'sfx', poolSize: 2 },
 
-  // Battle SFX (2 instances each)
   attack_hit: { path: '/audio/sfx/attack_hit.mp3', category: 'sfx', poolSize: 2 },
   critical_hit: { path: '/audio/sfx/critical_hit.mp3', category: 'sfx', poolSize: 2 },
   super_effective: { path: '/audio/sfx/super_effective.mp3', category: 'sfx', poolSize: 2 },
   not_effective: { path: '/audio/sfx/not_effective.mp3', category: 'sfx', poolSize: 2 },
   unit_faint: { path: '/audio/sfx/unit_faint.mp3', category: 'sfx', poolSize: 2 },
 
-  // Capture minigame (3 instances - pokeball_shake plays 3x in sequence)
   wild_encounter: { path: '/audio/sfx/wild_encounter.mp3', category: 'sfx', poolSize: 2 },
   ring_hit_perfect: { path: '/audio/sfx/ring_hit_perfect.mp3', category: 'sfx', poolSize: 3 },
   ring_hit_good: { path: '/audio/sfx/ring_hit_good.mp3', category: 'sfx', poolSize: 3 },

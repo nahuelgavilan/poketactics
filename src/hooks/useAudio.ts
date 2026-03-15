@@ -3,74 +3,100 @@ import { audioPreloader } from '../utils/audioPreloader';
 
 export type AudioKey = 'menu_theme' | 'board_theme' | 'battle_theme' | 'victory' | 'defeat';
 
+type MusicOptions = {
+  loop?: boolean;
+  volume?: number;
+};
+
+type MusicRequest = {
+  key: AudioKey;
+  options: Required<MusicOptions>;
+};
+
 export function useAudio() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const currentTrackRef = useRef<AudioKey | null>(null);
   const fadeIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const desiredTrackRef = useRef<MusicRequest | null>(null);
 
-  /**
-   * Play a music track using preloaded audio
-   * - No network delay (preloaded on game start)
-   * - Reuses same Audio element for performance
-   * - Supports crossfading between tracks
-   */
-  const playMusic = useCallback((key: AudioKey, options?: { loop?: boolean; volume?: number }) => {
-    const { loop = false, volume = 0.7 } = options || {};
-
-    // If same track is already playing, just ensure it's playing and update volume
-    if (currentTrackRef.current === key && audioRef.current) {
-      if (audioRef.current.paused) {
-        audioRef.current.play().catch((err) => {
-          console.warn('Audio resume failed:', err);
-        });
-      }
-      // Update volume if different
-      if (Math.abs(audioRef.current.volume - volume) > 0.01) {
-        audioRef.current.volume = volume;
-      }
-      return;
-    }
-
-    // Stop current track if different (clear any fade intervals)
-    if (audioRef.current && currentTrackRef.current !== key) {
-      if (fadeIntervalRef.current) {
-        clearInterval(fadeIntervalRef.current);
-        fadeIntervalRef.current = null;
-      }
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
-      audioRef.current = null;
-    }
-
-    // Get preloaded audio instance
-    const audio = audioPreloader.getMusic(key);
-    if (!audio) {
-      console.warn(`Music track "${key}" not preloaded`);
-      return;
-    }
-
-    // Configure and play
-    audio.loop = loop;
-    audio.volume = volume;
-    audio.currentTime = 0; // Reset to start
-
-    audio.play().catch((err) => {
-      console.warn('Audio playback failed:', err);
-    });
-
-    audioRef.current = audio;
-    currentTrackRef.current = key;
-  }, []);
-
-  // Stop current music with optional fade
-  const stopMusic = useCallback((fadeMs = 0) => {
-    if (!audioRef.current) return;
-
-    // Clear any existing fade interval
+  const clearFade = useCallback(() => {
     if (fadeIntervalRef.current) {
       clearInterval(fadeIntervalRef.current);
       fadeIntervalRef.current = null;
     }
+  }, []);
+
+  const resetAudio = useCallback((audio: HTMLAudioElement | null) => {
+    if (!audio) return;
+    audio.pause();
+    audio.currentTime = 0;
+  }, []);
+
+  const flushDesiredTrack = useCallback(() => {
+    const request = desiredTrackRef.current;
+    if (!request || !audioPreloader.isUnlocked) {
+      return;
+    }
+
+    const { key, options } = request;
+    const audio = audioPreloader.getMusic(key);
+    if (!audio) {
+      return;
+    }
+
+    clearFade();
+
+    if (audioRef.current && audioRef.current !== audio) {
+      resetAudio(audioRef.current);
+    }
+
+    audio.loop = options.loop;
+    audio.volume = options.volume;
+
+    const sameTrack = audioRef.current === audio && currentTrackRef.current === key;
+    if (sameTrack && !audio.paused && !audio.ended) {
+      return;
+    }
+
+    if (!sameTrack || audio.ended) {
+      audio.currentTime = 0;
+    }
+
+    const playPromise = audio.play();
+    if (playPromise !== undefined) {
+      playPromise.catch((err) => {
+        if (err.name !== 'AbortError' && err.name !== 'NotAllowedError') {
+          console.warn(`Music playback failed for "${key}":`, err);
+        }
+      });
+    }
+
+    audioRef.current = audio;
+    currentTrackRef.current = key;
+  }, [clearFade, resetAudio]);
+
+  const playMusic = useCallback((key: AudioKey, options?: MusicOptions) => {
+    desiredTrackRef.current = {
+      key,
+      options: {
+        loop: options?.loop ?? false,
+        volume: options?.volume ?? 0.7,
+      },
+    };
+
+    flushDesiredTrack();
+  }, [flushDesiredTrack]);
+
+  const stopMusic = useCallback((fadeMs = 0) => {
+    desiredTrackRef.current = null;
+
+    if (!audioRef.current) {
+      currentTrackRef.current = null;
+      clearFade();
+      return;
+    }
+
+    clearFade();
 
     if (fadeMs > 0) {
       const audio = audioRef.current;
@@ -82,46 +108,50 @@ export function useAudio() {
       let step = 0;
       fadeIntervalRef.current = setInterval(() => {
         step++;
-        if (audio && !audio.paused) {
+        if (!audio.paused) {
           audio.volume = Math.max(0, startVolume - volumeStep * step);
         }
 
         if (step >= fadeSteps) {
-          if (fadeIntervalRef.current) {
-            clearInterval(fadeIntervalRef.current);
-            fadeIntervalRef.current = null;
-          }
-          if (audio) {
-            audio.pause();
-            audio.currentTime = 0;
-          }
+          clearFade();
+          resetAudio(audio);
           audioRef.current = null;
           currentTrackRef.current = null;
         }
       }, stepTime);
-    } else {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
-      audioRef.current = null;
-      currentTrackRef.current = null;
+      return;
     }
-  }, []);
 
-  // Cleanup on unmount
+    resetAudio(audioRef.current);
+    audioRef.current = null;
+    currentTrackRef.current = null;
+  }, [clearFade, resetAudio]);
+
+  useEffect(() => {
+    const unsubscribeLoading = audioPreloader.onLoadingStateChange(() => {
+      flushDesiredTrack();
+    });
+    const unsubscribeUnlock = audioPreloader.onUnlockStateChange((unlocked) => {
+      if (unlocked) {
+        flushDesiredTrack();
+      }
+    });
+
+    return () => {
+      unsubscribeLoading();
+      unsubscribeUnlock();
+    };
+  }, [flushDesiredTrack]);
+
   useEffect(() => {
     return () => {
-      if (fadeIntervalRef.current) {
-        clearInterval(fadeIntervalRef.current);
-        fadeIntervalRef.current = null;
-      }
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current.currentTime = 0;
-        audioRef.current = null;
-      }
+      desiredTrackRef.current = null;
+      clearFade();
+      resetAudio(audioRef.current);
+      audioRef.current = null;
       currentTrackRef.current = null;
     };
-  }, []);
+  }, [clearFade, resetAudio]);
 
   return { playMusic, stopMusic };
 }

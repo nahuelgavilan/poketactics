@@ -23,18 +23,26 @@ export function AudioLoadingScreen({ onComplete }: AudioLoadingScreenProps) {
     failed: [],
     isComplete: false,
   });
+  const [isUnlocked, setIsUnlocked] = useState(audioPreloader.isUnlocked);
   const [showSkip, setShowSkip] = useState(false);
 
   useEffect(() => {
     const unsubscribe = audioPreloader.onLoadingStateChange(setLoadingState);
-    return unsubscribe;
+    const unsubscribeUnlock = audioPreloader.onUnlockStateChange(setIsUnlocked);
+
+    return () => {
+      unsubscribe();
+      unsubscribeUnlock();
+    };
   }, []);
 
   useEffect(() => {
     const skipTimer = setTimeout(() => setShowSkip(true), SKIP_BUTTON_DELAY_MS);
     const autoSkipTimer = setTimeout(() => {
-      console.warn('[Audio] Loading timed out, skipping to game');
-      onComplete();
+      if (!audioPreloader.getLoadingState().isComplete) {
+        console.warn('[Audio] Loading timed out, skipping to game');
+        onComplete();
+      }
     }, MAX_WAIT_MS);
 
     return () => {
@@ -44,15 +52,16 @@ export function AudioLoadingScreen({ onComplete }: AudioLoadingScreenProps) {
   }, [onComplete]);
 
   useEffect(() => {
-    if (loadingState.isComplete) {
+    if (loadingState.isComplete && isUnlocked) {
       const timer = setTimeout(onComplete, 350);
       return () => clearTimeout(timer);
     }
-  }, [loadingState.isComplete, onComplete]);
+  }, [loadingState.isComplete, isUnlocked, onComplete]);
 
   const progress = loadingState.total > 0
     ? Math.round((loadingState.loaded / loadingState.total) * 100)
     : 0;
+  const needsActivation = loadingState.isComplete && !isUnlocked;
 
   return (
     <StartMenuShell>
@@ -62,19 +71,19 @@ export function AudioLoadingScreen({ onComplete }: AudioLoadingScreenProps) {
             title="Audio Boot"
             subtitle="Preloading soundtrack and effects"
             accent="amber"
-            rightSlot={<MenuBadge label={loadingState.isComplete ? 'Ready' : 'Loading'} accent={loadingState.isComplete ? 'green' : 'blue'} />}
+            rightSlot={<MenuBadge label={loadingState.isComplete ? (isUnlocked ? 'Ready' : 'Tap to Start') : 'Loading'} accent={loadingState.isComplete ? (isUnlocked ? 'green' : 'amber') : 'blue'} />}
           >
             <div className="space-y-4">
               <div className="flex items-center justify-center gap-3">
                 <div className="w-9 h-9 rounded-sm border-2 border-amber-900/45 bg-[#f6edd8] flex items-center justify-center">
-                  {loadingState.isComplete ? (
+                  {loadingState.isComplete && isUnlocked ? (
                     <Volume2 className="w-5 h-5 text-emerald-700" />
                   ) : (
-                    <Loader2 className="w-5 h-5 text-amber-700 animate-spin" />
+                    <Loader2 className={`w-5 h-5 text-amber-700 ${loadingState.isComplete ? '' : 'animate-spin'}`} />
                   )}
                 </div>
                 <p className="text-[10px] uppercase tracking-[0.14em] text-[#493a29]" style={{ fontFamily: '"Press Start 2P", monospace' }}>
-                  {loadingState.isComplete ? 'Sound bank ready' : 'Caching audio assets'}
+                  {needsActivation ? 'Tap to enable audio' : loadingState.isComplete ? 'Sound bank ready' : 'Caching audio assets'}
                 </p>
               </div>
 
@@ -101,6 +110,7 @@ export function AudioLoadingScreen({ onComplete }: AudioLoadingScreenProps) {
                 <MenuStatRow label="Loaded" value={`${loadingState.loaded}`} />
                 <MenuStatRow label="Total" value={`${loadingState.total}`} />
                 <MenuStatRow label="Failed" value={`${loadingState.failed.length}`} />
+                <MenuStatRow label="Audio" value={isUnlocked ? 'Enabled' : 'Locked'} />
               </div>
 
               {loadingState.failed.length > 0 && (
@@ -116,13 +126,26 @@ export function AudioLoadingScreen({ onComplete }: AudioLoadingScreenProps) {
                 </div>
               )}
 
-              {showSkip && !loadingState.isComplete && (
+              {needsActivation && (
                 <MenuActionButton
-                  label="Skip"
+                  label="Activar Audio"
+                  icon={Volume2}
+                  color="green"
+                  onClick={() => {
+                    void audioPreloader.unlockAudio();
+                    onComplete();
+                  }}
+                  subtitle="Entrar con musica y efectos listos"
+                />
+              )}
+
+              {showSkip && (!loadingState.isComplete || needsActivation) && (
+                <MenuActionButton
+                  label={needsActivation ? 'Seguir Sin Audio' : 'Skip'}
                   icon={SkipForward}
                   color="slate"
                   onClick={onComplete}
-                  subtitle="Continue without waiting"
+                  subtitle={needsActivation ? 'Entrar y activar sonido mas tarde' : 'Continue without waiting'}
                 />
               )}
             </div>
