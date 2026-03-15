@@ -480,10 +480,6 @@ export function Tile({
       onClick={onClick}
       onMouseEnter={onHover}
       onMouseLeave={onHoverEnd}
-      onTouchEnd={(e) => {
-        e.preventDefault();
-        onClick();
-      }}
       className="relative group cursor-pointer overflow-visible"
     >
       {/* Main tile with 3D effect */}

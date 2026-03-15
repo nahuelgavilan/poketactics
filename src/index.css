@@ -26,6 +26,13 @@
   --ui-team-blue: #2f7e99;
   --ui-team-red: #b65a4b;
   --ui-team-green: #4f8e62;
+  --safe-area-top: env(safe-area-inset-top, 0px);
+  --safe-area-right: env(safe-area-inset-right, 0px);
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-left: env(safe-area-inset-left, 0px);
+  --game-mobile-scroll-top: calc(var(--safe-area-top) + 3.75rem);
+  --game-mobile-scroll-bottom: calc(var(--safe-area-bottom) + 7.5rem);
+  --game-mobile-terrain-bottom: calc(var(--safe-area-bottom) + 6rem);
 }
 
 /* Base styles */
@@ -36,6 +43,8 @@
 
 html {
   scroll-behavior: smooth;
+  height: 100%;
+  background-color: var(--ui-bg-mid);
 }
 
 body {
@@ -48,6 +57,7 @@ body {
   overscroll-behavior: none;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  margin: 0;
 }
 
 .font-ui {
@@ -104,6 +114,16 @@ html, body {
   overscroll-behavior-y: contain;
 }
 
+body,
+#root {
+  min-height: 100%;
+}
+
+#root {
+  height: 100%;
+  isolation: isolate;
+}
+
 /* Full height for mobile browsers */
 html {
   height: -webkit-fill-available;
@@ -113,6 +133,27 @@ body {
   min-height: 100vh;
   min-height: -webkit-fill-available;
   min-height: 100dvh;
+}
+
+.game-scroll-surface {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  touch-action: pan-x pan-y;
+  scroll-padding-top: var(--game-mobile-scroll-top);
+  scroll-padding-bottom: var(--game-mobile-scroll-bottom);
+}
+
+@media (min-width: 768px) {
+  :root {
+    --game-mobile-scroll-top: 1rem;
+    --game-mobile-scroll-bottom: 1rem;
+    --game-mobile-terrain-bottom: 1rem;
+  }
+
+  .game-scroll-surface {
+    scroll-padding-top: 1rem;
+    scroll-padding-bottom: 1rem;
+  }
 }
 
 /* Pixelated rendering for sprites */

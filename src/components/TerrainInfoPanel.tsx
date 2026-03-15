@@ -88,7 +88,8 @@ export function TerrainInfoPanel({ terrain, centerOwner = null, onClose }: Terra
 
   return (
     <div
-      className="absolute bottom-2 left-2 right-2 z-40 animate-slide-up cursor-pointer"
+      className="absolute left-2 right-2 z-40 animate-slide-up cursor-pointer"
+      style={{ bottom: 'calc(var(--safe-area-bottom) + 0.5rem)' }}
       onClick={onClose}
     >
       <div className={`

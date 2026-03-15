@@ -60,7 +60,7 @@ export function Header({
 
   // Close menu when clicking outside
   useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
+    function handleClickOutside(event: PointerEvent) {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
         if (menuOpen) {
           playSFX('menu_close', 0.4);
@@ -68,8 +68,9 @@ export function Header({
         setMenuOpen(false);
       }
     }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+
+    document.addEventListener('pointerdown', handleClickOutside);
+    return () => document.removeEventListener('pointerdown', handleClickOutside);
   }, [menuOpen, playSFX]);
 
   // Toggle menu with sound

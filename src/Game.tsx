@@ -25,6 +25,7 @@ import { AudioLoadingScreen } from './components/AudioLoadingScreen';
 import { MapSizeSelector } from './components/MapSizeSelector';
 import { MapEditor } from './components/MapEditor';
 import { audioPreloader, AUDIO_CONFIGS } from './utils/audioPreloader';
+import { getIconSprite } from './utils';
 import { MoveSelector } from './components/MoveSelector';
 import { TERRAIN } from './constants/terrain';
 import type { Position, TerrainType, Unit, GameMap, PokemonTemplate, EvolutionData, Move } from './types/game';
@@ -531,10 +532,22 @@ export default function Game() {
 
   // Detect mobile
   useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    const checkMobile = () => {
+      const isNarrowViewport = window.matchMedia('(max-width: 767px)').matches;
+      const isCompactTouchDevice = window.matchMedia('(pointer: coarse) and (max-width: 1180px)').matches;
+      const isShortLandscapeViewport = window.innerHeight < 540 && window.innerWidth < 1024;
+
+      setIsMobile(isNarrowViewport || isCompactTouchDevice || isShortLandscapeViewport);
+    };
+
     checkMobile();
     window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+    window.visualViewport?.addEventListener('resize', checkMobile);
+
+    return () => {
+      window.removeEventListener('resize', checkMobile);
+      window.visualViewport?.removeEventListener('resize', checkMobile);
+    };
   }, []);
 
   // Auto-scroll to selected unit
@@ -778,9 +791,19 @@ export default function Game() {
     && gamePhase !== 'ACTION_MENU'
     && gamePhase !== 'MOVE_SELECT'
     && gamePhase !== 'DEPLOY_SELECT';
+  const boardPaddingTop = isMobile && gameState === 'playing'
+    ? 'var(--game-mobile-scroll-top)'
+    : undefined;
+  const boardPaddingBottom = isMobile && gameState === 'playing'
+    ? (showMobileUnitPanel
+      ? 'var(--game-mobile-scroll-bottom)'
+      : selectedTerrain
+      ? 'var(--game-mobile-terrain-bottom)'
+      : 'calc(var(--safe-area-bottom) + 1rem)')
+    : undefined;
 
   return (
-    <div className="fixed inset-0 bg-[radial-gradient(circle_at_14%_8%,rgba(86,174,196,0.2),transparent_34%),radial-gradient(circle_at_84%_90%,rgba(196,132,84,0.16),transparent_32%),linear-gradient(155deg,#f1e7d2_0%,#e2d5bc_100%)] text-slate-800 flex flex-col select-none overflow-hidden">
+    <div className="relative h-full min-h-[100dvh] bg-[radial-gradient(circle_at_14%_8%,rgba(86,174,196,0.2),transparent_34%),radial-gradient(circle_at_84%_90%,rgba(196,132,84,0.16),transparent_32%),linear-gradient(155deg,#f1e7d2_0%,#e2d5bc_100%)] text-slate-800 flex flex-col select-none overflow-hidden">
       {/* Header - compact with dropdown menu */}
       <Header
         currentPlayer={currentPlayer}
@@ -838,8 +861,11 @@ export default function Game() {
         )}
 
         {/* Scrollable board area */}
-        <div ref={scrollRef} className="absolute inset-0 overflow-auto">
-          <div className="min-w-full min-h-full w-max flex items-center justify-center p-2 md:p-4">
+        <div ref={scrollRef} className="game-scroll-surface absolute inset-0 overflow-auto">
+          <div
+            className="min-w-full min-h-full w-max flex items-start justify-center p-2 md:items-center md:p-4"
+            style={{ paddingTop: boardPaddingTop, paddingBottom: boardPaddingBottom }}
+          >
             <div className="relative bg-[#f5ebd5]/88 border-[3px] border-amber-700/70 rounded-sm shadow-[0_10px_24px_rgba(101,74,40,0.2)] p-1.5 md:p-2">
               <div className="absolute inset-[2px] border border-amber-300/35 rounded-[2px] pointer-events-none" />
               <GameBoard
@@ -971,7 +997,10 @@ export default function Game() {
 
         {/* Mobile: Selected unit stats panel - bottom of screen */}
         {showMobileUnitPanel && selectedUnit && (
-          <div className="absolute bottom-2 left-2 right-2 animate-slide-up z-30 pointer-events-none">
+          <div
+            className="absolute left-2 right-2 animate-slide-up z-30 pointer-events-none"
+            style={{ bottom: 'calc(var(--safe-area-bottom) + 0.5rem)' }}
+          >
             <div className={`
               relative flex items-center gap-3 px-3 py-2
               bg-[#f8efd9]/95 rounded-sm
@@ -988,7 +1017,7 @@ export default function Game() {
                 ${selectedUnit.owner === 'P1' ? 'bg-sky-100' : 'bg-rose-100'}
               `}>
                 <img
-                  src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/${selectedUnit.template.id}.gif`}
+                  src={getIconSprite(selectedUnit.template.id)}
                   className={`w-full h-full object-contain ${selectedUnit.owner === 'P1' ? 'scale-x-[-1]' : ''}`}
                   style={{ imageRendering: 'pixelated' }}
                   alt=""
