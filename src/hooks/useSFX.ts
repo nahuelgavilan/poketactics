@@ -1,5 +1,6 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { audioPreloader } from '../utils/audioPreloader';
+import { getAudioSettingsSnapshot, subscribeAudioSettings } from './useAudioSettings';
 
 // SFX keys must match keys in AUDIO_CONFIGS
 export type SFXKey =
@@ -25,6 +26,14 @@ export type SFXKey =
   | 'flee_success';
 
 export function useSFX() {
+  const settingsRef = useRef(getAudioSettingsSnapshot());
+
+  useEffect(() => {
+    return subscribeAudioSettings((settings) => {
+      settingsRef.current = settings;
+    });
+  }, []);
+
   /**
    * Play a sound effect using preloaded audio pool
    * - No network delay (preloaded on game start)
@@ -32,7 +41,14 @@ export function useSFX() {
    * - Supports overlapping sounds via pooling
    */
   const playSFX = useCallback((key: SFXKey, volume = 0.5) => {
-    audioPreloader.playSFX(key, volume);
+    const { sfxMuted, sfxVolume } = settingsRef.current;
+    const finalVolume = sfxMuted ? 0 : volume * sfxVolume;
+
+    if (finalVolume <= 0) {
+      return;
+    }
+
+    audioPreloader.playSFX(key, Math.max(0, Math.min(1, finalVolume)));
   }, []);
 
   return { playSFX };

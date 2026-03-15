@@ -612,7 +612,6 @@ export function useGameState(): UseGameStateReturn {
     unitHasMoved,
     waitUnit,
     resetSelection,
-    tryRandomEncounter,
     isMultiplayer,
     isMyTurn,
     baseReserveP1,
@@ -1008,7 +1007,7 @@ export function useGameState(): UseGameStateReturn {
 
     // Show selector for 2+ enemies
     setGamePhase('ATTACKING');
-  }, [selectedUnit, pendingPosition, attackRange, units, map]);
+  }, [selectedUnit, pendingPosition, attackRange, units]);
 
   // Action menu: select wait - move unit to pending position and end turn
   const selectWait = useCallback(() => {

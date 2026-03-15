@@ -3,8 +3,6 @@
  * Track in-game stats for post-battle summary
  */
 
-import type { Player } from './game';
-
 export interface UnitStats {
   pokemonId: number;
   pokemonName: string;

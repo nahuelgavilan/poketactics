@@ -3,7 +3,7 @@ import { ArrowLeft, Play, Shuffle, Trash2 } from 'lucide-react';
 import { TERRAIN } from '../constants/terrain';
 import { TERRAIN_PROPS } from '../constants/terrain';
 import { TERRAIN_THEME, TerrainDecoration } from './GameBoard/Tile';
-import { MAP_SIZES, DEFAULT_MAP_SIZE, generateRandomMap, getBridgeOrientation, type MapSize } from '../utils/mapGenerator';
+import { MAP_SIZES, DEFAULT_MAP_SIZE, generateRandomMap, getBridgeOrientation } from '../utils/mapGenerator';
 import { useSFX } from '../hooks/useSFX';
 import type { GameMap, TerrainType } from '../types/game';
 

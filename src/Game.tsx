@@ -1,34 +1,57 @@
-import { useState, useEffect, useCallback, useRef, type RefObject } from 'react';
+import { Suspense, lazy, useState, useEffect, useCallback, useRef } from 'react';
 import { useGameState, useVision, useBattleStats, useSFX } from './hooks';
 import { useAudio } from './hooks/useAudio';
 import { useMultiplayer, ClientGameState, ActionResult } from './hooks/useMultiplayer';
-import {
-  Header,
-  GameBoard,
-  BattleCinematic,
-  BattleZoomTransition,
-  CaptureModal,
-  TurnTransition,
-  VictoryScreen,
-  EvolutionCinematic,
-  MultiplayerLobby,
-  TerrainInfoPanel,
-  BaseDeploySelector,
-  DraftScreen,
-  TurnTimer,
-  TURN_TIMER_DURATION
-} from './components';
-import { CaptureMinigame } from './components/CaptureMinigame';
+import { Header } from './components/Header';
 import { StartScreen } from './components/StartScreen';
-import { HowToPlay } from './components/HowToPlay';
 import { AudioLoadingScreen } from './components/AudioLoadingScreen';
-import { MapSizeSelector } from './components/MapSizeSelector';
-import { MapEditor } from './components/MapEditor';
+import { TurnTimer, TURN_TIMER_DURATION } from './components/TurnTimer';
 import { audioPreloader, AUDIO_CONFIGS } from './utils/audioPreloader';
-import { getIconSprite } from './utils';
-import { MoveSelector } from './components/MoveSelector';
+import { getAnimatedFrontSprite, getIconSprite } from './utils';
 import { TERRAIN } from './constants/terrain';
-import type { Position, TerrainType, Unit, GameMap, PokemonTemplate, EvolutionData, Move } from './types/game';
+import type { GameMap, Move, PokemonTemplate, Position, TerrainType, Unit } from './types/game';
+
+const GameBoard = lazy(() => import('./components/GameBoard').then((module) => ({ default: module.GameBoard })));
+const BattleCinematic = lazy(() => import('./components/BattleCinematic').then((module) => ({ default: module.BattleCinematic })));
+const BattleZoomTransition = lazy(() => import('./components/BattleZoomTransition').then((module) => ({ default: module.BattleZoomTransition })));
+const CaptureModal = lazy(() => import('./components/CaptureModal').then((module) => ({ default: module.CaptureModal })));
+const TurnTransition = lazy(() => import('./components/overlays').then((module) => ({ default: module.TurnTransition })));
+const VictoryScreen = lazy(() => import('./components/overlays').then((module) => ({ default: module.VictoryScreen })));
+const EvolutionCinematic = lazy(() => import('./components/EvolutionCinematic').then((module) => ({ default: module.EvolutionCinematic })));
+const MultiplayerLobby = lazy(() => import('./components/MultiplayerLobby').then((module) => ({ default: module.MultiplayerLobby })));
+const TerrainInfoPanel = lazy(() => import('./components/TerrainInfoPanel').then((module) => ({ default: module.TerrainInfoPanel })));
+const BaseDeploySelector = lazy(() => import('./components/BaseDeploySelector').then((module) => ({ default: module.BaseDeploySelector })));
+const DraftScreen = lazy(() => import('./components/DraftScreen').then((module) => ({ default: module.DraftScreen })));
+const CaptureMinigame = lazy(() => import('./components/CaptureMinigame').then((module) => ({ default: module.CaptureMinigame })));
+const HowToPlay = lazy(() => import('./components/HowToPlay').then((module) => ({ default: module.HowToPlay })));
+const MapSizeSelector = lazy(() => import('./components/MapSizeSelector').then((module) => ({ default: module.MapSizeSelector })));
+const MapEditor = lazy(() => import('./components/MapEditor').then((module) => ({ default: module.MapEditor })));
+const MoveSelector = lazy(() => import('./components/MoveSelector').then((module) => ({ default: module.MoveSelector })));
+
+function ScreenFallback({ title, subtitle }: { title: string; subtitle: string }) {
+  return (
+    <div className="min-h-[100dvh] flex items-center justify-center p-4 bg-[linear-gradient(155deg,#ece4d3_0%,#d9cfb9_100%)]">
+      <div className="ui-frame-light ui-inner-outline w-full max-w-md px-6 py-5 text-center">
+        <div className="text-[10px] uppercase tracking-[0.18em] text-amber-800" style={{ fontFamily: '"Press Start 2P", monospace' }}>
+          {title}
+        </div>
+        <p className="mt-3 text-sm text-slate-700 font-ui">{subtitle}</p>
+      </div>
+    </div>
+  );
+}
+
+function OverlayFallback({ label }: { label: string }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4">
+      <div className="ui-frame-light ui-inner-outline px-5 py-4 text-center">
+        <div className="text-[10px] uppercase tracking-[0.18em] text-amber-800" style={{ fontFamily: '"Press Start 2P", monospace' }}>
+          {label}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function Game() {
   const {
@@ -79,14 +102,11 @@ export default function Game() {
     selectWait,
     cancelAction,
     // Multiplayer
-    startServerBattle,
-    triggerMultiplayerEncounter,
     triggerServerEvolution,
     triggerServerEncounter,
     triggerServerBattleWithZoom,
     updateUnitsOptimistic,
     // Move selection
-    selectedMove,
     attackTarget,
     selectMove,
     cancelMoveSelect,
@@ -110,8 +130,7 @@ export default function Game() {
     sendDeploy,
     sendWait,
     sendCapture,
-    sendEndTurn,
-    roomStatus
+    sendEndTurn
   } = multiplayer;
 
   // Track if we're in a multiplayer game (started from lobby)
@@ -384,7 +403,7 @@ export default function Game() {
     });
   }, []);
   const [timerResetKey, setTimerResetKey] = useState(0);
-  const [timerEnabled, setTimerEnabled] = useState(true);
+  const timerEnabled = true;
 
   useEffect(() => {
     if (multiplayer.error) {
@@ -570,7 +589,7 @@ export default function Game() {
         tile?.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
       }
     }
-  }, [currentPlayer, gameState]);
+  }, [currentPlayer, gameState, isMultiplayer, myPlayer, units]);
 
   // Wire up multiplayer callbacks - receives game state from server
   useEffect(() => {
@@ -704,49 +723,57 @@ export default function Game() {
   if (gameState === 'menu') {
     if (showMapSizeSelector) {
       return (
-        <MapSizeSelector
-          onSelect={handleSizeSelected}
-          onBack={() => {
-            setShowMapSizeSelector(false);
-            setPendingDraftTeams(null);
-          }}
-        />
+        <Suspense fallback={<ScreenFallback title="Map Setup" subtitle="Preparing board presets..." />}>
+          <MapSizeSelector
+            onSelect={handleSizeSelected}
+            onBack={() => {
+              setShowMapSizeSelector(false);
+              setPendingDraftTeams(null);
+            }}
+          />
+        </Suspense>
       );
     }
 
     if (showMapEditor) {
       return (
-        <MapEditor
-          onPlay={handleEditorPlay}
-          onBack={() => setShowMapEditor(false)}
-        />
+        <Suspense fallback={<ScreenFallback title="Map Editor" subtitle="Loading custom terrain tools..." />}>
+          <MapEditor
+            onPlay={handleEditorPlay}
+            onBack={() => setShowMapEditor(false)}
+          />
+        </Suspense>
       );
     }
 
     if (showDraft) {
       return (
-        <DraftScreen
-          onDraftComplete={handleDraftComplete}
-          onCancel={() => setShowDraft(false)}
-        />
+        <Suspense fallback={<ScreenFallback title="Draft Arena" subtitle="Spinning up the local draft lobby..." />}>
+          <DraftScreen
+            onDraftComplete={handleDraftComplete}
+            onCancel={() => setShowDraft(false)}
+          />
+        </Suspense>
       );
     }
 
     if (showMultiplayer) {
       return (
-        <MultiplayerLobby
-          onBack={() => setShowMultiplayer(false)}
-          gameMode={multiplayerMode}
-          connectionStatus={multiplayer.connectionStatus}
-          roomStatus={multiplayer.roomStatus}
-          roomId={multiplayer.roomId}
-          myPlayer={multiplayer.myPlayer}
-          error={multiplayer.error}
-          connect={multiplayer.connect}
-          createRoom={multiplayer.createRoom}
-          joinRoom={multiplayer.joinRoom}
-          startGame={multiplayer.startGame}
-        />
+        <Suspense fallback={<ScreenFallback title="Online Lobby" subtitle="Connecting command terminals..." />}>
+          <MultiplayerLobby
+            onBack={() => setShowMultiplayer(false)}
+            gameMode={multiplayerMode}
+            connectionStatus={multiplayer.connectionStatus}
+            roomStatus={multiplayer.roomStatus}
+            roomId={multiplayer.roomId}
+            myPlayer={multiplayer.myPlayer}
+            error={multiplayer.error}
+            connect={multiplayer.connect}
+            createRoom={multiplayer.createRoom}
+            joinRoom={multiplayer.joinRoom}
+            startGame={multiplayer.startGame}
+          />
+        </Suspense>
       );
     }
 
@@ -762,7 +789,11 @@ export default function Game() {
           onDraft={() => setShowDraft(true)}
           onMapEditor={() => setShowMapEditor(true)}
         />
-        {showHowToPlay && <HowToPlay onClose={() => setShowHowToPlay(false)} />}
+        {showHowToPlay && (
+          <Suspense fallback={<OverlayFallback label="Loading Guide" />}>
+            <HowToPlay onClose={() => setShowHowToPlay(false)} />
+          </Suspense>
+        )}
       </>
     );
   }
@@ -868,24 +899,26 @@ export default function Game() {
           >
             <div className="relative bg-[#f5ebd5]/88 border-[3px] border-amber-700/70 rounded-sm shadow-[0_10px_24px_rgba(101,74,40,0.2)] p-1.5 md:p-2">
               <div className="absolute inset-[2px] border border-amber-300/35 rounded-[2px] pointer-events-none" />
-              <GameBoard
-                map={map}
-                units={units}
-                centerOwners={centerOwners}
-                selectedUnit={selectedUnit}
-                moveRange={moveRange}
-                attackRange={attackRange}
-                pendingPosition={pendingPosition}
-                onTileClick={handleTileClickWithTerrain}
-                isMobile={isMobile}
-                currentPlayer={fogPlayer}
-                visibility={visibility}
-                showActionMenu={gamePhase === 'ACTION_MENU' && !!pendingPosition}
-                canAttack={attackRange.length > 0}
-                onAttack={handleSelectAttack}
-                onWait={handleSelectWait}
-                onCancel={cancelAction}
-              />
+              <Suspense fallback={<OverlayFallback label="Loading Board" />}>
+                <GameBoard
+                  map={map}
+                  units={units}
+                  centerOwners={centerOwners}
+                  selectedUnit={selectedUnit}
+                  moveRange={moveRange}
+                  attackRange={attackRange}
+                  pendingPosition={pendingPosition}
+                  onTileClick={handleTileClickWithTerrain}
+                  isMobile={isMobile}
+                  currentPlayer={fogPlayer}
+                  visibility={visibility}
+                  showActionMenu={gamePhase === 'ACTION_MENU' && !!pendingPosition}
+                  canAttack={attackRange.length > 0}
+                  onAttack={handleSelectAttack}
+                  onWait={handleSelectWait}
+                  onCancel={cancelAction}
+                />
+              </Suspense>
             </div>
           </div>
         </div>
@@ -961,7 +994,7 @@ export default function Game() {
                   ${selectedUnit.owner === 'P1' ? 'bg-sky-100 border-sky-500/40' : 'bg-rose-100 border-rose-500/40'}
                 `}>
                   <img
-                    src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/${selectedUnit.template.id}.gif`}
+                    src={getAnimatedFrontSprite(selectedUnit.template.id)}
                     className={`w-full h-full object-contain ${selectedUnit.owner === 'P1' ? 'scale-x-[-1]' : ''}`}
                     style={{ imageRendering: 'pixelated' }}
                     alt=""
@@ -1069,11 +1102,13 @@ export default function Game() {
 
         {/* Terrain Info Panel - shows when clicking empty tile */}
         {selectedTerrain && gameState === 'playing' && !selectedUnit && (
-          <TerrainInfoPanel
-            terrain={selectedTerrain.terrain}
-            centerOwner={selectedTerrain.terrain === TERRAIN.POKEMON_CENTER ? (centerOwners[`${selectedTerrain.x},${selectedTerrain.y}`] ?? null) : null}
-            onClose={() => setSelectedTerrain(null)}
-          />
+          <Suspense fallback={<OverlayFallback label="Loading Terrain" />}>
+            <TerrainInfoPanel
+              terrain={selectedTerrain.terrain}
+              centerOwner={selectedTerrain.terrain === TERRAIN.POKEMON_CENTER ? (centerOwners[`${selectedTerrain.x},${selectedTerrain.y}`] ?? null) : null}
+              onClose={() => setSelectedTerrain(null)}
+            />
+          </Suspense>
         )}
       </main>
 
@@ -1093,69 +1128,91 @@ export default function Game() {
       {/* Overlays - full screen modals */}
       {/* TurnTransition is LOCAL GAME ONLY - for passing the phone */}
       {gameState === 'transition' && !isInMultiplayerGame.current && (
-        <TurnTransition
-          currentPlayer={currentPlayer}
-          onConfirm={confirmTurnChange}
-        />
+        <Suspense fallback={<OverlayFallback label="Preparing Turn" />}>
+          <TurnTransition
+            currentPlayer={currentPlayer}
+            onConfirm={confirmTurnChange}
+          />
+        </Suspense>
       )}
 
       {gamePhase === 'DEPLOY_SELECT' && deployBase && (
-        <BaseDeploySelector
-          player={activePlayer}
-          reserve={activeReserve}
-          credits={activeCredits}
-          onDeploy={handleDeployFromBase}
-          onCancel={cancelDeploySelect}
-        />
+        <Suspense fallback={<OverlayFallback label="Loading Reserve" />}>
+          <BaseDeploySelector
+            player={activePlayer}
+            reserve={activeReserve}
+            credits={activeCredits}
+            onDeploy={handleDeployFromBase}
+            onCancel={cancelDeploySelect}
+          />
+        </Suspense>
       )}
 
       {gamePhase === 'MOVE_SELECT' && selectedUnit && attackTarget && (
-        <MoveSelector
-          attacker={selectedUnit}
-          target={attackTarget}
-          onSelectMove={handleSelectMove}
-          onCancel={cancelMoveSelect}
-        />
+        <Suspense fallback={<OverlayFallback label="Loading Moves" />}>
+          <MoveSelector
+            attacker={selectedUnit}
+            target={attackTarget}
+            onSelectMove={handleSelectMove}
+            onCancel={cancelMoveSelect}
+          />
+        </Suspense>
       )}
 
       {gameState === 'battle_zoom' && battleData && (
-        <BattleZoomTransition
-          attacker={battleData.attacker}
-          defender={battleData.defender}
-          map={map}
-          onComplete={confirmBattleZoom}
-        />
+        <Suspense fallback={<OverlayFallback label="Zooming Battle" />}>
+          <BattleZoomTransition
+            attacker={battleData.attacker}
+            defender={battleData.defender}
+            map={map}
+            onComplete={confirmBattleZoom}
+          />
+        </Suspense>
       )}
 
       {gameState === 'battle' && battleData && (
-        <BattleCinematic {...battleData} onComplete={handleEndBattle} />
+        <Suspense fallback={<OverlayFallback label="Loading Battle" />}>
+          <BattleCinematic {...battleData} onComplete={handleEndBattle} />
+        </Suspense>
       )}
 
       {gameState === 'capture_minigame' && captureData && (
-        <CaptureMinigame
-          pokemon={captureData.pokemon}
-          player={captureData.player}
-          playerPokemon={selectedUnit?.template}
-          playerPP={selectedUnit?.pp}
-          onSuccess={handleCaptureSuccess}
-          onFail={handleCaptureFail}
-          onFlee={handleCaptureFlee}
-        />
+        <Suspense fallback={<OverlayFallback label="Loading Encounter" />}>
+          <CaptureMinigame
+            pokemon={captureData.pokemon}
+            player={captureData.player}
+            playerPokemon={selectedUnit?.template}
+            playerPP={selectedUnit?.pp}
+            onSuccess={handleCaptureSuccess}
+            onFail={handleCaptureFail}
+            onFlee={handleCaptureFlee}
+          />
+        </Suspense>
       )}
 
       {gameState === 'capture' && captureData && (
-        <CaptureModal {...captureData} onComplete={handleConfirmCapture} />
+        <Suspense fallback={<OverlayFallback label="Opening Capture" />}>
+          <CaptureModal {...captureData} onComplete={handleConfirmCapture} />
+        </Suspense>
       )}
 
       {gameState === 'evolution' && evolutionData && (
-        <EvolutionCinematic evolutionData={evolutionData} onComplete={confirmEvolution} />
+        <Suspense fallback={<OverlayFallback label="Loading Evolution" />}>
+          <EvolutionCinematic evolutionData={evolutionData} onComplete={confirmEvolution} />
+        </Suspense>
       )}
 
       {gameState === 'victory' && winner && (
-        <VictoryScreen winner={winner} onPlayAgain={initGame} stats={battleStats.stats} />
+        <Suspense fallback={<OverlayFallback label="Loading Results" />}>
+          <VictoryScreen winner={winner} onPlayAgain={initGame} stats={battleStats.stats} />
+        </Suspense>
       )}
 
-      {showHowToPlay && <HowToPlay onClose={() => setShowHowToPlay(false)} />}
+      {showHowToPlay && (
+        <Suspense fallback={<OverlayFallback label="Loading Guide" />}>
+          <HowToPlay onClose={() => setShowHowToPlay(false)} />
+        </Suspense>
+      )}
 
       {/* Global styles */}
       <style>{`

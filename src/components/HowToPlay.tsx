@@ -4,14 +4,12 @@ import {
   ChevronLeft,
   ChevronRight,
   Target,
-  Sword,
   Swords,
   TreePine,
   Sparkles,
   Zap,
   Shield,
   Move,
-  Clock,
   Gamepad2,
   Star,
   Hand,
@@ -19,17 +17,17 @@ import {
 } from 'lucide-react';
 import { Tile } from './GameBoard/Tile';
 import { TERRAIN } from '../constants/terrain';
+import { getAnimatedFrontSprite } from '../utils/sprites';
 import type { TerrainType, Position } from '../types/game';
 
 interface HowToPlayProps {
   onClose: () => void;
 }
 
-// Pokemon sprites
-const PIKACHU_SPRITE = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/25.gif';
-const CHARMANDER_SPRITE = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/4.gif';
-const SQUIRTLE_SPRITE = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/7.gif';
-const BULBASAUR_SPRITE = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/1.gif';
+const PIKACHU_SPRITE = getAnimatedFrontSprite(25);
+const CHARMANDER_SPRITE = getAnimatedFrontSprite(4);
+const SQUIRTLE_SPRITE = getAnimatedFrontSprite(7);
+const BULBASAUR_SPRITE = getAnimatedFrontSprite(1);
 
 // Generate sparkle particles
 function generateSparkles(count: number) {
@@ -84,69 +82,6 @@ function TutorialTile({
           {children}
         </div>
       )}
-    </div>
-  );
-}
-
-// EXACT copy of ActionButton from ActionMenu.tsx for tutorial accuracy
-function TutorialActionButton({
-  icon: Icon,
-  label,
-  color,
-  highlight = false,
-}: {
-  icon: React.ElementType;
-  label: string;
-  color: 'blue' | 'red' | 'green' | 'amber';
-  highlight?: boolean;
-}) {
-  const colorStyles = {
-    blue: {
-      edge: 'border-sky-400/80',
-      accent: 'bg-sky-500',
-      iconPlate: 'bg-sky-100 border-sky-300 text-sky-900',
-      text: 'text-sky-950'
-    },
-    red: {
-      edge: 'border-rose-400/80',
-      accent: 'bg-rose-500',
-      iconPlate: 'bg-rose-100 border-rose-300 text-rose-900',
-      text: 'text-rose-950'
-    },
-    green: {
-      edge: 'border-emerald-500/80',
-      accent: 'bg-emerald-600',
-      iconPlate: 'bg-emerald-100 border-emerald-300 text-emerald-900',
-      text: 'text-emerald-950'
-    },
-    amber: {
-      edge: 'border-amber-600/80',
-      accent: 'bg-amber-500',
-      iconPlate: 'bg-amber-100 border-amber-300 text-amber-900',
-      text: 'text-amber-950'
-    }
-  };
-
-  const style = colorStyles[color];
-
-  return (
-    <div
-      className={`
-        relative flex items-center justify-center gap-2
-        px-3 py-2.5 min-w-[72px]
-        bg-gradient-to-b from-[#f3e7c6] to-[#e2d2ab]
-        border-[2px] border-b-[4px] rounded-sm ${style.edge}
-        text-xs font-bold uppercase tracking-wide ${style.text}
-        shadow-[0_4px_0_0_rgba(0,0,0,0.25)]
-        ${highlight ? 'ring-2 ring-amber-400 ring-offset-2 ring-offset-[#111f23]' : ''}
-      `}
-    >
-      <span className="pointer-events-none absolute inset-[1px] border border-amber-300/80 rounded-[2px]" />
-      <span className={`pointer-events-none absolute left-1 top-1 bottom-1 w-1 rounded-sm ${style.accent}`} />
-      <span className={`w-5 h-5 rounded-sm border flex items-center justify-center ${style.iconPlate}`}>
-        <Icon className="w-3.5 h-3.5" />
-      </span>
-      <span>{label}</span>
     </div>
   );
 }

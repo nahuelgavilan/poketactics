@@ -1,6 +1,7 @@
 import { Undo2, Swords, Sparkles, Shield } from 'lucide-react';
 import { TYPE_COLORS } from '../constants/types';
 import { getDistance } from '../utils/pathfinding';
+import { getAnimatedFrontSprite } from '../utils/sprites';
 import type { Unit, Move } from '../types/game';
 
 interface MoveSelectorProps {
@@ -54,7 +55,7 @@ export function MoveSelector({ attacker, target, onSelectMove, onCancel }: MoveS
           {/* Target info */}
           <div className="px-3 py-2 border-b border-amber-800/45 bg-[#f4e8ce] flex items-center gap-2">
             <img
-              src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/${target.template.id}.gif`}
+              src={getAnimatedFrontSprite(target.template.id)}
               className="w-8 h-8 object-contain"
               style={{ imageRendering: 'pixelated' }}
               alt=""

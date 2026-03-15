@@ -1,6 +1,7 @@
 import React from 'react';
-import { Heart, Skull, Users } from 'lucide-react';
+import { Users } from 'lucide-react';
 import type { Unit, Player } from '../types/game';
+import { getIconSprite } from '../utils/sprites';
 
 interface GameHUDProps {
   units: Unit[];
@@ -31,7 +32,7 @@ function MiniUnitIcon({ unit }: { unit: Unit }) {
   return (
     <div className="relative">
       <img
-        src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-viii/icons/${unit.template.id}.png`}
+        src={getIconSprite(unit.template.id)}
         alt={unit.template.name}
         className={`w-8 h-8 object-contain ${unit.hasMoved ? 'opacity-40 grayscale' : ''}`}
         style={{ imageRendering: 'pixelated' }}

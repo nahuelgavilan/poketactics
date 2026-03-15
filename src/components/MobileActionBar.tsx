@@ -2,6 +2,7 @@ import React from 'react';
 import { Sword, Shield, Zap, SkipForward, HelpCircle, Heart } from 'lucide-react';
 import { TYPE_COLORS } from '../constants/types';
 import type { Unit } from '../types/game';
+import { getIconSprite } from '../utils/sprites';
 
 interface MobileActionBarProps {
   selectedUnit: Unit | null;
@@ -26,7 +27,7 @@ export function MobileActionBar({
             <div className="flex items-center gap-3">
               <div className={`relative rounded-md border ${selectedUnit.owner === 'P1' ? 'border-sky-500/55 bg-sky-100' : 'border-rose-500/55 bg-rose-100'}`}>
                 <img
-                  src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-viii/icons/${selectedUnit.template.id}.png`}
+                  src={getIconSprite(selectedUnit.template.id)}
                   alt={selectedUnit.template.name}
                   className="w-10 h-10 object-contain"
                   style={{ imageRendering: 'pixelated' }}

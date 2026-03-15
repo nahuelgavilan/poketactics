@@ -2,6 +2,8 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Swords, BookOpen, Wifi, Map, Shield, Users } from 'lucide-react';
 import { useSFX } from '../hooks/useSFX';
 import { VERSION } from '../constants/version';
+import { getAnimatedFrontSprite } from '../utils/sprites';
+import { AudioSettingsPanel } from './AudioSettingsPanel';
 import {
   StartMenuShell,
   MenuActionButton,
@@ -24,9 +26,6 @@ const VS_PAIRS = [
   { left: { id: 3, name: 'Venusaur' }, right: { id: 25, name: 'Pikachu' } },
   { left: { id: 448, name: 'Lucario' }, right: { id: 94, name: 'Gengar' } },
 ];
-
-const SPRITE_URL = (id: number) =>
-  `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/${id}.gif`;
 
 function generateOrbitParticles(count: number) {
   return Array.from({ length: count }, (_, i) => ({
@@ -206,7 +205,7 @@ export function StartScreen({ onStartGame, onHowToPlay, onMultiplayer, onDraft, 
                     >
                       <div className="absolute inset-0 blur-2xl scale-150 bg-cyan-500/20 animate-start-menu-pulse" />
                       <img
-                        src={SPRITE_URL(pair.left.id)}
+                        src={getAnimatedFrontSprite(pair.left.id)}
                         alt={pair.left.name}
                         className="relative w-24 h-24 sm:w-32 sm:h-32 lg:w-40 lg:h-40 object-contain scale-x-[-1] animate-start-menu-idle"
                         style={{ imageRendering: 'pixelated' }}
@@ -231,7 +230,7 @@ export function StartScreen({ onStartGame, onHowToPlay, onMultiplayer, onDraft, 
                     >
                       <div className="absolute inset-0 blur-2xl scale-150 bg-rose-500/20 animate-start-menu-pulse" />
                       <img
-                        src={SPRITE_URL(pair.right.id)}
+                        src={getAnimatedFrontSprite(pair.right.id)}
                         alt={pair.right.name}
                         className="relative w-24 h-24 sm:w-32 sm:h-32 lg:w-40 lg:h-40 object-contain animate-start-menu-idle"
                         style={{ imageRendering: 'pixelated', animationDelay: '0.35s' }}
@@ -359,6 +358,9 @@ export function StartScreen({ onStartGame, onHowToPlay, onMultiplayer, onDraft, 
                     <p className="text-[12px] tracking-[0.02em] text-slate-700 font-ui">
                       Online rooms with host and guest sync.
                     </p>
+                  </div>
+                  <div className="pt-1">
+                    <AudioSettingsPanel />
                   </div>
                 </div>
               </MenuPanel>

@@ -25,7 +25,7 @@ export function UnitActionMenu({
   onWait,
   onCancel,
   gridX,
-  gridY,
+  gridY: _gridY,
   boardWidth
 }: UnitActionMenuProps) {
   // Determine menu position relative to tile

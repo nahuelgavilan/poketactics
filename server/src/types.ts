@@ -5,7 +5,7 @@
 // Re-export shared types
 export type { Player, PokemonType, PokemonTemplate, Position, StatusEffect, Move } from '@poketactics/shared';
 
-import type { Player, PokemonType, PokemonTemplate, Position, StatusEffect } from '@poketactics/shared';
+import type { Player, PokemonTemplate, Position, StatusEffect } from '@poketactics/shared';
 
 export interface Room {
   id: string;

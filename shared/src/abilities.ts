@@ -1,4 +1,4 @@
-import type { PokemonType, PokemonTemplate, Move, Ability, StatusEffect } from './types';
+import type { PokemonType, Move, Ability, StatusEffect } from './types';
 
 // ── Ability Hook Results ──────────────────────────────────────────────
 

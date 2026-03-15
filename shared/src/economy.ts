@@ -10,7 +10,7 @@ export const CENTER_RESUPPLY_COST_PER_PP = 30;
 export const CENTER_STATUS_CURE_COST = 100;
 export const CENTER_MAX_REPAIR_RATIO = 0.25;
 
-export const SHOWDOWN_ITEM_ICON_BASE_URL = 'https://play.pokemonshowdown.com/sprites/itemicons';
+export const SHOWDOWN_ITEM_ICON_BASE_URL = '/sprites/items';
 
 export const SHOWDOWN_SERVICE_ITEMS = {
   credits: {

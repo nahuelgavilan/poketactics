@@ -6,7 +6,7 @@ interface BattleLogProps {
   onEndTurn: () => void;
 }
 
-export function BattleLog({ logs, onEndTurn }: BattleLogProps) {
+export function BattleLog({ logs, onEndTurn: _onEndTurn }: BattleLogProps) {
   return (
     <div className="bg-[#f8efd9] p-4 rounded-sm border-2 border-amber-700/60 shadow-[3px_3px_0_0_rgba(92,66,34,0.2)]">
       {/* Tall grass info */}

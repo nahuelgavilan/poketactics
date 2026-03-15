@@ -449,7 +449,6 @@ export function BattleZoomTransition({ attacker, defender, map, onComplete }: Ba
                   const armAngleOffset = (armIndex / 6) * Math.PI * 2;
                   const rotations = 3; // Number of spiral rotations
                   const maxRadius = 85;
-                  const currentRotation = spiralProgress * rotations * Math.PI * 2;
 
                   // Generate points along the spiral arm
                   const points: string[] = [];

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { getAnimatedFrontSprite } from '../utils/sprites';
+import { getAnimatedFrontSprite, getItemSprite } from '../utils/sprites';
 import { useSFX } from '../hooks/useSFX';
 import { calculateBaseDamage, checkAccuracy, CRIT_CHANCE, CRIT_MULTIPLIER, VARIANCE_MIN, VARIANCE_MAX, TERRAIN } from '@poketactics/shared';
 import type { PokemonTemplate, Player, PokemonType, Move } from '../types/game';
@@ -132,7 +132,7 @@ function calcMoveDamage(move: Move, attacker: PokemonTemplate, defender: Pokemon
 
 export function CaptureMinigame({
   pokemon,
-  player,
+  player: _player,
   playerPokemon,
   playerPP,
   onSuccess,
@@ -145,7 +145,6 @@ export function CaptureMinigame({
   const [hasAttacked, setHasAttacked] = useState(false);
   const [damageDealt, setDamageDealt] = useState(0);
   const [damageTaken, setDamageTaken] = useState(0);
-  const [selectedMove, setSelectedMove] = useState<Move | null>(null);
   const [effectivenessText, setEffectivenessText] = useState<string | null>(null);
   const [showInfoOverlay, setShowInfoOverlay] = useState(false);
 
@@ -169,17 +168,14 @@ export function CaptureMinigame({
   const [shakeIndex, setShakeIndex] = useState(0);
   const [captureSuccess, setCaptureSuccess] = useState(false);
 
-  // Button hover state
-  const [hoveredButton, setHoveredButton] = useState<string | null>(null);
-
   const typeColor = TYPE_COLORS[pokemon.types[0]] || TYPE_COLORS.normal;
 
-  const activePlayerPokemon: PokemonTemplate = playerPokemon || {
+  const activePlayerPokemon = useMemo<PokemonTemplate>(() => playerPokemon || {
     id: 25, name: 'Pikachu', types: ['electric'] as PokemonType[],
     hp: 60, atk: 25, def: 15, spa: 20, spd: 20, spe: 30, mov: 3,
     moves: [{ id: 'thunderbolt', name: 'Rayo', type: 'electric' as PokemonType, category: 'special' as const, power: 90, accuracy: 100, pp: 15, range: 2, priority: 0, description: 'A strong electric attack.' }],
     ability: { id: 'static', name: 'Static', description: 'Contact may paralyze.' },
-  };
+  }, [playerPokemon]);
 
   const playerTypeColor = TYPE_COLORS[activePlayerPokemon.types[0]] || TYPE_COLORS.normal;
 
@@ -236,7 +232,6 @@ export function CaptureMinigame({
 
   // Handle move selection and start attack sequence
   const handleMoveSelect = useCallback((move: Move, moveIndex: number) => {
-    setSelectedMove(move);
     setHasAttacked(true);
 
     // Deduct PP
@@ -306,34 +301,6 @@ export function CaptureMinigame({
     setPhase('battle');
   }, []);
 
-  // Ring system
-  const handleCapture = useCallback(() => {
-    if (phase !== 'battle') return;
-    setCurrentRingIndex(0);
-    setCurrentRingSize(100);
-    setPhase('ring1');
-    ringStartTimeRef.current = Date.now();
-
-    const startRing = (index: number) => {
-      const speed = RING_SPEEDS[index];
-      const decrementPerFrame = 100 / (speed / 16);
-
-      ringIntervalRef.current = setInterval(() => {
-        setCurrentRingSize(size => {
-          const newSize = size - decrementPerFrame;
-          if (newSize <= 0) {
-            if (ringIntervalRef.current) clearInterval(ringIntervalRef.current);
-            completeRing(index, 'miss');
-            return 100;
-          }
-          return newSize;
-        });
-      }, 16);
-    };
-
-    setTimeout(() => startRing(0), 300);
-  }, [phase]);
-
   const completeRing = useCallback((ringIndex: number, quality: RingResult) => {
     // Play ring sound based on quality
     if (quality === 'perfect') {
@@ -385,6 +352,34 @@ export function CaptureMinigame({
       }
     }, 500);
   }, [playSFX]);
+
+  // Ring system
+  const handleCapture = useCallback(() => {
+    if (phase !== 'battle') return;
+    setCurrentRingIndex(0);
+    setCurrentRingSize(100);
+    setPhase('ring1');
+    ringStartTimeRef.current = Date.now();
+
+    const startRing = (index: number) => {
+      const speed = RING_SPEEDS[index];
+      const decrementPerFrame = 100 / (speed / 16);
+
+      ringIntervalRef.current = setInterval(() => {
+        setCurrentRingSize(size => {
+          const newSize = size - decrementPerFrame;
+          if (newSize <= 0) {
+            if (ringIntervalRef.current) clearInterval(ringIntervalRef.current);
+            completeRing(index, 'miss');
+            return 100;
+          }
+          return newSize;
+        });
+      }, 16);
+    };
+
+    setTimeout(() => startRing(0), 300);
+  }, [completeRing, phase]);
 
   const handleRingTap = useCallback(() => {
     const ringIndex = phase === 'ring1' ? 0 : phase === 'ring2' ? 1 : phase === 'ring3' ? 2 : -1;
@@ -877,8 +872,6 @@ export function CaptureMinigame({
                   <button
                     onClick={handleAttack}
                     disabled={hasAttacked}
-                    onMouseEnter={() => setHoveredButton('attack')}
-                    onMouseLeave={() => setHoveredButton(null)}
                     className={`relative group rounded-xl overflow-hidden transition-all duration-200 ${hasAttacked ? 'opacity-40 cursor-not-allowed' : 'hover:scale-105 active:scale-95'}`}
                     style={{
                       background: hasAttacked ? '#d8cab0' : 'linear-gradient(180deg, #dc2626 0%, #991b1b 50%, #7f1d1d 100%)',
@@ -901,8 +894,6 @@ export function CaptureMinigame({
                   {/* CAPTURE Button */}
                   <button
                     onClick={handleCapture}
-                    onMouseEnter={() => setHoveredButton('capture')}
-                    onMouseLeave={() => setHoveredButton(null)}
                     className="relative group rounded-xl overflow-hidden transition-all duration-200 hover:scale-105 active:scale-95"
                     style={{
                       background: 'linear-gradient(180deg, #f59e0b 0%, #d97706 50%, #b45309 100%)',
@@ -927,8 +918,6 @@ export function CaptureMinigame({
                   {/* FLEE Button */}
                   <button
                     onClick={handleFlee}
-                    onMouseEnter={() => setHoveredButton('flee')}
-                    onMouseLeave={() => setHoveredButton(null)}
                     className="relative group rounded-xl overflow-hidden transition-all duration-200 hover:scale-105 active:scale-95"
                     style={{
                       background: 'linear-gradient(180deg, #8a6f50 0%, #73593f 50%, #5d4733 100%)',
@@ -1442,7 +1431,7 @@ export function CaptureMinigame({
                   {/* Showdown Pokeball Sprite - spinning */}
                   <div className="relative animate-[throw-spin_0.25s_linear_infinite]">
                     <img
-                      src="https://play.pokemonshowdown.com/sprites/itemicons/poke-ball.png"
+                      src={getItemSprite('poke-ball')}
                       alt="Pokeball"
                       className="w-16 h-16 md:w-20 md:h-20"
                       style={{
@@ -1594,7 +1583,7 @@ export function CaptureMinigame({
                         className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 md:w-5 md:h-5 rounded-full z-10 pointer-events-none opacity-0"
                       />
                       <img
-                        src="https://play.pokemonshowdown.com/sprites/itemicons/poke-ball.png"
+                        src={getItemSprite('poke-ball')}
                         alt="Pokeball"
                         className="w-16 h-16 md:w-20 md:h-20"
                         style={{
@@ -1620,7 +1609,7 @@ export function CaptureMinigame({
                         }}
                       />
                       <img
-                        src="https://play.pokemonshowdown.com/sprites/itemicons/poke-ball.png"
+                        src={getItemSprite('poke-ball')}
                         alt="Pokeball"
                         className="w-16 h-16 md:w-20 md:h-20"
                         style={{

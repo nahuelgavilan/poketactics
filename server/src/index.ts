@@ -20,7 +20,6 @@ import {
   getClientDraftState,
   executeBan,
   executePick,
-  handleTimeout,
   getPlayerTeam
 } from './draftLogic';
 import type { ClientToServerEvents, ServerToClientEvents, Player } from './types';

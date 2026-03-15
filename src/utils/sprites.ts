@@ -1,26 +1,31 @@
-/**
- * Sprite URL generators for PokeAPI
- */
+const SPRITE_BASE = '/sprites/pokemon';
+const ITEM_SPRITE_BASE = '/sprites/items';
 
-const SPRITE_BASE = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon';
+export function getStaticSprite(pokemonId: number): string {
+  return `${SPRITE_BASE}/static/${pokemonId}.png`;
+}
 
 /**
  * Get small icon sprite (Gen 8 style) for board display
  */
 export function getIconSprite(pokemonId: number): string {
-  return `${SPRITE_BASE}/versions/generation-viii/icons/${pokemonId}.png`;
+  return `${SPRITE_BASE}/icons/${pokemonId}.png`;
 }
 
 /**
  * Get animated front sprite (Gen 5 style) for battle cinematic
  */
 export function getAnimatedFrontSprite(pokemonId: number): string {
-  return `${SPRITE_BASE}/versions/generation-v/black-white/animated/${pokemonId}.gif`;
+  return `${SPRITE_BASE}/animated/front/${pokemonId}.gif`;
 }
 
 /**
  * Get animated back sprite (Gen 5 style) for battle cinematic
  */
 export function getAnimatedBackSprite(pokemonId: number): string {
-  return `${SPRITE_BASE}/versions/generation-v/black-white/animated/back/${pokemonId}.gif`;
+  return `${SPRITE_BASE}/animated/back/${pokemonId}.gif`;
+}
+
+export function getItemSprite(itemId: string): string {
+  return `${ITEM_SPRITE_BASE}/${itemId}.png`;
 }

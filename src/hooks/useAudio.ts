@@ -1,5 +1,6 @@
 import { useRef, useCallback, useEffect } from 'react';
 import { audioPreloader } from '../utils/audioPreloader';
+import { getAudioSettingsSnapshot, subscribeAudioSettings } from './useAudioSettings';
 
 export type AudioKey = 'menu_theme' | 'board_theme' | 'battle_theme' | 'victory' | 'defeat';
 
@@ -18,6 +19,7 @@ export function useAudio() {
   const currentTrackRef = useRef<AudioKey | null>(null);
   const fadeIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const desiredTrackRef = useRef<MusicRequest | null>(null);
+  const settingsRef = useRef(getAudioSettingsSnapshot());
 
   const clearFade = useCallback(() => {
     if (fadeIntervalRef.current) {
@@ -51,7 +53,9 @@ export function useAudio() {
     }
 
     audio.loop = options.loop;
-    audio.volume = options.volume;
+    audio.volume = settingsRef.current.musicMuted
+      ? 0
+      : Math.max(0, Math.min(1, options.volume * settingsRef.current.musicVolume));
 
     const sameTrack = audioRef.current === audio && currentTrackRef.current === key;
     if (sameTrack && !audio.paused && !audio.ended) {
@@ -136,10 +140,15 @@ export function useAudio() {
         flushDesiredTrack();
       }
     });
+    const unsubscribeSettings = subscribeAudioSettings((settings) => {
+      settingsRef.current = settings;
+      flushDesiredTrack();
+    });
 
     return () => {
       unsubscribeLoading();
       unsubscribeUnlock();
+      unsubscribeSettings();
     };
   }, [flushDesiredTrack]);
 

@@ -1,5 +1,5 @@
 import { execSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 import react from '@vitejs/plugin-react';
 import { defineConfig, type Plugin } from 'vite';
@@ -9,6 +9,7 @@ const packageJson = JSON.parse(
 ) as { version: string };
 
 const APP_VERSION = packageJson.version;
+const PUBLIC_DIR = path.resolve(__dirname, './public');
 
 function getGitHash() {
   try {
@@ -25,11 +26,41 @@ function getGitHash() {
 
 const BUILD_ID = `${APP_VERSION}-${getGitHash()}-${Date.now().toString(36)}`;
 
+function collectPublicAssets(relativeDir: string): string[] {
+  const startDir = path.resolve(PUBLIC_DIR, relativeDir);
+
+  if (!statSync(startDir, { throwIfNoEntry: false })?.isDirectory()) {
+    return [];
+  }
+
+  const stack = [startDir];
+  const assets: string[] = [];
+
+  while (stack.length > 0) {
+    const currentDir = stack.pop()!;
+    const entries = readdirSync(currentDir, { withFileTypes: true });
+
+    entries.forEach((entry) => {
+      const absolutePath = path.join(currentDir, entry.name);
+      if (entry.isDirectory()) {
+        stack.push(absolutePath);
+        return;
+      }
+
+      const relativePath = path.relative(PUBLIC_DIR, absolutePath).split(path.sep).join('/');
+      assets.push(`/${relativePath}`);
+    });
+  }
+
+  return assets.sort();
+}
+
 function createServiceWorkerPlugin(buildId: string): Plugin {
   return {
     name: 'poketactics-generate-sw',
     apply: 'build',
     generateBundle(_, bundle) {
+      const spriteAssets = collectPublicAssets('sprites');
       const precacheAssets = new Set<string>([
         '/index.html',
         '/manifest.webmanifest',
@@ -37,6 +68,7 @@ function createServiceWorkerPlugin(buildId: string): Plugin {
         '/apple-touch-icon.png',
         '/icon-192.png',
         '/icon-512.png',
+        ...spriteAssets,
       ]);
 
       Object.keys(bundle).forEach((fileName) => {
@@ -181,6 +213,25 @@ export default defineConfig({
     __BUILD_ID__: JSON.stringify(BUILD_ID),
   },
   plugins: [react(), createServiceWorkerPlugin(BUILD_ID)],
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules/react') || id.includes('node_modules/react-dom') || id.includes('node_modules/scheduler')) {
+            return 'react-vendor';
+          }
+
+          if (id.includes('node_modules/lucide-react')) {
+            return 'ui-vendor';
+          }
+
+          if (id.includes('/shared/src/')) {
+            return 'shared-logic';
+          }
+        },
+      },
+    },
+  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),

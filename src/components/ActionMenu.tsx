@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Move, Sword, Target, Clock, X } from 'lucide-react';
 import type { ActionMenuState, Unit } from '../types/game';
+import { getStaticSprite } from '../utils/sprites';
 
 interface ActionMenuProps {
   state: ActionMenuState;
@@ -133,7 +134,7 @@ export function ActionMenu({
             : 'bg-rose-100 text-rose-900 border border-rose-500/45'}
         `}>
           <img
-            src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${selectedUnit.template.id}.png`}
+            src={getStaticSprite(selectedUnit.template.id)}
             className="w-5 h-5 object-contain"
             style={{ imageRendering: 'pixelated' }}
             alt=""

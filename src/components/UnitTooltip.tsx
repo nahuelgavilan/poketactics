@@ -2,6 +2,7 @@ import React from 'react';
 import { Sword, Shield, Zap, Heart, Navigation, Target, AlertCircle } from 'lucide-react';
 import { TYPE_COLORS } from '../constants/types';
 import type { Unit } from '../types/game';
+import { getIconSprite } from '../utils/sprites';
 
 const STATUS_ICONS: Record<string, { label: string; color: string }> = {
   burn: { label: 'QUE', color: 'bg-orange-600' },
@@ -44,7 +45,7 @@ export function UnitTooltip({ unit, screenX, screenY, isEnemy = false }: UnitToo
         <div className={`px-3 py-2 border-b border-amber-700/35 ${isEnemy ? 'bg-rose-100' : 'bg-sky-100'}`}>
           <div className="flex items-center gap-2">
             <img
-              src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-viii/icons/${unit.template.id}.png`}
+              src={getIconSprite(unit.template.id)}
               alt={unit.template.name}
               className="w-8 h-8 object-contain"
               style={{ imageRendering: 'pixelated' }}

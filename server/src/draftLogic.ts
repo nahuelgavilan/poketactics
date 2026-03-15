@@ -1,4 +1,4 @@
-import type { DraftState, DraftPhase, Player, ClientDraftState, PokemonTemplate } from './types';
+import type { DraftState, Player, ClientDraftState, PokemonTemplate } from './types';
 import { EVOLUTION_CHAINS } from '@poketactics/shared';
 
 // Get all base Pokemon (first stage of each evolution chain)

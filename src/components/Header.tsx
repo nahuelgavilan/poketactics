@@ -13,6 +13,7 @@ import {
 import { SHOWDOWN_SERVICE_ITEMS, getShowdownItemIconUrl } from '@poketactics/shared';
 import { useSFX } from '../hooks/useSFX';
 import type { Player } from '../types/game';
+import { AudioSettingsPanel } from './AudioSettingsPanel';
 
 interface HeaderProps {
   currentPlayer: Player;
@@ -284,6 +285,9 @@ export function Header({
                       delay={3}
                     />
                   )}
+
+                  <div className="h-px bg-amber-300 my-1" />
+                  <AudioSettingsPanel compact />
                 </div>
               </div>
 

@@ -14,6 +14,7 @@
     "preview": "vite preview",
     "lint": "eslint . --quiet",
     "lint:full": "eslint .",
+    "sprites:sync": "node ./scripts/sync-sprites.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "type-check": "tsc --noEmit"
@@ -26,6 +27,8 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
+    "@fontsource/chakra-petch": "^5.2.7",
+    "@fontsource/press-start-2p": "^5.2.7",
     "@pkmn/dex": "^0.10.6",
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",

@@ -5,6 +5,7 @@ import type { DraftState } from '../types/draft';
 import { DRAFT_CONFIG } from '../types/draft';
 import { getBaseFormPokemon } from '../constants/evolution';
 import { TYPE_COLORS } from '../constants/types';
+import { getStaticSprite } from '../utils/sprites';
 
 interface DraftScreenProps {
   onDraftComplete: (p1Team: PokemonTemplate[], p2Team: PokemonTemplate[]) => void;
@@ -132,7 +133,7 @@ export function DraftScreen({ onDraftComplete, onCancel }: DraftScreenProps) {
         confirmSelection();
       }, 100);
     }
-  }, [draftState.pool, allBannedIds, allPickedIds]);
+  }, [draftState.pool, allBannedIds, allPickedIds, confirmSelection]);
 
   useEffect(() => {
     if (draftState.phase === 'ready' || showIntro) {
@@ -233,7 +234,6 @@ export function DraftScreen({ onDraftComplete, onCancel }: DraftScreenProps) {
           isActive={isP1Turn && draftState.phase !== 'ready'}
           banned={draftState.bannedByP1}
           picked={draftState.pickedByP1}
-          pool={draftState.pool}
         />
         <div className="teams-divider">
           <span>VS</span>
@@ -243,7 +243,6 @@ export function DraftScreen({ onDraftComplete, onCancel }: DraftScreenProps) {
           isActive={!isP1Turn && draftState.phase !== 'ready'}
           banned={draftState.bannedByP2}
           picked={draftState.pickedByP2}
-          pool={draftState.pool}
         />
       </div>
 
@@ -298,7 +297,7 @@ export function DraftScreen({ onDraftComplete, onCancel }: DraftScreenProps) {
 
                   {/* Sprite */}
                   <img
-                    src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokemon.id}.png`}
+                    src={getStaticSprite(pokemon.id)}
                     className="card-sprite"
                     alt={pokemon.name}
                     loading="lazy"
@@ -346,7 +345,7 @@ export function DraftScreen({ onDraftComplete, onCancel }: DraftScreenProps) {
         <div className={`selection-footer ${draftState.phase === 'ban' ? 'footer-ban' : 'footer-pick'}`}>
           <div className="selection-preview">
             <img
-              src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${selectedPokemon.id}.png`}
+              src={getStaticSprite(selectedPokemon.id)}
               className="preview-sprite"
               alt=""
             />
@@ -395,7 +394,7 @@ export function DraftScreen({ onDraftComplete, onCancel }: DraftScreenProps) {
       {lastAction && (
         <div className={`action-popup ${lastAction.player === 'P1' ? 'popup-p1' : 'popup-p2'}`}>
           <img
-            src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${lastAction.pokemon.id}.png`}
+            src={getStaticSprite(lastAction.pokemon.id)}
             className={`popup-sprite ${lastAction.type === 'ban' ? 'sprite-banned' : ''}`}
             alt=""
           />
@@ -1279,10 +1278,9 @@ interface TeamStripProps {
   isActive: boolean;
   banned: number[];
   picked: PokemonTemplate[];
-  pool: PokemonTemplate[];
 }
 
-function TeamStrip({ player, isActive, banned, picked, pool }: TeamStripProps) {
+function TeamStrip({ player, isActive, banned, picked }: TeamStripProps) {
   const isP1 = player === 'P1';
 
   return (
@@ -1301,7 +1299,7 @@ function TeamStrip({ player, isActive, banned, picked, pool }: TeamStripProps) {
               <div key={i} className={`strip-slot ban-slot ${bannedId ? 'filled' : ''}`}>
                 {bannedId ? (
                   <img
-                    src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${bannedId}.png`}
+                    src={getStaticSprite(bannedId)}
                     alt=""
                   />
                 ) : (
@@ -1323,7 +1321,7 @@ function TeamStrip({ player, isActive, banned, picked, pool }: TeamStripProps) {
               <div key={i} className={`strip-slot pick-slot ${isP1 ? 'p1' : 'p2'} ${pickedPokemon ? 'filled' : ''}`}>
                 {pickedPokemon ? (
                   <img
-                    src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pickedPokemon.id}.png`}
+                    src={getStaticSprite(pickedPokemon.id)}
                     alt=""
                   />
                 ) : (

@@ -1,8 +1,9 @@
 import { useEffect, useState, useMemo } from 'react';
-import { Trophy, RotateCcw, Home, Crown, Star, Swords, Shield, Target, Sparkles, Clock, ChevronDown, ChevronUp } from 'lucide-react';
+import { Trophy, RotateCcw, Home, Crown, Star, Swords, Target, Sparkles, Clock, ChevronDown, ChevronUp } from 'lucide-react';
 import type { Player } from '../../types/game';
 import type { BattleStats } from '../../types/stats';
 import { VERSION } from '../../constants/version';
+import { getStaticSprite } from '../../utils/sprites';
 
 interface VictoryScreenProps {
   winner: Player;
@@ -313,7 +314,7 @@ export function VictoryScreen({ winner, onPlayAgain, stats }: VictoryScreenProps
                   `}>
                     <div className="relative">
                       <img
-                        src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${mvpInfo.id}.png`}
+                        src={getStaticSprite(mvpInfo.id)}
                         className="w-12 h-12"
                         alt=""
                       />

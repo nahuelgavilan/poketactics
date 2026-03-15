@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sword, Shield, HandMetal, Zap, Sparkles, Wind } from 'lucide-react';
+import { Sword, HandMetal, Sparkles } from 'lucide-react';
 import { TYPE_COLORS } from '../../constants/types';
 import type { Unit } from '../../types/game';
 

@@ -143,7 +143,7 @@ export function useBattleStats() {
   }, []);
 
   // Finalize stats at game end
-  const finalizeStats = useCallback((winner: Player) => {
+  const finalizeStats = useCallback((_winner: Player) => {
     setStats(prev => {
       const newStats = { ...prev };
       newStats.battleEndTime = Date.now();

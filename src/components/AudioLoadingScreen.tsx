@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Loader2, Volume2, SkipForward } from 'lucide-react';
+import { useAudioSettings } from '../hooks/useAudioSettings';
 import { audioPreloader, type AudioLoadingState } from '../utils/audioPreloader';
 import {
   StartMenuShell,
@@ -17,6 +18,7 @@ const MAX_WAIT_MS = 10_000;
 const SKIP_BUTTON_DELAY_MS = 4_000;
 
 export function AudioLoadingScreen({ onComplete }: AudioLoadingScreenProps) {
+  const { settings } = useAudioSettings();
   const [loadingState, setLoadingState] = useState<AudioLoadingState>({
     total: 0,
     loaded: 0,
@@ -52,16 +54,23 @@ export function AudioLoadingScreen({ onComplete }: AudioLoadingScreenProps) {
   }, [onComplete]);
 
   useEffect(() => {
-    if (loadingState.isComplete && isUnlocked) {
+    const isSilentMode =
+      (settings.musicMuted || settings.musicVolume === 0) &&
+      (settings.sfxMuted || settings.sfxVolume === 0);
+
+    if (loadingState.isComplete && (isUnlocked || isSilentMode)) {
       const timer = setTimeout(onComplete, 350);
       return () => clearTimeout(timer);
     }
-  }, [loadingState.isComplete, isUnlocked, onComplete]);
+  }, [loadingState.isComplete, isUnlocked, onComplete, settings]);
 
   const progress = loadingState.total > 0
     ? Math.round((loadingState.loaded / loadingState.total) * 100)
     : 0;
-  const needsActivation = loadingState.isComplete && !isUnlocked;
+  const isSilentMode =
+    (settings.musicMuted || settings.musicVolume === 0) &&
+    (settings.sfxMuted || settings.sfxVolume === 0);
+  const needsActivation = loadingState.isComplete && !isUnlocked && !isSilentMode;
 
   return (
     <StartMenuShell>
@@ -71,7 +80,7 @@ export function AudioLoadingScreen({ onComplete }: AudioLoadingScreenProps) {
             title="Audio Boot"
             subtitle="Preloading soundtrack and effects"
             accent="amber"
-            rightSlot={<MenuBadge label={loadingState.isComplete ? (isUnlocked ? 'Ready' : 'Tap to Start') : 'Loading'} accent={loadingState.isComplete ? (isUnlocked ? 'green' : 'amber') : 'blue'} />}
+            rightSlot={<MenuBadge label={loadingState.isComplete ? (isSilentMode ? 'Silent' : isUnlocked ? 'Ready' : 'Tap to Start') : 'Loading'} accent={loadingState.isComplete ? (isSilentMode || isUnlocked ? 'green' : 'amber') : 'blue'} />}
           >
             <div className="space-y-4">
               <div className="flex items-center justify-center gap-3">
@@ -83,7 +92,13 @@ export function AudioLoadingScreen({ onComplete }: AudioLoadingScreenProps) {
                   )}
                 </div>
                 <p className="text-[10px] uppercase tracking-[0.14em] text-[#493a29]" style={{ fontFamily: '"Press Start 2P", monospace' }}>
-                  {needsActivation ? 'Tap to enable audio' : loadingState.isComplete ? 'Sound bank ready' : 'Caching audio assets'}
+                  {needsActivation
+                    ? 'Tap to enable audio'
+                    : isSilentMode
+                    ? 'Silent mode ready'
+                    : loadingState.isComplete
+                    ? 'Sound bank ready'
+                    : 'Caching audio assets'}
                 </p>
               </div>
 
@@ -110,7 +125,7 @@ export function AudioLoadingScreen({ onComplete }: AudioLoadingScreenProps) {
                 <MenuStatRow label="Loaded" value={`${loadingState.loaded}`} />
                 <MenuStatRow label="Total" value={`${loadingState.total}`} />
                 <MenuStatRow label="Failed" value={`${loadingState.failed.length}`} />
-                <MenuStatRow label="Audio" value={isUnlocked ? 'Enabled' : 'Locked'} />
+                <MenuStatRow label="Audio" value={isSilentMode ? 'Silent' : isUnlocked ? 'Enabled' : 'Locked'} />
               </div>
 
               {loadingState.failed.length > 0 && (

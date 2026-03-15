@@ -6,6 +6,7 @@ import {
 } from '@poketactics/shared';
 import { TYPE_COLORS } from '../constants/types';
 import type { PokemonTemplate, Player } from '../types/game';
+import { getAnimatedFrontSprite } from '../utils/sprites';
 
 interface BaseDeploySelectorProps {
   player: Player;
@@ -64,7 +65,7 @@ export function BaseDeploySelector({ player, reserve, credits, onDeploy, onCance
               >
                 <div className="flex items-center gap-2">
                   <img
-                    src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/${pokemon.id}.gif`}
+                    src={getAnimatedFrontSprite(pokemon.id)}
                     className="w-9 h-9 object-contain"
                     style={{ imageRendering: 'pixelated' }}
                     alt=""

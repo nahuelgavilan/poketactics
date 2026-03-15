@@ -227,7 +227,7 @@ export function BattleCinematic({
     }
 
     return () => timers.forEach(clearTimeout);
-  }, [onComplete, hasCounter, attackerDamage, counterDamage, attacker, defender, attackerResult, defenderResult, playSFX]);
+  }, [onComplete, hasCounter, attackerDamage, counterDamage, attacker, defender, attackerMove.name, defenderMove?.name, attackerResult, defenderResult, playSFX]);
 
   const isCounterPhase = phase.startsWith('counter_');
   const currentAttacker = isCounterPhase ? defender : attacker;
@@ -238,10 +238,7 @@ export function BattleCinematic({
   const atkSprite = getAnimatedBackSprite(currentAttacker.template.id);
   const defSprite = getAnimatedFrontSprite(currentDefender.template.id);
 
-  const maxHpAtk = currentAttacker.template.hp;
   const curHpAtk = isCounterPhase ? defenderHp : attackerHp;
-  const maxHpDef = currentDefender.template.hp;
-  const curHpDef = isCounterPhase ? attackerHp : defenderHp;
 
   const showAttackerDamage = phase === 'result' || (isCounterPhase && ['counter_result', 'end'].includes(phase));
   const showCounterDamage = ['counter_result', 'end'].includes(phase);
@@ -267,7 +264,7 @@ export function BattleCinematic({
   const attackerDied = isCounterPhase && attacker.currentHp - counterDamage <= 0;
 
   // HP Bar with segments (Fire Emblem style)
-  const HpBar = ({ current, max, isEnemy }: { current: number; max: number; isEnemy?: boolean }) => {
+  const HpBar = ({ current, max }: { current: number; max: number }) => {
     const percentage = (current / max) * 100;
     const segments = 10;
     const filledSegments = Math.ceil((current / max) * segments);

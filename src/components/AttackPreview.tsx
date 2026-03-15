@@ -3,17 +3,17 @@ import {
   Sword,
   Shield,
   Zap,
-  Heart,
   ArrowRight,
   ArrowLeft,
   Sparkles,
   Mountain,
   X,
-  Check
+  Check,
 } from 'lucide-react';
 import { TYPE_COLORS } from '../constants/types';
 import { getTerrainName } from '../constants/terrain';
-import type { AttackPreview as AttackPreviewType, GameMap, Move } from '../types/game';
+import { getAnimatedFrontSprite } from '../utils/sprites';
+import type { AttackPreview as AttackPreviewType, GameMap } from '../types/game';
 
 interface AttackPreviewProps {
   preview: AttackPreviewType;
@@ -57,7 +57,6 @@ export function AttackPreview({ preview, map, onConfirm, onCancel }: AttackPrevi
   } = preview;
 
   const attackerTerrain = map[attacker.y][attacker.x];
-  const defenderTerrain = map[defender.y][defender.x];
 
   // Calculate HP predictions
   const defenderMinHp = Math.max(0, defender.currentHp - predictedDamage.max);
@@ -101,7 +100,7 @@ export function AttackPreview({ preview, map, onConfirm, onCancel }: AttackPrevi
                 attacker.owner === 'P1' ? 'bg-sky-100 border-sky-400/70' : 'bg-rose-100 border-rose-400/70'
               }`}>
                 <img
-                  src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/${attacker.template.id}.gif`}
+                  src={getAnimatedFrontSprite(attacker.template.id)}
                   alt={attacker.template.name}
                   className="w-16 h-16 object-contain"
                   style={{ imageRendering: 'pixelated' }}
@@ -162,7 +161,7 @@ export function AttackPreview({ preview, map, onConfirm, onCancel }: AttackPrevi
                 defender.owner === 'P1' ? 'bg-sky-100 border-sky-400/70' : 'bg-rose-100 border-rose-400/70'
               }`}>
                 <img
-                  src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/${defender.template.id}.gif`}
+                  src={getAnimatedFrontSprite(defender.template.id)}
                   alt={defender.template.name}
                   className="w-16 h-16 object-contain"
                   style={{ imageRendering: 'pixelated' }}
