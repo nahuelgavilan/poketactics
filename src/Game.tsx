@@ -4,7 +4,6 @@ import { useAudio } from './hooks/useAudio';
 import { useMultiplayer, ClientGameState, ActionResult } from './hooks/useMultiplayer';
 import { Header } from './components/Header';
 import { StartScreen } from './components/StartScreen';
-import { AudioLoadingScreen } from './components/AudioLoadingScreen';
 import { TurnTimer, TURN_TIMER_DURATION } from './components/TurnTimer';
 import { audioPreloader, AUDIO_CONFIGS } from './utils/audioPreloader';
 import { getAnimatedFrontSprite, getIconSprite } from './utils';
@@ -390,10 +389,7 @@ export default function Game() {
   const [isMobile, setIsMobile] = useState(false);
   const [selectedTerrain, setSelectedTerrain] = useState<{ x: number; y: number; terrain: TerrainType } | null>(null);
 
-  // Audio preloading state
-  const [audioLoaded, setAudioLoaded] = useState(false);
-
-  // Preload all audio files on mount (fixes production timing issues)
+  // Preload all audio files on mount so music/SFX can start as soon as the user interacts.
   useEffect(() => {
     audioPreloader.preloadAll(AUDIO_CONFIGS).then(() => {
       console.log('[Audio] All audio files preloaded successfully');
@@ -713,11 +709,6 @@ export default function Game() {
       }
     };
   }, [onGameStarted, onStateUpdate, onActionResult, setMultiplayerState, triggerServerEncounter, triggerServerBattleWithZoom, myPlayer, units, sendWait]);
-
-  // Show audio loading screen first (critical for production performance)
-  if (!audioLoaded) {
-    return <AudioLoadingScreen onComplete={() => setAudioLoaded(true)} />;
-  }
 
   // Show start screen
   if (gameState === 'menu') {

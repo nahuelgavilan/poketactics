@@ -24,7 +24,7 @@ export interface AudioLoadingState {
 }
 
 const AUDIO_READY_TIMEOUT_MS = 12_000;
-const UNLOCK_EVENTS = ['click', 'touchstart', 'keydown', 'pointerdown'] as const;
+const UNLOCK_EVENTS = ['click', 'keydown'] as const;
 
 class AudioPreloader {
   private musicCache: Map<string, HTMLAudioElement> = new Map();

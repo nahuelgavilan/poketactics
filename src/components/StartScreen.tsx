@@ -3,6 +3,7 @@ import { Swords, BookOpen, Wifi, Map, Shield, Users } from 'lucide-react';
 import { useSFX } from '../hooks/useSFX';
 import { VERSION } from '../constants/version';
 import { getAnimatedFrontSprite } from '../utils/sprites';
+import { audioPreloader, type AudioLoadingState } from '../utils/audioPreloader';
 import { AudioSettingsPanel } from './AudioSettingsPanel';
 import {
   StartMenuShell,
@@ -42,6 +43,8 @@ export function StartScreen({ onStartGame, onHowToPlay, onMultiplayer, onDraft, 
   const [phase, setPhase] = useState<'boot' | 'ready'>('boot');
   const [activePair, setActivePair] = useState(0);
   const [onlineMode, setOnlineMode] = useState<'quick' | 'draft'>('quick');
+  const [audioLoadingState, setAudioLoadingState] = useState<AudioLoadingState>(() => audioPreloader.getLoadingState());
+  const [isAudioUnlocked, setIsAudioUnlocked] = useState(audioPreloader.isUnlocked);
 
   const { playSFX } = useSFX();
   const orbitParticles = useMemo(() => generateOrbitParticles(12), []);
@@ -87,6 +90,22 @@ export function StartScreen({ onStartGame, onHowToPlay, onMultiplayer, onDraft, 
     }, 4200);
     return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    const unsubscribeLoading = audioPreloader.onLoadingStateChange(setAudioLoadingState);
+    const unsubscribeUnlock = audioPreloader.onUnlockStateChange(setIsAudioUnlocked);
+
+    return () => {
+      unsubscribeLoading();
+      unsubscribeUnlock();
+    };
+  }, []);
+
+  const audioStatus = !audioLoadingState.isComplete
+    ? 'Loading'
+    : isAudioUnlocked
+    ? 'Enabled'
+    : 'Tap any button';
 
   return (
     <StartMenuShell>
@@ -348,6 +367,7 @@ export function StartScreen({ onStartGame, onHowToPlay, onMultiplayer, onDraft, 
                   <MenuStatRow label="Format" value="Turn based tactics" />
                   <MenuStatRow label="Ruleset" value="Shared combat parity" />
                   <MenuStatRow label="Supports" value="Touch + desktop" />
+                  <MenuStatRow label="Audio" value={audioStatus} />
                   <div className="pt-1 flex flex-wrap gap-2">
                     <MenuBadge label="Fog of war" accent="blue" />
                     <MenuBadge label="Capture" accent="green" />
