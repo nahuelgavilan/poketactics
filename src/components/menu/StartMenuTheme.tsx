@@ -71,7 +71,7 @@ interface StartMenuShellProps {
 
 export function StartMenuShell({ children, className = '' }: StartMenuShellProps) {
   return (
-    <div className={`fixed inset-0 z-50 overflow-hidden select-none ${className}`}>
+    <div className={`fixed inset-0 z-50 overflow-x-hidden overflow-y-auto overscroll-contain touch-pan-y select-none ${className}`}>
       <div className="absolute inset-0 bg-[#efe4cf]" />
 
       <div className="absolute inset-0">

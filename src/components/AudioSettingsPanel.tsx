@@ -107,7 +107,7 @@ export function AudioSettingsPanel({ compact = false, className = '' }: AudioSet
             Audio
           </div>
           <div className="text-[11px] text-slate-600">
-            Guardado en este dispositivo
+            Activo para esta sesion
           </div>
         </div>
         <button

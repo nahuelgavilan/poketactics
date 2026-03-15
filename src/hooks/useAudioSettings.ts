@@ -7,8 +7,6 @@ export interface AudioSettings {
   sfxVolume: number;
 }
 
-const STORAGE_KEY = 'poketactics:audio-settings';
-
 const DEFAULT_AUDIO_SETTINGS: AudioSettings = {
   musicMuted: false,
   sfxMuted: false,
@@ -36,32 +34,7 @@ function sanitizeSettings(value: unknown): AudioSettings {
   };
 }
 
-function loadSettings(): AudioSettings {
-  if (typeof window === 'undefined') {
-    return DEFAULT_AUDIO_SETTINGS;
-  }
-
-  try {
-    const stored = window.localStorage.getItem(STORAGE_KEY);
-    if (!stored) {
-      return DEFAULT_AUDIO_SETTINGS;
-    }
-
-    return sanitizeSettings(JSON.parse(stored));
-  } catch {
-    return DEFAULT_AUDIO_SETTINGS;
-  }
-}
-
-let currentSettings = loadSettings();
-
-function persistSettings() {
-  if (typeof window === 'undefined') {
-    return;
-  }
-
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(currentSettings));
-}
+let currentSettings = DEFAULT_AUDIO_SETTINGS;
 
 function emitSettings() {
   const snapshot = { ...currentSettings };
@@ -73,7 +46,6 @@ function updateSettings(patch: Partial<AudioSettings>) {
     ...currentSettings,
     ...patch,
   });
-  persistSettings();
   emitSettings();
 }
 
@@ -91,7 +63,6 @@ export function subscribeAudioSettings(listener: (settings: AudioSettings) => vo
 
 export function resetAudioSettings() {
   currentSettings = DEFAULT_AUDIO_SETTINGS;
-  persistSettings();
   emitSettings();
 }
 
@@ -99,22 +70,7 @@ export function useAudioSettings() {
   const [settings, setSettings] = useState<AudioSettings>(() => getAudioSettingsSnapshot());
 
   useEffect(() => {
-    const unsubscribe = subscribeAudioSettings(setSettings);
-
-    const handleStorage = (event: StorageEvent) => {
-      if (event.key !== STORAGE_KEY) {
-        return;
-      }
-
-      currentSettings = loadSettings();
-      emitSettings();
-    };
-
-    window.addEventListener('storage', handleStorage);
-    return () => {
-      unsubscribe();
-      window.removeEventListener('storage', handleStorage);
-    };
+    return subscribeAudioSettings(setSettings);
   }, []);
 
   return {

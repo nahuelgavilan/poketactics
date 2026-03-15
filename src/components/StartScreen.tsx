@@ -107,11 +107,11 @@ export function StartScreen({ onStartGame, onHowToPlay, onMultiplayer, onDraft, 
       </div>
 
       <div
-        className={`h-full transition-opacity duration-700 ${
+        className={`min-h-full transition-opacity duration-700 ${
           phase === 'ready' ? 'opacity-100' : 'opacity-0'
         }`}
       >
-        <div className="h-full max-w-6xl mx-auto px-3 py-3 md:px-6 md:py-5 flex flex-col gap-3 md:gap-4 overflow-y-auto no-scrollbar">
+        <div className="min-h-full max-w-6xl mx-auto px-3 py-3 md:px-6 md:py-5 flex flex-col gap-3 md:gap-4">
           <MenuPanel
             title="PokeTactics"
             subtitle="Command Terminal"
@@ -140,7 +140,7 @@ export function StartScreen({ onStartGame, onHowToPlay, onMultiplayer, onDraft, 
             </div>
           </MenuPanel>
 
-          <div className="grid grid-cols-1 lg:grid-cols-[1.3fr_1fr] gap-3 md:gap-4 flex-1 min-h-0">
+          <div className="grid grid-cols-1 lg:grid-cols-[1.3fr_1fr] gap-3 md:gap-4 flex-1">
             <MenuPanel
               title="Battle Feed"
               subtitle={`${VS_PAIRS[activePair].left.name} vs ${VS_PAIRS[activePair].right.name}`}
