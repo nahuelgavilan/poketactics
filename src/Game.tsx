@@ -1,11 +1,18 @@
-import { Suspense, lazy, useState, useEffect, useCallback, useRef } from 'react';
+import { Suspense, lazy, useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { buildPositionIndex, toPositionKey } from '@poketactics/shared';
 import { useGameState, useVision, useBattleStats, useSFX } from './hooks';
 import { useAudio } from './hooks/useAudio';
 import { useMultiplayer, ClientGameState, ActionResult } from './hooks/useMultiplayer';
 import { Header } from './components/Header';
 import { StartScreen } from './components/StartScreen';
 import { TurnTimer, TURN_TIMER_DURATION } from './components/TurnTimer';
-import { audioPreloader, AUDIO_CONFIGS } from './utils/audioPreloader';
+import {
+  audioPreloader,
+  CAPTURE_AUDIO_KEYS,
+  ENDING_AUDIO_KEYS,
+  GAMEPLAY_AUDIO_KEYS,
+  MENU_AUDIO_KEYS,
+} from './utils/audioPreloader';
 import { getAnimatedFrontSprite, getIconSprite } from './utils';
 import { TERRAIN } from './constants/terrain';
 import type { GameMap, Move, PokemonTemplate, Position, TerrainType, Unit } from './types/game';
@@ -389,15 +396,35 @@ export default function Game() {
   const [isMobile, setIsMobile] = useState(false);
   const [selectedTerrain, setSelectedTerrain] = useState<{ x: number; y: number; terrain: TerrainType } | null>(null);
 
-  // Preload all audio files on mount so music/SFX can start as soon as the user interacts.
+  // Load only menu-critical audio up front so startup stays light on mobile.
   useEffect(() => {
-    audioPreloader.preloadAll(AUDIO_CONFIGS).then(() => {
-      console.log('[Audio] All audio files preloaded successfully');
+    audioPreloader.preloadKeys(MENU_AUDIO_KEYS).then(() => {
+      console.log('[Audio] Menu audio preloaded successfully');
     }).catch((err) => {
-      console.error('[Audio] Preload error:', err);
-      // Still set as loaded even if some failed (failed files shown in loading screen)
+      console.error('[Audio] Menu audio preload error:', err);
     });
   }, []);
+
+  // Hydrate the rest of the sound bank only when the player reaches those flows.
+  useEffect(() => {
+    const requestedKeys = new Set<string>();
+
+    if (gameState !== 'menu') {
+      GAMEPLAY_AUDIO_KEYS.forEach((key) => requestedKeys.add(key));
+    }
+    if (gameState === 'capture_minigame') {
+      CAPTURE_AUDIO_KEYS.forEach((key) => requestedKeys.add(key));
+    }
+    if (gameState === 'victory') {
+      ENDING_AUDIO_KEYS.forEach((key) => requestedKeys.add(key));
+    }
+
+    if (requestedKeys.size === 0) {
+      return;
+    }
+
+    void audioPreloader.preloadKeys([...requestedKeys]);
+  }, [gameState]);
   const [timerResetKey, setTimerResetKey] = useState(0);
   const timerEnabled = true;
 
@@ -467,26 +494,35 @@ export default function Game() {
     initGameWithMap(customMap);
   }, [battleStats, initGameWithMap]);
 
-  // Wrapper for tile click that also handles terrain info
-  const handleTileClickWithTerrain = useCallback((x: number, y: number) => {
-    // Check if there's a unit at this position
-    const unitAtPosition = units.find(u => u.x === x && u.y === y);
-    const interactionPlayer = isMultiplayer && myPlayer ? myPlayer : currentPlayer;
-    const interactionReserve = interactionPlayer === 'P1' ? baseReserveP1 : baseReserveP2;
-    const tileTerrain = map[y]?.[x];
+  const unitByPosition = useMemo(() => buildPositionIndex(units), [units]);
+  const playerBaseTiles = useMemo<Record<'P1' | 'P2', Position | null>>(() => {
     const bases: Position[] = [];
-    for (let by = 0; by < map.length; by++) {
-      for (let bx = 0; bx < (map[0]?.length ?? 0); bx++) {
-        if (map[by]?.[bx] === TERRAIN.BASE) {
-          bases.push({ x: bx, y: by });
+    for (let y = 0; y < map.length; y++) {
+      for (let x = 0; x < (map[0]?.length ?? 0); x++) {
+        if (map[y]?.[x] === TERRAIN.BASE) {
+          bases.push({ x, y });
         }
       }
     }
-    const ownBase = bases.length > 0
-      ? (interactionPlayer === 'P1'
-        ? bases.reduce((best, tile) => (tile.x + tile.y > best.x + best.y ? tile : best), bases[0])
-        : bases.reduce((best, tile) => (tile.x + tile.y < best.x + best.y ? tile : best), bases[0]))
-      : null;
+
+    if (bases.length === 0) {
+      return { P1: null, P2: null };
+    }
+
+    return {
+      P1: bases.reduce((best, tile) => (tile.x + tile.y > best.x + best.y ? tile : best), bases[0]),
+      P2: bases.reduce((best, tile) => (tile.x + tile.y < best.x + best.y ? tile : best), bases[0]),
+    };
+  }, [map]);
+
+  // Wrapper for tile click that also handles terrain info
+  const handleTileClickWithTerrain = useCallback((x: number, y: number) => {
+    // Check if there's a unit at this position
+    const unitAtPosition = unitByPosition.get(toPositionKey(x, y));
+    const interactionPlayer = isMultiplayer && myPlayer ? myPlayer : currentPlayer;
+    const interactionReserve = interactionPlayer === 'P1' ? baseReserveP1 : baseReserveP2;
+    const tileTerrain = map[y]?.[x];
+    const ownBase = playerBaseTiles[interactionPlayer];
     const canOpenDeploy = !!ownBase
       && ownBase.x === x
       && ownBase.y === y
@@ -508,7 +544,7 @@ export default function Game() {
 
     // Pass to multiplayer-aware handler
     handleTileClickMultiplayer(x, y);
-  }, [units, gamePhase, selectedUnit, map, handleTileClickMultiplayer, selectedTerrain, isMultiplayer, myPlayer, currentPlayer, baseReserveP1, baseReserveP2]);
+  }, [unitByPosition, gamePhase, selectedUnit, map, playerBaseTiles, handleTileClickMultiplayer, selectedTerrain, isMultiplayer, myPlayer, currentPlayer, baseReserveP1, baseReserveP2]);
 
   // Clear terrain selection when game state changes
   useEffect(() => {
@@ -794,9 +830,11 @@ export default function Game() {
   const playerUnits = units.filter(u => u.owner === activePlayer);
   const activeReserve = activePlayer === 'P1' ? baseReserveP1 : baseReserveP2;
   const activeCredits = activePlayer === 'P1' ? creditsP1 : creditsP2;
-  const controlledCentersP1 = Object.values(centerOwners).filter(owner => owner === 'P1').length;
-  const controlledCentersP2 = Object.values(centerOwners).filter(owner => owner === 'P2').length;
-  const activeUnitsLeft = playerUnits.filter(u => !u.hasMoved).length;
+  const centerOwnersList = Object.values(centerOwners);
+  const controlledCentersP1 = centerOwnersList.filter(owner => owner === 'P1').length;
+  const controlledCentersP2 = centerOwnersList.filter(owner => owner === 'P2').length;
+  const movedCount = playerUnits.filter(u => u.hasMoved).length;
+  const activeUnitsLeft = playerUnits.length - movedCount;
   const phaseLabelByState: Record<string, string> = {
     SELECT: 'Seleccion',
     MOVING: 'Movimiento',
@@ -835,7 +873,7 @@ export default function Game() {
         onHowToPlay={() => setShowHowToPlay(true)}
         myPlayer={myPlayer}
         isMultiplayer={isMultiplayer}
-        movedCount={playerUnits.filter(u => u.hasMoved).length}
+        movedCount={movedCount}
         totalCount={playerUnits.length}
         gamePhase={gamePhase}
         creditsP1={creditsP1}

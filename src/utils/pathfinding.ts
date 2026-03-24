@@ -1,6 +1,11 @@
 import { TERRAIN_PROPS } from '../constants/terrain';
 import { TYPES } from '../constants/types';
-import { calculateMoveRange as sharedCalculateMoveRange, getMaxAttackRange } from '@poketactics/shared';
+import {
+  buildPositionIndex,
+  calculateMoveRange as sharedCalculateMoveRange,
+  getMaxAttackRange,
+  toPositionKey,
+} from '@poketactics/shared';
 import type { Unit, Position, AttackTarget, GameMap } from '../types/game';
 
 /**
@@ -70,6 +75,7 @@ export function findPath(
   const queue: Position[][] = [[start]];
   const visited = new Set([`${start.x},${start.y}`]);
   const isFlying = movingUnit.template.types.includes(TYPES.FLYING);
+  const unitByPosition = buildPositionIndex(units);
 
   while (queue.length > 0) {
     const path = queue.shift()!;
@@ -84,7 +90,7 @@ export function findPath(
       // Check bounds
       if (nx < 0 || nx >= map[0].length || ny < 0 || ny >= map.length) continue;
 
-      const key = `${nx},${ny}`;
+      const key = toPositionKey(nx, ny);
       if (visited.has(key)) continue;
 
       const terrain = map[ny][nx];
@@ -95,7 +101,7 @@ export function findPath(
       if (cost > 10) continue;
 
       // Check for units blocking
-      const occupant = units.find(u => u.x === nx && u.y === ny);
+      const occupant = unitByPosition.get(key);
 
       // Enemy units always block (can't pass through)
       if (occupant && occupant.owner !== movingUnit.owner) continue;

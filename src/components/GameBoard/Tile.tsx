@@ -13,10 +13,11 @@ interface TileProps {
   centerOwner?: Player | null;
   unit: Unit | undefined;
   isSelected: boolean;
+  isOnPath?: boolean;
   canMove: boolean;
   canAttack: boolean;
-  onClick: () => void;
-  onHover?: () => void;
+  onClick: (x: number, y: number) => void;
+  onHover?: (x: number, y: number) => void;
   onHoverEnd?: () => void;
   isMobile?: boolean;
   isVisible?: boolean;
@@ -451,13 +452,14 @@ export function TerrainDecoration({ texture, bridgeDir }: { texture?: string; br
   }
 }
 
-export function Tile({
+function TileComponent({
   x,
   y,
   terrain,
   centerOwner = null,
   unit,
   isSelected,
+  isOnPath = false,
   canMove,
   canAttack,
   onClick,
@@ -466,10 +468,9 @@ export function Tile({
   isMobile = false,
   isVisible = true,
   isExplored = true,
-  path = [],
+  path,
   bridgeDir
 }: TileProps) {
-  const isOnPath = path.some(p => p.x === x && p.y === y);
   const isInFog = !isVisible;
   const isUnexplored = !isExplored;
   const theme = TERRAIN_THEME[terrain] || TERRAIN_THEME[TERRAIN.GRASS];
@@ -477,8 +478,8 @@ export function Tile({
   return (
     <div
       data-pos={`${x}-${y}`}
-      onClick={onClick}
-      onMouseEnter={onHover}
+      onClick={() => onClick(x, y)}
+      onMouseEnter={onHover ? () => onHover(x, y) : undefined}
       onMouseLeave={onHoverEnd}
       className="relative group cursor-pointer overflow-visible"
     >
@@ -577,7 +578,7 @@ export function Tile({
       </div>
 
       {/* === PATH SEGMENT - Outside main tile to avoid clipping === */}
-      {path.length > 0 && <PathSegment x={x} y={y} path={path} />}
+      {path && path.length > 0 && <PathSegment x={x} y={y} path={path} />}
 
       {/* === POKEMON UNIT === */}
       {unit && (
@@ -638,3 +639,5 @@ export function Tile({
     </div>
   );
 }
+
+export const Tile = React.memo(TileComponent);

@@ -1,5 +1,6 @@
 import { TERRAIN_GAME_PROPS } from './terrain';
 import { getMovReduction } from './status';
+import { buildPositionIndex, toPositionKey } from './positions';
 import type { PokemonType, Position, GameMap, StatusEffect } from './types';
 
 export interface PathfindingUnit {
@@ -35,6 +36,7 @@ export function calculateMoveRange(
   const queue: QueueNode[] = [{ x: unit.x, y: unit.y, cost: 0 }];
   costs[`${unit.x},${unit.y}`] = 0;
   const validMoves: Position[] = [];
+  const unitByPosition = buildPositionIndex(units);
 
   const isFlying = unit.template.types.includes('flying' as PokemonType);
 
@@ -55,7 +57,7 @@ export function calculateMoveRange(
 
         if (cost > 10) continue;
 
-        const occupant = units.find(u => u.x === nx && u.y === ny);
+        const occupant = unitByPosition.get(toPositionKey(nx, ny));
         if (occupant && occupant.owner !== unit.owner) continue;
 
         const newCost = curr.cost + cost;

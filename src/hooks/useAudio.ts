@@ -80,6 +80,8 @@ export function useAudio() {
   }, [clearFade, resetAudio]);
 
   const playMusic = useCallback((key: AudioKey, options?: MusicOptions) => {
+    void audioPreloader.preloadKeys([key]);
+
     desiredTrackRef.current = {
       key,
       options: {

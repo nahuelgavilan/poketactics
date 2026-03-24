@@ -10,3 +10,4 @@ export * from './moves';
 export * from './status';
 export * from './abilities';
 export * from './economy';
+export * from './positions';

@@ -1,7 +1,8 @@
 import { useState, useMemo, useCallback } from 'react';
+import { buildPositionIndex, buildPositionSet, toPositionKey } from '@poketactics/shared';
 import { Tile } from './Tile';
 import { UnitActionMenu } from '../UnitActionMenu';
-import { isInRange, isInAttackRange, findPath } from '../../utils/pathfinding';
+import { isInRange, findPath } from '../../utils/pathfinding';
 import { TERRAIN, TERRAIN_PROPS } from '../../constants/terrain';
 import { getBridgeOrientation } from '../../utils/mapGenerator';
 import type { GameMap, Unit, Position, AttackTarget, Player, VisibilityMap } from '../../types/game';
@@ -83,6 +84,28 @@ export function GameBoard({
     return path;
   }, [selectedUnit, hoveredTile, pendingPosition, moveRange, map, units]);
 
+  const unitByPosition = useMemo(() => buildPositionIndex(units), [units]);
+  const moveRangeSet = useMemo(() => buildPositionSet(moveRange), [moveRange]);
+  const attackRangeSet = useMemo(() => buildPositionSet(attackRange), [attackRange]);
+  const activePathSet = useMemo(() => buildPositionSet(activePath), [activePath]);
+  const caveRevealSet = useMemo(() => {
+    const reveal = new Set<string>();
+
+    for (const unit of units) {
+      if (unit.owner !== currentPlayer) {
+        continue;
+      }
+
+      reveal.add(toPositionKey(unit));
+      reveal.add(toPositionKey(unit.x + 1, unit.y));
+      reveal.add(toPositionKey(unit.x - 1, unit.y));
+      reveal.add(toPositionKey(unit.x, unit.y + 1));
+      reveal.add(toPositionKey(unit.x, unit.y - 1));
+    }
+
+    return reveal;
+  }, [units, currentPlayer]);
+
   // Handle hover
   const handleTileHover = useCallback((x: number, y: number) => {
     setHoveredTile({ x, y });
@@ -93,7 +116,7 @@ export function GameBoard({
   }, []);
 
   // Check if a unit should be visible
-  const isUnitVisible = (unit: Unit): boolean => {
+  const isUnitVisible = useCallback((unit: Unit): boolean => {
     // Own units are always visible
     if (unit.owner === currentPlayer) return true;
     // No fog enabled - show all
@@ -104,14 +127,10 @@ export function GameBoard({
     // Cave hiding: even if tile is visible, unit is hidden unless an ally is adjacent
     const terrain = map[unit.y]?.[unit.x];
     if (terrain !== undefined && TERRAIN_PROPS[terrain]?.hidesUnit) {
-      const playerUnits = units.filter(u => u.owner === currentPlayer);
-      const hasAdjacentAlly = playerUnits.some(u =>
-        Math.abs(u.x - unit.x) + Math.abs(u.y - unit.y) <= 1
-      );
-      return hasAdjacentAlly;
+      return caveRevealSet.has(toPositionKey(unit));
     }
     return true;
-  };
+  }, [currentPlayer, visibility, map, caveRevealSet]);
 
 
   return (
@@ -133,12 +152,14 @@ export function GameBoard({
       >
         {map.map((row, y) =>
           row.map((terrain, x) => {
-            const unit = units.find(u => u.x === x && u.y === y);
+            const positionKey = toPositionKey(x, y);
+            const unit = unitByPosition.get(positionKey);
             // Only show unit if visible (fog of war check)
             const visibleUnit = unit && isUnitVisible(unit) ? unit : undefined;
             const isSelected = selectedUnit?.x === x && selectedUnit?.y === y;
-            const canMoveTo = isInRange({ x, y }, moveRange);
-            const tileCanAttack = isInAttackRange({ x, y }, attackRange);
+            const canMoveTo = moveRangeSet.has(positionKey);
+            const tileCanAttack = attackRangeSet.has(positionKey);
+            const isPathTile = activePathSet.has(positionKey);
 
             // Visibility state for fog of war
             const isVisible = visibility ? visibility.visible[y]?.[x] ?? true : true;
@@ -157,15 +178,16 @@ export function GameBoard({
                   centerOwner={terrain === TERRAIN.POKEMON_CENTER ? (centerOwners[`${x},${y}`] ?? null) : null}
                   unit={visibleUnit}
                   isSelected={isSelected}
+                  isOnPath={isPathTile}
                   canMove={canMoveTo}
                   canAttack={tileCanAttack}
-                  onClick={() => onTileClick(x, y)}
-                  onHover={() => handleTileHover(x, y)}
+                  onClick={onTileClick}
+                  onHover={handleTileHover}
                   onHoverEnd={handleTileHoverEnd}
                   isMobile={isMobile}
                   isVisible={isVisible}
                   isExplored={isExplored}
-                  path={activePath}
+                  path={isPathTile ? activePath : undefined}
                   bridgeDir={terrain === TERRAIN.BRIDGE ? getBridgeOrientation(map, x, y) : undefined}
                 />
                 {/* Action menu - rendered at pending tile position */}

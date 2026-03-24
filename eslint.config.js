@@ -8,6 +8,8 @@ export default [
   {
     ignores: [
       'dist/**',
+      'shared/dist/**',
+      'server/dist/**',
       'node_modules/**',
       'server/node_modules/**',
       'shared/node_modules/**',

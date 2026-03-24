@@ -1,11 +1,10 @@
 /**
  * Audio Preloader & Pool Manager
  *
- * Goals:
- * 1. Preload all audio files early so gameplay never waits on the network
- * 2. Keep a small reusable pool for SFX overlap
- * 3. Expose loading + unlock state so music can recover after autoplay blocks
- * 4. Stay resilient on mobile browsers where `canplaythrough` is unreliable
+ * Optimized for staged loading:
+ * - Load only the menu-critical audio up front
+ * - Allow later batches to hydrate the rest of the sound bank on demand
+ * - Recover cleanly after autoplay restrictions are lifted
  */
 
 export type AudioCategory = 'music' | 'sfx';
@@ -23,12 +22,86 @@ export interface AudioLoadingState {
   isComplete: boolean;
 }
 
+export const AUDIO_CONFIGS = {
+  menu_theme: { path: '/audio/music/menu_theme.mp3', category: 'music' },
+  board_theme: { path: '/audio/music/board_theme.mp3', category: 'music' },
+  battle_theme: { path: '/audio/music/battle_theme.mp3', category: 'music' },
+  victory: { path: '/audio/music/victory.mp3', category: 'music' },
+  defeat: { path: '/audio/music/defeat.mp3', category: 'music' },
+
+  menu_open: { path: '/audio/sfx/menu_open.mp3', category: 'sfx', poolSize: 2 },
+  menu_close: { path: '/audio/sfx/menu_close.mp3', category: 'sfx', poolSize: 2 },
+  button_click: { path: '/audio/sfx/button_click.mp3', category: 'sfx', poolSize: 2 },
+  unit_select: { path: '/audio/sfx/unit_select.mp3', category: 'sfx', poolSize: 2 },
+  unit_deselect: { path: '/audio/sfx/unit_deselect.mp3', category: 'sfx', poolSize: 2 },
+  unit_move: { path: '/audio/sfx/unit_move.mp3', category: 'sfx', poolSize: 2 },
+
+  attack_hit: { path: '/audio/sfx/attack_hit.mp3', category: 'sfx', poolSize: 2 },
+  critical_hit: { path: '/audio/sfx/critical_hit.mp3', category: 'sfx', poolSize: 2 },
+  super_effective: { path: '/audio/sfx/super_effective.mp3', category: 'sfx', poolSize: 2 },
+  not_effective: { path: '/audio/sfx/not_effective.mp3', category: 'sfx', poolSize: 2 },
+  unit_faint: { path: '/audio/sfx/unit_faint.mp3', category: 'sfx', poolSize: 2 },
+
+  wild_encounter: { path: '/audio/sfx/wild_encounter.mp3', category: 'sfx', poolSize: 2 },
+  ring_hit_perfect: { path: '/audio/sfx/ring_hit_perfect.mp3', category: 'sfx', poolSize: 3 },
+  ring_hit_good: { path: '/audio/sfx/ring_hit_good.mp3', category: 'sfx', poolSize: 3 },
+  ring_miss: { path: '/audio/sfx/ring_miss.mp3', category: 'sfx', poolSize: 2 },
+  pokeball_throw: { path: '/audio/sfx/pokeball_throw.mp3', category: 'sfx', poolSize: 2 },
+  pokeball_shake: { path: '/audio/sfx/pokeball_shake.mp3', category: 'sfx', poolSize: 3 },
+  pokeball_open: { path: '/audio/sfx/pokeball_open.mp3', category: 'sfx', poolSize: 2 },
+  capture_fail: { path: '/audio/sfx/capture_fail.mp3', category: 'sfx', poolSize: 2 },
+  flee_success: { path: '/audio/sfx/flee_success.mp3', category: 'sfx', poolSize: 2 },
+} satisfies Record<string, AudioConfig>;
+
+export type AudioAssetKey = keyof typeof AUDIO_CONFIGS;
+
+export const MENU_AUDIO_KEYS: readonly AudioAssetKey[] = [
+  'menu_theme',
+  'menu_open',
+  'menu_close',
+  'button_click',
+];
+
+export const GAMEPLAY_AUDIO_KEYS: readonly AudioAssetKey[] = [
+  'board_theme',
+  'battle_theme',
+  'unit_select',
+  'unit_deselect',
+  'unit_move',
+  'attack_hit',
+  'critical_hit',
+  'super_effective',
+  'not_effective',
+  'unit_faint',
+];
+
+export const CAPTURE_AUDIO_KEYS: readonly AudioAssetKey[] = [
+  'wild_encounter',
+  'ring_hit_perfect',
+  'ring_hit_good',
+  'ring_miss',
+  'pokeball_throw',
+  'pokeball_shake',
+  'pokeball_open',
+  'capture_fail',
+  'flee_success',
+];
+
+export const ENDING_AUDIO_KEYS: readonly AudioAssetKey[] = [
+  'victory',
+  'defeat',
+];
+
 const AUDIO_READY_TIMEOUT_MS = 12_000;
 const UNLOCK_EVENTS = ['click', 'keydown'] as const;
 
 class AudioPreloader {
   private musicCache: Map<string, HTMLAudioElement> = new Map();
   private sfxPools: Map<string, HTMLAudioElement[]> = new Map();
+  private requestedKeys = new Set<string>();
+  private loadedKeys = new Set<string>();
+  private failedKeys = new Set<string>();
+  private inFlightLoads: Map<string, Promise<void>> = new Map();
   private loadingState: AudioLoadingState = {
     total: 0,
     loaded: 0,
@@ -39,7 +112,6 @@ class AudioPreloader {
   private unlockListeners: Set<(unlocked: boolean) => void> = new Set();
   private audioUnlocked = false;
   private pendingPlaybacks: Array<() => void> = [];
-  private preloadPromise: Promise<void> | null = null;
   private unlockHandler = () => {
     void this.unlockAudio();
   };
@@ -48,9 +120,6 @@ class AudioPreloader {
     this.setupAutoUnlock();
   }
 
-  /**
-   * Listen for the first user interaction so later playback requests are allowed.
-   */
   private setupAutoUnlock(): void {
     if (typeof document === 'undefined') return;
 
@@ -68,6 +137,18 @@ class AudioPreloader {
     UNLOCK_EVENTS.forEach((eventName) => {
       document.removeEventListener(eventName, this.unlockHandler, true);
     });
+  }
+
+  private syncLoadingState(): void {
+    const total = this.requestedKeys.size;
+    const loaded = this.loadedKeys.size + this.failedKeys.size;
+
+    this.loadingState = {
+      total,
+      loaded,
+      failed: [...this.failedKeys],
+      isComplete: total > 0 && loaded >= total && this.inFlightLoads.size === 0,
+    };
   }
 
   private createAudioElement(path: string): HTMLAudioElement {
@@ -131,10 +212,6 @@ class AudioPreloader {
     });
   }
 
-  /**
-   * Explicitly unlock audio after a user gesture.
-   * This is also called by the passive global listeners above.
-   */
   async unlockAudio(): Promise<void> {
     if (this.audioUnlocked) return;
 
@@ -147,38 +224,61 @@ class AudioPreloader {
     pending.forEach((playback) => playback());
   }
 
-  /**
-   * Preload all audio files once and reuse the same promise for subsequent calls.
-   */
-  async preloadAll(configs: Record<string, AudioConfig>): Promise<void> {
-    if (this.loadingState.isComplete) {
-      return;
+  isLoaded(key: string): boolean {
+    return this.loadedKeys.has(key);
+  }
+
+  async preloadAll(): Promise<void> {
+    await this.preloadKeys(Object.keys(AUDIO_CONFIGS) as AudioAssetKey[]);
+  }
+
+  async preloadKeys(keys: readonly string[]): Promise<void> {
+    const uniqueKeys = [...new Set(keys)];
+    const pendingPromises: Promise<void>[] = [];
+    let stateChanged = false;
+
+    for (const key of uniqueKeys) {
+      const config = AUDIO_CONFIGS[key as AudioAssetKey];
+      if (!config) {
+        console.warn(`Audio "${key}" is not configured`);
+        continue;
+      }
+
+      if (!this.requestedKeys.has(key)) {
+        this.requestedKeys.add(key);
+        stateChanged = true;
+      }
+
+      if (this.loadedKeys.has(key)) {
+        continue;
+      }
+
+      if (this.failedKeys.has(key)) {
+        this.failedKeys.delete(key);
+        stateChanged = true;
+      }
+
+      const existingLoad = this.inFlightLoads.get(key);
+      if (existingLoad) {
+        pendingPromises.push(existingLoad);
+        continue;
+      }
+
+      const loadPromise = this.preloadAudio(key, config).finally(() => {
+        this.inFlightLoads.delete(key);
+        this.notifyLoadingListeners();
+      });
+      this.inFlightLoads.set(key, loadPromise);
+      pendingPromises.push(loadPromise);
+      stateChanged = true;
     }
 
-    if (this.preloadPromise) {
-      return this.preloadPromise;
-    }
-
-    const entries = Object.entries(configs);
-    this.loadingState = {
-      total: entries.length,
-      loaded: 0,
-      failed: [],
-      isComplete: false,
-    };
-    this.notifyLoadingListeners();
-
-    this.preloadPromise = (async () => {
-      const promises = entries.map(([key, config]) => this.preloadAudio(key, config));
-      await Promise.allSettled(promises);
-      this.loadingState.isComplete = true;
+    if (stateChanged) {
       this.notifyLoadingListeners();
-    })();
+    }
 
-    try {
-      await this.preloadPromise;
-    } finally {
-      this.preloadPromise = this.loadingState.isComplete ? this.preloadPromise : null;
+    if (pendingPromises.length > 0) {
+      await Promise.allSettled(pendingPromises);
     }
   }
 
@@ -189,12 +289,13 @@ class AudioPreloader {
       } else {
         await this.preloadSFX(key, config.path, config.poolSize || 2);
       }
+
+      this.loadedKeys.add(key);
+      this.failedKeys.delete(key);
     } catch (err) {
       console.error(`Failed to preload ${key}:`, err);
-      this.loadingState.failed.push(key);
-    } finally {
-      this.loadingState.loaded++;
-      this.notifyLoadingListeners();
+      this.loadedKeys.delete(key);
+      this.failedKeys.add(key);
     }
   }
 
@@ -257,7 +358,7 @@ class AudioPreloader {
 
   onLoadingStateChange(callback: (state: AudioLoadingState) => void): () => void {
     this.loadingListeners.add(callback);
-    callback({ ...this.loadingState });
+    callback({ ...this.loadingState, failed: [...this.loadingState.failed] });
 
     return () => {
       this.loadingListeners.delete(callback);
@@ -274,7 +375,7 @@ class AudioPreloader {
   }
 
   getLoadingState(): AudioLoadingState {
-    return { ...this.loadingState };
+    return { ...this.loadingState, failed: [...this.loadingState.failed] };
   }
 
   get isUnlocked(): boolean {
@@ -282,7 +383,8 @@ class AudioPreloader {
   }
 
   private notifyLoadingListeners(): void {
-    const state = { ...this.loadingState };
+    this.syncLoadingState();
+    const state = { ...this.loadingState, failed: [...this.loadingState.failed] };
     this.loadingListeners.forEach((listener) => listener(state));
   }
 
@@ -306,7 +408,10 @@ class AudioPreloader {
     this.sfxPools.clear();
 
     this.pendingPlaybacks = [];
-    this.preloadPromise = null;
+    this.requestedKeys.clear();
+    this.loadedKeys.clear();
+    this.failedKeys.clear();
+    this.inFlightLoads.clear();
     this.loadingState = {
       total: 0,
       loaded: 0,
@@ -318,34 +423,3 @@ class AudioPreloader {
 }
 
 export const audioPreloader = new AudioPreloader();
-
-export const AUDIO_CONFIGS: Record<string, AudioConfig> = {
-  menu_theme: { path: '/audio/music/menu_theme.mp3', category: 'music' },
-  board_theme: { path: '/audio/music/board_theme.mp3', category: 'music' },
-  battle_theme: { path: '/audio/music/battle_theme.mp3', category: 'music' },
-  victory: { path: '/audio/music/victory.mp3', category: 'music' },
-  defeat: { path: '/audio/music/defeat.mp3', category: 'music' },
-
-  menu_open: { path: '/audio/sfx/menu_open.mp3', category: 'sfx', poolSize: 2 },
-  menu_close: { path: '/audio/sfx/menu_close.mp3', category: 'sfx', poolSize: 2 },
-  button_click: { path: '/audio/sfx/button_click.mp3', category: 'sfx', poolSize: 2 },
-  unit_select: { path: '/audio/sfx/unit_select.mp3', category: 'sfx', poolSize: 2 },
-  unit_deselect: { path: '/audio/sfx/unit_deselect.mp3', category: 'sfx', poolSize: 2 },
-  unit_move: { path: '/audio/sfx/unit_move.mp3', category: 'sfx', poolSize: 2 },
-
-  attack_hit: { path: '/audio/sfx/attack_hit.mp3', category: 'sfx', poolSize: 2 },
-  critical_hit: { path: '/audio/sfx/critical_hit.mp3', category: 'sfx', poolSize: 2 },
-  super_effective: { path: '/audio/sfx/super_effective.mp3', category: 'sfx', poolSize: 2 },
-  not_effective: { path: '/audio/sfx/not_effective.mp3', category: 'sfx', poolSize: 2 },
-  unit_faint: { path: '/audio/sfx/unit_faint.mp3', category: 'sfx', poolSize: 2 },
-
-  wild_encounter: { path: '/audio/sfx/wild_encounter.mp3', category: 'sfx', poolSize: 2 },
-  ring_hit_perfect: { path: '/audio/sfx/ring_hit_perfect.mp3', category: 'sfx', poolSize: 3 },
-  ring_hit_good: { path: '/audio/sfx/ring_hit_good.mp3', category: 'sfx', poolSize: 3 },
-  ring_miss: { path: '/audio/sfx/ring_miss.mp3', category: 'sfx', poolSize: 2 },
-  pokeball_throw: { path: '/audio/sfx/pokeball_throw.mp3', category: 'sfx', poolSize: 2 },
-  pokeball_shake: { path: '/audio/sfx/pokeball_shake.mp3', category: 'sfx', poolSize: 3 },
-  pokeball_open: { path: '/audio/sfx/pokeball_open.mp3', category: 'sfx', poolSize: 2 },
-  capture_fail: { path: '/audio/sfx/capture_fail.mp3', category: 'sfx', poolSize: 2 },
-  flee_success: { path: '/audio/sfx/flee_success.mp3', category: 'sfx', poolSize: 2 },
-};

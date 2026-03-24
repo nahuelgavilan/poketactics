@@ -36,7 +36,8 @@ export function useSFX() {
 
   /**
    * Play a sound effect using preloaded audio pool
-   * - No network delay (preloaded on game start)
+   * - Essential menu sounds are ready up front
+   * - Other sounds are hydrated lazily on first use
    * - Reuses Audio instances (better performance)
    * - Supports overlapping sounds via pooling
    */
@@ -45,6 +46,13 @@ export function useSFX() {
     const finalVolume = sfxMuted ? 0 : volume * sfxVolume;
 
     if (finalVolume <= 0) {
+      return;
+    }
+
+    if (!audioPreloader.isLoaded(key)) {
+      void audioPreloader.preloadKeys([key]).then(() => {
+        audioPreloader.playSFX(key, Math.max(0, Math.min(1, finalVolume)));
+      });
       return;
     }
 

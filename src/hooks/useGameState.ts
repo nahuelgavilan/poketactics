@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { TERRAIN } from '../constants/terrain';
 import { getNextEvolution, getBalancedRandomBaseTeams } from '../constants/evolution';
 import { calculateMoveRange, calculateAttackRange } from '../utils/pathfinding';
@@ -23,7 +23,10 @@ import {
   POKEMART_MAX_POTION_COST,
   POKEMART_ELIXIR_COST,
   POKEMART_FULL_HEAL_COST,
-  SHOWDOWN_SERVICE_ITEMS
+  SHOWDOWN_SERVICE_ITEMS,
+  buildPositionIndex,
+  buildPositionSet,
+  toPositionKey,
 } from '@poketactics/shared';
 import type {
   GameState,
@@ -186,6 +189,9 @@ export function useGameState(): UseGameStateReturn {
 
   // Computed: is it my turn?
   const isMyTurn = !isMultiplayer || myPlayer === currentPlayer;
+  const unitByPosition = useMemo(() => buildPositionIndex(units), [units]);
+  const moveRangeSet = useMemo(() => buildPositionSet(moveRange), [moveRange]);
+  const attackRangeSet = useMemo(() => buildPositionSet(attackRange), [attackRange]);
 
   const getPlayerBaseTile = useCallback((currentMap: GameMap, player: Player): Position | null => {
     const bases: Position[] = [];
@@ -202,6 +208,10 @@ export function useGameState(): UseGameStateReturn {
     }
     return bases.reduce((best, tile) => (tile.x + tile.y < best.x + best.y ? tile : best), bases[0]);
   }, []);
+  const playerBaseTiles = useMemo<Record<Player, Position | null>>(() => ({
+    P1: getPlayerBaseTile(map, 'P1'),
+    P2: getPlayerBaseTile(map, 'P2'),
+  }), [map, getPlayerBaseTile]);
 
   const resolveWinner = useCallback((
     currentUnits: Unit[],
@@ -468,7 +478,8 @@ export function useGameState(): UseGameStateReturn {
     // Block input when it's not your turn in multiplayer
     if (isMultiplayer && !isMyTurn) return;
 
-    const clickedUnit = units.find(u => u.x === x && u.y === y);
+    const tileKey = toPositionKey(x, y);
+    const clickedUnit = unitByPosition.get(tileKey);
 
     // Helper: Check if clicking on own unit that can act
     const isOwnActiveUnit = (unit: Unit | undefined) =>
@@ -489,7 +500,7 @@ export function useGameState(): UseGameStateReturn {
 
       const playerReserve = currentPlayer === 'P1' ? baseReserveP1 : baseReserveP2;
       if (!clickedUnit && playerReserve.length > 0) {
-        const baseTile = getPlayerBaseTile(map, currentPlayer);
+        const baseTile = playerBaseTiles[currentPlayer];
         if (baseTile && baseTile.x === x && baseTile.y === y) {
           setDeployBase(baseTile);
           setGamePhase('DEPLOY_SELECT');
@@ -519,7 +530,7 @@ export function useGameState(): UseGameStateReturn {
 
       // Click on current position OR valid move destination: show preview with action menu
       const isCurrentPosition = x === selectedUnit.x && y === selectedUnit.y;
-      const isValidDestination = moveRange.some(m => m.x === x && m.y === y);
+      const isValidDestination = moveRangeSet.has(tileKey);
 
       if (isCurrentPosition || isValidDestination) {
         // Set pending position (where unit WILL move, not confirmed yet)
@@ -547,7 +558,7 @@ export function useGameState(): UseGameStateReturn {
     // Phase: ACTION_MENU - can click another tile to change destination
     if (gamePhase === 'ACTION_MENU' && selectedUnit) {
       const isCurrentPosition = x === selectedUnit.x && y === selectedUnit.y;
-      const isValidDestination = moveRange.some(m => m.x === x && m.y === y);
+      const isValidDestination = moveRangeSet.has(tileKey);
 
       // Click on valid tile (including current position): change pending destination
       if (isCurrentPosition || isValidDestination) {
@@ -570,8 +581,8 @@ export function useGameState(): UseGameStateReturn {
     // Phase: ATTACKING - selecting attack target
     if (gamePhase === 'ATTACKING' && selectedUnit) {
       // Click on valid target: go to move selection
-      if (attackRange.some(a => a.x === x && a.y === y)) {
-        const target = units.find(u => u.x === x && u.y === y);
+      if (attackRangeSet.has(tileKey)) {
+        const target = unitByPosition.get(tileKey);
         if (target) {
           setAttackTarget(target);
           setAttackRange([]);
@@ -606,8 +617,6 @@ export function useGameState(): UseGameStateReturn {
     units,
     currentPlayer,
     selectedUnit,
-    moveRange,
-    attackRange,
     map,
     unitHasMoved,
     waitUnit,
@@ -616,8 +625,11 @@ export function useGameState(): UseGameStateReturn {
     isMyTurn,
     baseReserveP1,
     baseReserveP2,
-    getPlayerBaseTile,
-    deployBase
+    deployBase,
+    unitByPosition,
+    moveRangeSet,
+    attackRangeSet,
+    playerBaseTiles,
   ]);
 
   const endBattle = useCallback(() => {
